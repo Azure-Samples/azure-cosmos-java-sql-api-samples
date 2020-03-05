@@ -60,16 +60,17 @@ public class SampleChangeFeedProcessor {
             CosmosAsyncContainer leaseContainer = createNewLeaseCollection(client, DATABASE_NAME, COLLECTION_NAME + "-leases");
 
             changeFeedProcessorInstance = getChangeFeedProcessor("SampleHost_1", feedContainer, leaseContainer);
-            System.out.println("Got here\n");
             changeFeedProcessorInstance.start()
                 .subscribeOn(Schedulers.elastic())
                 .doOnSuccess(aVoid -> {
-                    System.out.println("!doOnSuccess!\n");
-                    createNewDocumentsJSON(feedContainer, 10, Duration.ofSeconds(3));
+                    //Insert 10 documents into the feed container
+                    //createNewDocumentsCustomPOJO demonstrates how to insert a custom POJO into a Cosmos DB container as an item
+                    //createNewDocumentsJSON demonstrates how to insert a JSON object into a Cosmos DB container as an item
+                    createNewDocumentsCustomPOJO(feedContainer, 5, Duration.ofSeconds(3));
+                    createNewDocumentsJSON(feedContainer, 5, Duration.ofSeconds(3));
                     isWorkCompleted = true;
                 })
                 .subscribe();
-            System.out.println("and here\n");
 
             long remainingWork = WAIT_FOR_WORK;
             while (!isWorkCompleted && remainingWork > 0) {

@@ -14,6 +14,7 @@ import com.azure.cosmos.examples.common.AccountSettings;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -125,6 +126,8 @@ public class SampleStoredProcedureAsync {
                 container.getScripts().readAllStoredProcedures(feedOptions);
 
         final CountDownLatch completionLatch = new CountDownLatch(1);
+
+
 
         fluxResponse.flatMap(storedProcedureProperties -> {
             logger.info(String.format("Stored Procedure: %s\n",storedProcedureProperties.getId()));
