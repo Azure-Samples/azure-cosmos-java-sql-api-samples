@@ -148,15 +148,13 @@ public class SampleCRUDQuickstart {
             //  </CreateItem>
 
             //  Get request charge and other properties like latency, and diagnostics strings, etc.
-            logger.info(String.format("Created item with request charge of %.2f within" +
-                    " duration %s",
+            System.out.println(String.format("Created item with request charge of %.2f within duration %s",
                 item.getRequestCharge(), item.getRequestLatency()));
+
             totalRequestCharge += item.getRequestCharge();
         }
-        logger.info(String.format("Created %d items with total request " +
-                "charge of %.2f",
-            families.size(),
-            totalRequestCharge));
+        System.out.println(String.format("Created %d items with total request charge of %.2f",
+            families.size(), totalRequestCharge));
     }
 
     private void readItems(ArrayList<Family> familiesToCreate) {
