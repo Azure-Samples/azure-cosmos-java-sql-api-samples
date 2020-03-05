@@ -119,31 +119,6 @@ public class SampleChangeFeedProcessor {
             .build();
     }
 
-    /*
-    public static ChangeFeedProcessor getChangeFeedProcessorCustomPOJO(String hostName, CosmosAsyncContainer feedContainer, CosmosAsyncContainer leaseContainer) {
-        return ChangeFeedProcessor.changeFeedProcessorBuilder()
-                .setHostName(hostName)
-                .setFeedContainer(feedContainer)
-                .setLeaseContainer(leaseContainer)
-                .setHandleChanges((List<CustomPOJO> docs) -> {
-                    System.out.println("--->setHandleChanges() START");
-
-                    for (CustomPOJO document : docs) {
-                        try {
-                            System.out.println("---->DOCUMENT RECEIVED: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
-                                    .writeValueAsString(document));
-                        } catch (JsonProcessingException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    System.out.println("--->handleChanges() END");
-
-                })
-                .build();
-    }
-
-
-     */
     public static CosmosAsyncClient getCosmosClient() {
 
         return new CosmosClientBuilder()
@@ -186,9 +161,7 @@ public class SampleChangeFeedProcessor {
         }
 
         CosmosContainerProperties containerSettings = new CosmosContainerProperties(collectionName, "/id");
-
         CosmosContainerRequestOptions requestOptions = new CosmosContainerRequestOptions();
-
         containerResponse = databaseLink.createContainer(containerSettings, 10000, requestOptions).block();
 
         if (containerResponse == null) {
@@ -293,13 +266,8 @@ public class SampleChangeFeedProcessor {
     public static void createNewDocumentsJSON(CosmosAsyncContainer containerClient, int count, Duration delay) {
         String suffix = RandomStringUtils.randomAlphabetic(10);
         for (int i = 0; i <= count; i++) {
-//            CosmosItemProperties document = new CosmosItemProperties();
-//            document.setId(String.format("0%d-%s", i, suffix));
 
-            String jsonString =
-                    "{\n" +
-                        "\"id\" : \"" + String.format("0%d-%s", i, suffix) + "\"\n" +
-                    "}";
+            String jsonString = "{\"id\" : \"" + String.format("0%d-%s", i, suffix) + "\"}";
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode document = null;
