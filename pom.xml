@@ -11,6 +11,25 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+	<distributionManagement>
+		<repository>
+			<id>azure-sdk-for-java</id>
+			<url>https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-java/maven/v1</url>
+		</repository>
+	</distributionManagement>
+	<repositories>
+		<repository>
+			<id>azure-sdk-for-java</id>
+			<url>https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-java/maven/v1</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -58,7 +77,13 @@
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-cosmos</artifactId>
-			<version>4.0.0-preview.2</version>
+			<version>4.0.1-beta.1.dev.20200228.2</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.azure</groupId>
+					<artifactId>azure-core</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 
