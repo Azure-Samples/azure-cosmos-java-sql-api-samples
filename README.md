@@ -46,8 +46,9 @@ Clone the sample to your PC. Using your Java IDE, open pom.xml as a Maven projec
 
 ## Running the sample
 
-If you are using Intellij IDEA: Once you have opened the project, go to the **Run/Debug Configurations** drop-down and choose **Edit Configurations**. In the **Edit Configurations** dialog, click **+** (**Add New Configuration**) and give the new configuration a name.
-In **Environment variables** paste 
+*If you are using Intellij IDEA as your Java IDE:* Once you have opened the project, go to the **Run/Debug Configurations** drop-down and choose **Edit Configurations**. 
+In the **Edit Configurations** dialog, click the **+** (**Add New Configuration**) button, select **Application** as the configuration type, 
+ and give the new configuration a name. Once you are looking at the settings for your new Configuration, find **Environment variables** and paste
 
 ```
 ACCOUNT_HOST=your account hostname;ACCOUNT_KEY=your account master key
@@ -55,7 +56,7 @@ ACCOUNT_HOST=your account hostname;ACCOUNT_KEY=your account master key
 
 which gives the sample read/write access to your account.
 
-To choose which sample will run, populate the **Main class** field with 
+To choose which sample will run, populate the **Main class** field of the Configuration with 
 
 ```
 com.azure.cosmos.examples.changefeed.sample
@@ -70,12 +71,20 @@ where *sample* can be
 * SampleStoredProcedureAsync
 * SampleChangeFeedProcessor
 
+*Build and execute from command line without an IDE:* From top-level directory of repo:
+```
+mvn clean package
+mvn exec:java -Dexec.mainClass="com.azure.cosmos.examples.changefeed.sample" -DACCOUNT_HOST=your account hostname -DACCOUNT_KEY=your account master key
+```
+
+where *sample*, *your account hostname*, and *your account master key* are to be filled in as above. This will rebuild and run the selected sample.
+
 ## Key concepts
 
 These samples cover a range of Azure Cosmos DB usage topics from more to less basic:
 * Basic management of databases, containers and items
-* Indexing, stored procedures, and Change Feed
-* An end-to-end application sample (*coming soon*)
+* Indexing, stored procedures
+* Change Feed
 
 ## Contributing
 
