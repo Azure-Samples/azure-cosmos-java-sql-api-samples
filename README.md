@@ -36,6 +36,7 @@ Sample code repo for Azure Cosmos DB Java SDK for SQL API. By cloning and runnin
 
 * A Java IDE such as IntelliJ IDEA or VSCode
 * Maven
+* Java SE JRE 8
 * Setting up an Azure Cosmos DB account through the Azure Portal. The **Create a database account** section of [this guide](https://docs.microsoft.com/en-us/azure/cosmos-db/create-sql-api-java) walks you through account creation. 
 * The hostname and master key for your Azure Cosmos DB account
 
