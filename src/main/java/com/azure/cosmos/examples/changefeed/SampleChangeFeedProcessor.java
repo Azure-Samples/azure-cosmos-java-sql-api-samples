@@ -46,7 +46,16 @@ public class SampleChangeFeedProcessor {
         logger.info("BEGIN Sample");
 
         try {
+            //This sample models an application where documents are being inserted into one container (the "feed container"),
+            //and meanwhile another worker thread or worker application is pulling inserted documents from the feed container's Change Feed
+            //and operating on them in some way. For one or more workers to process the Change Feed, the workers must first contact the server
+            //and "lease" access to monitor one or more partitions of the feed container. The Change Feed Processor Library
+            //handles leasing automatically for you, however you must create a separate "lease container" where the Change Feed
+            //Processor Library can store and track leases.
 
+            //Summary of the next four commands:
+            //-Create an asynchronous Azure Cosmos DB client and database so that we can issue async requests to the DB
+            //-Create a "feed container" and a "lease container" in the DB
             System.out.println("-->CREATE DocumentClient");
             CosmosAsyncClient client = getCosmosClient();
 
@@ -59,25 +68,28 @@ public class SampleChangeFeedProcessor {
             System.out.println("-->CREATE container for lease: " + COLLECTION_NAME + "-leases");
             CosmosAsyncContainer leaseContainer = createNewLeaseCollection(client, DATABASE_NAME, COLLECTION_NAME + "-leases");
 
+            //Now, create and start the Change Feed Processor. See the implementation of getChangeFeedProcessor() for guidance
+            //on creating a handler for Change Feed events. In this stream, we also trigger the insertion of 10 documents on a separate
+            //thread.
             changeFeedProcessorInstance = getChangeFeedProcessor("SampleHost_1", feedContainer, leaseContainer);
             changeFeedProcessorInstance.start()
                 .subscribeOn(Schedulers.elastic())
                 .doOnSuccess(aVoid -> {
                     //Insert 10 documents into the feed container
-                    //createNewDocumentsCustomPOJO demonstrates how to insert a custom POJO into a Cosmos DB container as an item
-                    //createNewDocumentsJSON demonstrates how to insert a JSON object into a Cosmos DB container as an item
-                    createNewDocumentsCustomPOJO(feedContainer, 5, Duration.ofSeconds(3));
-                    createNewDocumentsJSON(feedContainer, 5, Duration.ofSeconds(3));
+                    createNewDocumentsCustomPOJO(feedContainer, 10, Duration.ofSeconds(3));
                     isWorkCompleted = true;
                 })
                 .subscribe();
 
+            //Model of a worker thread or application which leases access to monitor one or more feed container
+            //partitions via the Change Feed. In a real-world application you might deploy this code in an Azure function
             long remainingWork = WAIT_FOR_WORK;
             while (!isWorkCompleted && remainingWork > 0) {
                 Thread.sleep(100);
                 remainingWork -= 100;
             }
 
+            //When all documents have been processed, clean up
             if (isWorkCompleted) {
                 if (changeFeedProcessorInstance != null) {
                     changeFeedProcessorInstance.stop().subscribe();
@@ -108,8 +120,18 @@ public class SampleChangeFeedProcessor {
 
                 for (JsonNode document : docs) {
                     try {
+                        //Change Feed hands the document to you in the form of a JsonNode
+                        //As a developer you have two options for handling the JsonNode document provided to you by Change Feed
+                        //One option is to operate on the document in the form of a JsonNode, as shown below. This is great
+                        //especially if you do not have a single uniform data model for all documents.
                         System.out.println("---->DOCUMENT RECEIVED: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
                                                                             .writeValueAsString(document));
+
+                        //You can also transform the JsonNode to a POJO having the same structure as the JsonNode,
+                        //as shown below.
+                        CustomPOJO pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO.class);
+                        System.out.println("----=>id: " + pojo_doc.getId());
+
                     } catch (JsonProcessingException e) {
                         e.printStackTrace();
                     }
@@ -249,43 +271,6 @@ public class SampleChangeFeedProcessor {
 
             containerClient.createItem(document).subscribe(doc -> {
                 System.out.println("---->DOCUMENT WRITE: " + doc);
-            });
-
-            long remainingWork = delay.toMillis();
-            try {
-                while (remainingWork > 0) {
-                    Thread.sleep(100);
-                    remainingWork -= 100;
-                }
-            } catch (InterruptedException iex) {
-                // exception caught
-                break;
-            }
-        }
-    }
-
-    public static void createNewDocumentsJSON(CosmosAsyncContainer containerClient, int count, Duration delay) {
-        String suffix = RandomStringUtils.randomAlphabetic(10);
-        for (int i = 0; i <= count; i++) {
-
-            String jsonString = "{\"id\" : \"" + String.format("0%d-%s", i, suffix) + "\"}";
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode document = null;
-
-            try {
-                document = mapper.readTree(jsonString);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            containerClient.createItem(document).subscribe(doc -> {
-                try {
-                    System.out.println("---->DOCUMENT WRITE: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
-                            .writeValueAsString(doc));
-                } catch (JsonProcessingException e) {
-                    System.err.println(String.format("Failure in processing json %s", e.getMessage()));
-                }
             });
 
             long remainingWork = delay.toMillis();

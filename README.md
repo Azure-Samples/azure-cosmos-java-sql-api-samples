@@ -18,7 +18,7 @@ Guidance on onboarding samples to docs.microsoft.com/samples: https://review.doc
 Taxonomies for products and languages: https://review.docs.microsoft.com/new-hope/information-architecture/metadata/taxonomies?branch=master
 -->
 
-Sample code repo for Azure Cosmos DB Java SDK for SQL API. By cloning and running these samples, and then studying their implementation, you will have an example for sending various requests to Azure Cosmos DB from Java SDK via the SQL API.
+Sample code repo for Azure Cosmos DB Java SDK for SQL API. By cloning and running these samples, and then studying their implementations, you will have an example for sending various requests to Azure Cosmos DB from Java SDK via the SQL API.
 
 ## Contents
 
@@ -50,7 +50,7 @@ If you are using Intellij IDEA: Once you have opened the project, go to the **Ru
 In **Environment variables** paste 
 
 ```
-ACCOUNT_HOST= your account hostname;ACCOUNT_KEY=your account master key
+ACCOUNT_HOST=your account hostname;ACCOUNT_KEY=your account master key
 ```
 
 which gives the sample read/write access to your account.
