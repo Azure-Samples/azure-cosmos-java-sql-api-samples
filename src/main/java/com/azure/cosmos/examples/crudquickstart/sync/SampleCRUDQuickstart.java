@@ -71,6 +71,15 @@ public class SampleCRUDQuickstart {
     //  </Main>
 
     private void getStartedDemo() throws Exception {
+        //This is a simple sample application intended to demonstrate Create, Read, Update, Delete (CRUD) operations
+        //with Azure Cosmos DB Java SDK, as applied to databases, containers and items. This sample will
+        //1. Create synchronous client, database and container instances
+        //2. Create several items
+        //3. Upsert one of the items
+        //4. Perform a query over the items
+        //5. Delete an item
+        //6. Delete the Cosmos DB database and container resources and close the client.
+
         System.out.println("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
         ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
@@ -160,6 +169,16 @@ public class SampleCRUDQuickstart {
         }
         System.out.println(String.format("Created %d items with total request charge of %.2f",
             families.size(), totalRequestCharge));
+
+        Family family_to_upsert = families.get(0);
+        System.out.println(String.format("Upserting the item with id %s after modifying the isRegistered field...",family_to_upsert.getId()));
+        family_to_upsert.setRegistered(!family_to_upsert.isRegistered());
+
+        CosmosItemResponse<Family> item = container.upsertItem(family_to_upsert);
+
+        //  Get upsert request charge and other properties like latency, and diagnostics strings, etc.
+        System.out.println(String.format("Upserted item with request charge of %.2f within duration %s",
+                item.getRequestCharge(), item.getRequestLatency()));
     }
 
     private void readItems(ArrayList<Family> familiesToCreate) {

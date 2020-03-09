@@ -64,10 +64,11 @@ public class SampleCRUDQuickstartAsync {
         //This is a simple sample application intended to demonstrate Create, Read, Update, Delete (CRUD) operations
         //with Azure Cosmos DB Java SDK, as applied to databases, containers and items. This sample will
         //1. Create asynchronous client, database and container instances
-        //2. Create (and also update) several items
-        //3. Perform a query over the items
-        //4. Delete an item
-        //5. Delete the Cosmos DB database and container resources and close the client.
+        //2. Create several items
+        //3. Upsert one of the items
+        //4. Perform a query over the items
+        //5. Delete an item
+        //6. Delete the Cosmos DB database and container resources and close the client.
 
         System.out.println("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
@@ -102,8 +103,10 @@ public class SampleCRUDQuickstartAsync {
                                             smithFamilyItem);
 
         // Creates several items in the container
-        // Also applies an upsert operation to one of the items (create if not present, otherwise replace)
         createFamilies(familiesToCreate);
+
+        // Upsert one of the items in the container
+        upsertFamily(wakefieldFamilyItem);
 
         familiesToCreate = Flux.just(andersenFamilyItem,
                                 wakefieldFamilyItem,
@@ -200,6 +203,23 @@ public class SampleCRUDQuickstartAsync {
         }
 
         //  </CreateItem>
+    }
+
+    private void upsertFamily(Family family_to_upsert) {
+        //Modify a field of the family object
+        System.out.println(String.format("Upserting the item with id %s after modifying the isRegistered field...",family_to_upsert.getId()));
+        family_to_upsert.setRegistered(!family_to_upsert.isRegistered());
+
+        //Upsert the modified item
+        Mono.just(family_to_upsert).flatMap(item -> {
+            CosmosAsyncItemResponse<Family> item_resp = container.upsertItem(family_to_upsert).block();
+
+            //  Get upsert request charge and other properties like latency, and diagnostics strings, etc.
+            System.out.println(String.format("Upserted item with request charge of %.2f within duration %s",
+                    item_resp.getRequestCharge(), item_resp.getRequestLatency()));
+
+            return Mono.empty();
+        }).subscribe();
     }
 
     private void readItems(Flux<Family> familiesToCreate) {
