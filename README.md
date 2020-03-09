@@ -68,7 +68,7 @@ where *sample* can be
 * SampleIndexManagementAsync
 * SampleStoredProcedure
 * SampleStoredProcedureAsync
-* Sample ChangeFeedProcessor
+* SampleChangeFeedProcessor
 
 ## Key concepts
 
