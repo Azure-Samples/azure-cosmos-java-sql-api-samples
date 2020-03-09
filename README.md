@@ -1,11 +1,11 @@
 ---
 page_type: sample
 languages:
-- csharp
+- java
 products:
-- dotnet
-description: "Add 150 character max description"
-urlFragment: "update-this-to-unique-url-stub"
+- java sdk
+description: "Sample code repo for Azure Cosmos DB Java SDK for SQL API"
+urlFragment: ""
 ---
 
 # Azure Cosmos DB Java SQL API Samples
