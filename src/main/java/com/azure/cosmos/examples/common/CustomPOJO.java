@@ -1,6 +1,4 @@
-package com.azure.cosmos.examples.changefeed;
-
-import com.azure.cosmos.JsonSerializable;
+package com.azure.cosmos.examples.common;
 
 public class CustomPOJO {
     private String id;
@@ -9,6 +7,9 @@ public class CustomPOJO {
 
     }
 
+    public CustomPOJO(String id) {
+        this.id=id;
+    }
 
     public String getId() {
         return id;

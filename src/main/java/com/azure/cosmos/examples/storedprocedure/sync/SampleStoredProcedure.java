@@ -6,6 +6,9 @@ package com.azure.cosmos.examples.storedprocedure.sync;
 import com.azure.cosmos.*;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
+import com.azure.cosmos.examples.common.CustomPOJO;
+import com.azure.cosmos.implementation.Utils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +20,8 @@ public class SampleStoredProcedure {
 
     private CosmosClient client;
 
-    private final String databaseName = "AzureSampleFamilyDB";
-    private final String containerName = "FamilyContainer";
+    private final String databaseName = "SprocTestDB";
+    private final String containerName = "SprocTestContainer";
 
     private CosmosDatabase database;
     private CosmosContainer container;
@@ -42,12 +45,12 @@ public class SampleStoredProcedure {
 
         try {
             p.sprocDemo();
-            logger.info("Demo complete, please hold while resources are released");
+            System.out.println("Demo complete, please hold while resources are released");
             p.shutdown();
-            logger.info("Done.\n");
+            System.out.println("Done.\n");
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error(String.format("Cosmos getStarted failed with %s", e));
+            System.err.println(String.format("Cosmos getStarted failed with %s", e));
             p.close();
         } finally {
         }
@@ -56,17 +59,26 @@ public class SampleStoredProcedure {
     //  </Main>
 
     private void sprocDemo() throws Exception {
-            //Setup client, DB
+            //Setup client, DB, and the container for which we will create stored procedures
+            //The container partition key will be id
             setUp();
 
-            //Create, list and execute stored procedure
+            //Create stored procedure and list all stored procedures that have been created.
             createStoredProcedure();
             readAllSprocs();
+
+            //Execute the stored procedure, which we expect will create an item with id test_doc
             executeStoredProcedure();
+
+            //Perform a point-read to confirm that the item with id test_doc exists
+            System.out.println("Checking that a document was created by the stored procedure...");
+            CosmosItemResponse<CustomPOJO> test_resp = container.readItem("test_doc",new PartitionKey("test_doc"),CustomPOJO.class);
+            System.out.println(String.format(
+                    "Result of point-read for document created by stored procedure (200 indicates success): %d",test_resp.getStatusCode()));
     }
 
     public void setUp() throws Exception{
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        System.out.println("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
         ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
         //  Setting the preferred location to Cosmos DB Account region
@@ -82,12 +94,12 @@ public class SampleStoredProcedure {
             .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
             .buildClient();
 
-            logger.info("Create database " + databaseName + " with container " + containerName + " if either does not already exist.\n");
+            System.out.println("Create database " + databaseName + " with container " + containerName + " if either does not already exist.\n");
 
             database = client.createDatabaseIfNotExists(databaseName).getDatabase();
 
             CosmosContainerProperties containerProperties =
-                new CosmosContainerProperties(containerName, "/lastName");
+                new CosmosContainerProperties(containerName, "/id");
             container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
     }
 
@@ -97,16 +109,28 @@ public class SampleStoredProcedure {
     }
 
     public void createStoredProcedure() throws Exception {
-        logger.info("Creating stored procedure...\n");
+        System.out.println("Creating stored procedure...");
 
-        sprocId = UUID.randomUUID().toString();
-        CosmosStoredProcedureProperties storedProcedureDef =  new CosmosStoredProcedureProperties(sprocId,"function() {var x = 11;}");
+        sprocId = "createMyDocument";
+        String sprocBody = "function createMyDocument() {\n" +
+                        "var documentToCreate = {\"id\":\"test_doc\"}\n" +
+                        "var context = getContext();\n" +
+                        "var collection = context.getCollection();\n" +
+                        "var accepted = collection.createDocument(collection.getSelfLink(), documentToCreate,\n" +
+                        "    function (err, documentCreated) {\n" +
+                                "if (err) throw new Error('Error' + err.message);\n" +
+                                "context.getResponse().setBody(documentCreated.id)\n" +
+                            "});\n" +
+                        "if (!accepted) return;\n" +
+                    "}";
+        CosmosStoredProcedureProperties storedProcedureDef =  new CosmosStoredProcedureProperties(sprocId,sprocBody);
         container.getScripts()
             .createStoredProcedure(storedProcedureDef,
             new CosmosStoredProcedureRequestOptions());
     }
 
     private void readAllSprocs() throws Exception {
+        System.out.println("Listing all stored procedures associated with container " + containerName + "\n");
 
         FeedOptions feedOptions = new FeedOptions();
         CosmosContinuablePagedIterable<CosmosStoredProcedureProperties> feedResponseIterable =
@@ -116,34 +140,35 @@ public class SampleStoredProcedure {
 
         while(feedResponseIterator.hasNext()) {
             CosmosStoredProcedureProperties storedProcedureProperties = feedResponseIterator.next();
-            logger.info(String.format("Stored Procedure: %s\n",storedProcedureProperties));
+            System.out.println(String.format("Stored Procedure: %s",storedProcedureProperties));
         }
-        logger.info("\n");
     }
 
     public void executeStoredProcedure() throws Exception {
-        logger.info(String.format("Executing stored procedure %s...\n\n",sprocId));
+        System.out.println(String.format("Executing stored procedure %s...\n\n",sprocId));
 
         CosmosStoredProcedureRequestOptions options = new CosmosStoredProcedureRequestOptions();
-        options.setPartitionKey(PartitionKey.NONE);
+        options.setPartitionKey(new PartitionKey("test_doc"));
         CosmosStoredProcedureResponse executeResponse = container.getScripts()
                                                          .getStoredProcedure(sprocId)
                                                          .execute(null, options);
 
-        logger.info(String.format("Stored procedure %s returned %s (HTTP %d), at cost %.3f RU.\n",
+        System.out.println(String.format("Stored procedure %s returned %s (HTTP %d), at cost %.3f RU.\n",
                                          sprocId,
                                          executeResponse.responseAsString(),
                                          executeResponse.getStatusCode(),
-                                         //executeResponse.getRequestLatency().toString(),
                                          executeResponse.getRequestCharge()));
     }
 
     public void deleteStoredProcedure() throws Exception {
-        logger.info("-Deleting stored procedure...\n");
+        System.out.println("-Deleting stored procedure...\n");
         container.getScripts()
             .getStoredProcedure(sprocId)
             .delete();
-        logger.info("-Closing client instance...\n");
+        System.out.println("-Deleting database...\n");
+        database.delete();
+        System.out.println("-Closing client instance...\n");
         client.close();
+        System.out.println("Done.");
     }
 }
