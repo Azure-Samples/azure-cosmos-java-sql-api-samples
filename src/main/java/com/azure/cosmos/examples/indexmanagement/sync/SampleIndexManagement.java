@@ -41,25 +41,30 @@ public class SampleIndexManagement {
      */
     //  <Main>
     public static void main(String[] args) {
+
         SampleIndexManagement p = new SampleIndexManagement();
 
         try {
-            logger.info("Starting SYNC main");
-            p.getStartedDemo();
-            logger.info("Demo complete, please hold while resources are released");
+            System.out.println("Starting SYNC main");
+            p.indexManagementDemo();
+            System.out.println("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error(String.format("Cosmos getStarted failed with %s", e));
+            System.err.println(String.format("Cosmos getStarted failed with %s", e));
         } finally {
-            logger.info("Closing the client");
+            System.out.println("Closing the client");
             p.close();
         }
     }
 
     //  </Main>
 
-    private void getStartedDemo() throws Exception {
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+    private void indexManagementDemo() throws Exception {
+        //This sample is similar to SampleCRUDQuickstart, but modified to show indexing capabilities of Cosmos DB.
+        //Look at the implementation of createContainerIfNotExistsWithSpecifiedIndex() for the demonstration of
+        //indexing capabilities.
+
+        System.out.println("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
         ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
         //  Setting the preferred location to Cosmos DB Account region
@@ -78,9 +83,9 @@ public class SampleIndexManagement {
         //  </CreateSyncClient>
 
         createDatabaseIfNotExists();
+
+        //Here is where index management is performed
         createContainerIfNotExistsWithSpecifiedIndex();
-
-
 
         //  Setup family items to create
         ArrayList<Family> familiesToCreate = new ArrayList<>();
@@ -91,26 +96,26 @@ public class SampleIndexManagement {
 
         createFamilies(familiesToCreate);
 
-        logger.info("Reading items.");
+        System.out.println("Reading items.");
         readItems(familiesToCreate);
 
-        logger.info("Querying items.");
+        System.out.println("Querying items.");
         queryItems();
     }
 
     private void createDatabaseIfNotExists() throws Exception {
-        logger.info("Create database " + databaseName + " if not exists.");
+        System.out.println("Create database " + databaseName + " if not exists.");
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
         database = client.createDatabaseIfNotExists(databaseName).getDatabase();
         //  </CreateDatabaseIfNotExists>
 
-        logger.info("Checking database " + database.getId() + " completed!\n");
+        System.out.println("Checking database " + database.getId() + " completed!\n");
     }
 
     private void createContainerIfNotExistsWithSpecifiedIndex() throws Exception {
-        logger.info("Create container " + containerName + " if not exists.");
+        System.out.println("Create container " + containerName + " if not exists.");
 
         //  Create container if not exists
         CosmosContainerProperties containerProperties =
@@ -175,7 +180,7 @@ public class SampleIndexManagement {
         //  Create container with 400 RU/s
         container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
 
-        logger.info("Checking container " + container.getId() + " completed!\n");
+        System.out.println("Checking container " + container.getId() + " completed!\n");
     }
 
     private void createFamilies(List<Family> families) throws Exception {
@@ -192,12 +197,12 @@ public class SampleIndexManagement {
             //  </CreateItem>
 
             //  Get request charge and other properties like latency, and diagnostics strings, etc.
-            logger.info(String.format("Created item with request charge of %.2f within" +
+            System.out.println(String.format("Created item with request charge of %.2f within" +
                             " duration %s",
                     item.getRequestCharge(), item.getRequestLatency()));
             totalRequestCharge += item.getRequestCharge();
         }
-        logger.info(String.format("Created %d items with total request " +
+        System.out.println(String.format("Created %d items with total request " +
                         "charge of %.2f",
                 families.size(),
                 totalRequestCharge));
@@ -234,11 +239,11 @@ public class SampleIndexManagement {
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
         familiesPagedIterable.iterableByPage().forEach(cosmosItemPropertiesFeedResponse -> {
-            logger.info("Got a page of query result with " +
+            System.out.println("Got a page of query result with " +
                     cosmosItemPropertiesFeedResponse.getResults().size() + " items(s)"
                     + " and request charge of " + cosmosItemPropertiesFeedResponse.getRequestCharge());
 
-            logger.info("Item Ids " + cosmosItemPropertiesFeedResponse
+            System.out.println("Item Ids " + cosmosItemPropertiesFeedResponse
                     .getResults()
                     .stream()
                     .map(Family::getId)
