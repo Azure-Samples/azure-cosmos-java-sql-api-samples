@@ -18,36 +18,44 @@ Guidance on onboarding samples to docs.microsoft.com/samples: https://review.doc
 Taxonomies for products and languages: https://review.docs.microsoft.com/new-hope/information-architecture/metadata/taxonomies?branch=master
 -->
 
-Give a short description for your sample here. What does it do and why is it important?
+Sample code repo for Azure Cosmos DB Java SDK for SQL API. By cloning and running these samples, and then studying their implementation, you can have an example for sending various requests to Azure Cosmos DB from Java SDK via the SQL API.
 
 ## Contents
 
-Outline the file contents of the repository. It helps users navigate the codebase, build configuration and any related assets.
-
 | File/folder       | Description                                |
 |-------------------|--------------------------------------------|
-| `src`             | Sample source code.                        |
+| `src`             | Java sample source code. Many samples have 'sync' and sync' variants                |
 | `.gitignore`      | Define what to ignore at commit time.      |
 | `CHANGELOG.md`    | List of changes to the sample.             |
 | `CONTRIBUTING.md` | Guidelines for contributing to the sample. |
 | `README.md`       | This README file.                          |
 | `LICENSE`         | The license for the sample.                |
+| `pom.xml`         | Maven Project Object Model File
 
 ## Prerequisites
 
-Outline the required components and tools that a user might need to have on their machine in order to run the sample. This can be anything from frameworks, SDKs, OS versions or IDE releases.
+* A Java IDE such as IntelliJ IDEA or VSCode
+* Maven
+* Setting up an Azure Cosmos DB account through the Azure Portal. The **Create a database account** section of [this guide](https://docs.microsoft.com/en-us/azure/cosmos-db/create-sql-api-java) walks you through account creation. 
+* The hostname and master key for your Azure Cosmos DB account
 
 ## Setup
 
-Explain how to prepare the sample once the user clones or downloads the repository. The section should outline every step necessary to install dependencies and set up any settings (for example, API keys and output folders).
+Clone the sample to your PC. Using your Java IDE, open pom.xml as a Maven project.
 
 ## Running the sample
+
+Once you have opened the project, go to the **Run/Debug Configurations** drop-down and choose **Edit Configurations**. In the **Edit Configurations** dialog, click **+** (**Add New Configuration**) and give the new configuration a name.
+In **Environment variables** paste **ACCOUNT_HOST=** *your account hostname***;ACCOUNT_KEY=** *your account key*
 
 Outline step-by-step instructions to execute the sample and see its output. Include steps for executing the sample from the IDE, starting specific services in the Azure portal or anything related to the overall launch of the code.
 
 ## Key concepts
 
-Provide users with more context on the tools and services used in the sample. Explain some of the code that is being used and how services interact with each other.
+These samples cover a range of Azure Cosmos DB usage topics from more to less basic:
+* Basic management of databases, containers and items
+* Indexing, stored procedures, and Change Feed
+* An end-to-end application sample
 
 ## Contributing
 
