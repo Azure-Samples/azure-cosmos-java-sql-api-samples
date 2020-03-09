@@ -46,9 +46,21 @@ Clone the sample to your PC. Using your Java IDE, open pom.xml as a Maven projec
 ## Running the sample
 
 If you are using Intellij IDEA: Once you have opened the project, go to the **Run/Debug Configurations** drop-down and choose **Edit Configurations**. In the **Edit Configurations** dialog, click **+** (**Add New Configuration**) and give the new configuration a name.
-In **Environment variables** paste **ACCOUNT_HOST=** *your account hostname* **;ACCOUNT_KEY=** *your account master key* which gives the sample read/write access to your account.
+In **Environment variables** paste 
 
-To choose which sample will run, populate the **Main class field** with **com.azure.cosmos.examples.changefeed.** *sample* where *sample* can be
+'''
+ACCOUNT_HOST= your account hostname;ACCOUNT_KEY=your account master key
+'''
+
+which gives the sample read/write access to your account.
+
+To choose which sample will run, populate the **Main class** field with 
+
+'''
+com.azure.cosmos.examples.changefeed.sample
+'''
+
+where *sample* can be
 * SampleCRUDQuickstart
 * SampleCRUDQuickstartAsync
 * SampleIndexManagement
