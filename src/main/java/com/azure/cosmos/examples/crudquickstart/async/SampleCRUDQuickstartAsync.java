@@ -47,7 +47,6 @@ public class SampleCRUDQuickstartAsync {
 
         try {
             System.out.println("Starting ASYNC main");
-            System.out.println("got here.\n");
             p.getStartedDemo();
             System.out.println("Demo complete, please hold while resources are released");
         } catch (Exception e) {
@@ -55,13 +54,21 @@ public class SampleCRUDQuickstartAsync {
             System.err.println(String.format("Cosmos getStarted failed with %s", e));
         } finally {
             System.out.println("Closing the client");
-            p.close();
+            p.shutdown();
         }
     }
 
     //  </Main>
 
     private void getStartedDemo() throws Exception {
+        //This is a simple sample application intended to demonstrate Create, Read, Update, Delete (CRUD) operations
+        //with Azure Cosmos DB Java SDK, as applied to databases, containers and items. This sample will
+        //1. Create asynchronous client, database and container instances
+        //2. Create (and also update) several items
+        //3. Perform a query over the items
+        //4. Delete an item
+        //5. Delete the Cosmos DB database and container resources and close the client.
+
         System.out.println("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
         ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
@@ -94,6 +101,8 @@ public class SampleCRUDQuickstartAsync {
                                             johnsonFamilyItem,
                                             smithFamilyItem);
 
+        // Creates several items in the container
+        // Also applies an upsert operation to one of the items (create if not present, otherwise replace)
         createFamilies(familiesToCreate);
 
         familiesToCreate = Flux.just(andersenFamilyItem,
@@ -106,6 +115,9 @@ public class SampleCRUDQuickstartAsync {
 
         System.out.println("Querying items.");
         queryItems();
+
+        System.out.println("Deleting an item.");
+        deleteItem(andersenFamilyItem);
     }
 
     private void createDatabaseIfNotExists() throws Exception {
@@ -283,5 +295,28 @@ public class SampleCRUDQuickstartAsync {
         }
 
         // </QueryItems>
+    }
+
+    private void deleteItem(Family item) {
+        container.deleteItem(item.getId(),new PartitionKey(item.getLastName())).block();
+    }
+
+    private void shutdown() {
+        try {
+            //Clean shutdown
+            System.out.println("Deleting Cosmos DB resources");
+            System.out.println("-Deleting container...");
+            if (container != null)
+                container.delete();
+            System.out.println("-Deleting database...");
+            if (database != null)
+                database.delete();
+            System.out.println("-Closing the client...");
+        } catch (Exception err) {
+            System.err.println("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
+            err.printStackTrace();
+        }
+        client.close();
+        System.out.println("Done.");
     }
 }

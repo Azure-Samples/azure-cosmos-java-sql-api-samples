@@ -99,6 +99,8 @@ public class SampleCRUDQuickstart {
         familiesToCreate.add(Families.getJohnsonFamilyItem());
         familiesToCreate.add(Families.getSmithFamilyItem());
 
+        // Creates several items in the container
+        // Also applies an upsert operation to one of the items (create if not present, otherwise replace)
         createFamilies(familiesToCreate);
 
         System.out.println("Reading items.");
@@ -106,6 +108,9 @@ public class SampleCRUDQuickstart {
 
         System.out.println("Querying items.");
         queryItems();
+
+        System.out.println("Delete an item.");
+        deleteItem(familiesToCreate.get(0));
     }
 
     private void createDatabaseIfNotExists() throws Exception {
@@ -200,6 +205,10 @@ public class SampleCRUDQuickstart {
                 .collect(Collectors.toList()));
         });
         //  </QueryItems>
+    }
+
+    private void deleteItem(Family item) {
+        container.deleteItem(item.getId(),new PartitionKey(item.getLastName()),new CosmosItemRequestOptions());
     }
 
     private void shutdown() {
