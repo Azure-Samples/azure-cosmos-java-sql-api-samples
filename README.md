@@ -18,7 +18,7 @@ Guidance on onboarding samples to docs.microsoft.com/samples: https://review.doc
 Taxonomies for products and languages: https://review.docs.microsoft.com/new-hope/information-architecture/metadata/taxonomies?branch=master
 -->
 
-Sample code repo for Azure Cosmos DB Java SDK for SQL API. By cloning and running these samples, and then studying their implementation, you can have an example for sending various requests to Azure Cosmos DB from Java SDK via the SQL API.
+Sample code repo for Azure Cosmos DB Java SDK for SQL API. By cloning and running these samples, and then studying their implementation, you will have an example for sending various requests to Azure Cosmos DB from Java SDK via the SQL API.
 
 ## Contents
 
@@ -46,16 +46,23 @@ Clone the sample to your PC. Using your Java IDE, open pom.xml as a Maven projec
 ## Running the sample
 
 Once you have opened the project, go to the **Run/Debug Configurations** drop-down and choose **Edit Configurations**. In the **Edit Configurations** dialog, click **+** (**Add New Configuration**) and give the new configuration a name.
-In **Environment variables** paste **ACCOUNT_HOST=** *your account hostname***;ACCOUNT_KEY=** *your account key*
+In **Environment variables** paste **ACCOUNT_HOST=** *your account hostname***;ACCOUNT_KEY=** *your account master key* which gives the sample read/write access to your account.
 
-Outline step-by-step instructions to execute the sample and see its output. Include steps for executing the sample from the IDE, starting specific services in the Azure portal or anything related to the overall launch of the code.
+To choose which sample will run, populate the **Main class field** with **com.azure.cosmos.examples.changefeed.***sample* where *sample* can be
+* SampleCRUDQuickstart
+* SampleCRUDQuickstartAsync
+* SampleIndexManagement
+* SampleIndexManagementAsync
+* SampleStoredProcedure
+* SampleStoredProcedureAsync
+* Sample ChangeFeedProcessor
 
 ## Key concepts
 
 These samples cover a range of Azure Cosmos DB usage topics from more to less basic:
 * Basic management of databases, containers and items
 * Indexing, stored procedures, and Change Feed
-* An end-to-end application sample
+* An end-to-end application sample (*coming soon*)
 
 ## Contributing
 
