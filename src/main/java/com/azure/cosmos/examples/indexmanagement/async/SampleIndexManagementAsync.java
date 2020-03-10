@@ -56,7 +56,9 @@ public class SampleIndexManagementAsync {
     /**
      * Run a Hello CosmosDB console application.
      *
-     * @param args command line args.
+     * This sample is similar to SampleCRUDQuickstartAsync, but modified to show indexing capabilities of Cosmos DB.
+     * Look at the implementation of createContainerIfNotExistsWithSpecifiedIndex() for the demonstration of
+     * indexing capabilities.
      */
     //  <Main>
     public static void main(String[] args) {
@@ -78,9 +80,6 @@ public class SampleIndexManagementAsync {
     //  </Main>
 
     private void indexManagementDemo() throws Exception {
-        //This sample is similar to SampleCRUDQuickstartAsync, but modified to show indexing capabilities of Cosmos DB.
-        //Look at the implementation of createContainerIfNotExistsWithSpecifiedIndex() for the demonstration of
-        //indexing capabilities.
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 

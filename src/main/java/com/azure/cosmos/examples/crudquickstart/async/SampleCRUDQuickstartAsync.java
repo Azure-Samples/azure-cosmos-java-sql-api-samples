@@ -51,7 +51,14 @@ public class SampleCRUDQuickstartAsync {
     /**
      * Run a Hello CosmosDB console application.
      *
-     * @param args command line args.
+     * This is a simple sample application intended to demonstrate Create, Read, Update, Delete (CRUD) operations
+     * with Azure Cosmos DB Java SDK, as applied to databases, containers and items. This sample will
+     * 1. Create asynchronous client, database and container instances
+     * 2. Create several items
+     * 3. Upsert one of the items
+     * 4. Perform a query over the items
+     * 5. Delete an item
+     * 6. Delete the Cosmos DB database and container resources and close the client.
      */
     //  <Main>
     public static void main(String[] args) {
@@ -73,14 +80,6 @@ public class SampleCRUDQuickstartAsync {
     //  </Main>
 
     private void getStartedDemo() throws Exception {
-        //This is a simple sample application intended to demonstrate Create, Read, Update, Delete (CRUD) operations
-        //with Azure Cosmos DB Java SDK, as applied to databases, containers and items. This sample will
-        //1. Create asynchronous client, database and container instances
-        //2. Create several items
-        //3. Upsert one of the items
-        //4. Perform a query over the items
-        //5. Delete an item
-        //6. Delete the Cosmos DB database and container resources and close the client.
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
