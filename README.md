@@ -59,17 +59,17 @@ which gives the sample read/write access to your account.
 To choose which sample will run, populate the **Main class** field of the Configuration with 
 
 ```
-com.azure.cosmos.examples.changefeed.sample
+com.azure.cosmos.examples.sample.synchronicity.MainClass
 ```
 
-where *sample* can be
-* SampleCRUDQuickstart
-* SampleCRUDQuickstartAsync
-* SampleIndexManagement
-* SampleIndexManagementAsync
-* SampleStoredProcedure
-* SampleStoredProcedureAsync
-* SampleChangeFeedProcessor
+where *sample.synchronicity.MainClass* can be
+* crudquickstart.sync.SampleCRUDQuickstart
+* crudquickstart.async.SampleCRUDQuickstartAsync
+* indexmanagement.sync.SampleIndexManagement
+* indexmanagement.async.SampleIndexManagementAsync
+* storedprocedure.sync.SampleStoredProcedure
+* storedprocedure.async.SampleStoredProcedureAsync
+* changefeed.SampleChangeFeedProcessor *(Changefeed has only an async sample, no sync sample.)*
 
 *Build and execute from command line without an IDE:* From top-level directory of repo:
 ```

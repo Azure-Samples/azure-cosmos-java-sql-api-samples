@@ -57,12 +57,12 @@ public class SampleCRUDQuickstart {
         try {
             logger.info("Starting SYNC main");
             p.getStartedDemo();
-            System.out.println("Demo complete, please hold while resources are released");
+            logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println(String.format("Cosmos getStarted failed with %s", e));
+            logger.error(String.format("Cosmos getStarted failed with %s", e));
         } finally {
-            System.out.println("Closing the client");
+            logger.info("Closing the client");
             p.shutdown();
         }
     }
@@ -79,7 +79,7 @@ public class SampleCRUDQuickstart {
         //5. Delete an item
         //6. Delete the Cosmos DB database and container resources and close the client.
 
-        System.out.println("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
         ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
         //  Setting the preferred location to Cosmos DB Account region
@@ -111,29 +111,29 @@ public class SampleCRUDQuickstart {
         // Also applies an upsert operation to one of the items (create if not present, otherwise replace)
         createFamilies(familiesToCreate);
 
-        System.out.println("Reading items.");
+        logger.info("Reading items.");
         readItems(familiesToCreate);
 
-        System.out.println("Querying items.");
+        logger.info("Querying items.");
         queryItems();
 
-        System.out.println("Delete an item.");
+        logger.info("Delete an item.");
         deleteItem(familiesToCreate.get(0));
     }
 
     private void createDatabaseIfNotExists() throws Exception {
-        System.out.println("Create database " + databaseName + " if not exists.");
+        logger.info("Create database " + databaseName + " if not exists.");
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
         database = client.createDatabaseIfNotExists(databaseName).getDatabase();
         //  </CreateDatabaseIfNotExists>
 
-        System.out.println("Checking database " + database.getId() + " completed!\n");
+        logger.info("Checking database " + database.getId() + " completed!\n");
     }
 
     private void createContainerIfNotExists() throws Exception {
-        System.out.println("Create container " + containerName + " if not exists.");
+        logger.info("Create container " + containerName + " if not exists.");
 
         //  Create container if not exists
         //  <CreateContainerIfNotExists>
@@ -144,7 +144,7 @@ public class SampleCRUDQuickstart {
         container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
         //  </CreateContainerIfNotExists>
 
-        System.out.println("Checking container " + container.getId() + " completed!\n");
+        logger.info("Checking container " + container.getId() + " completed!\n");
     }
 
     private void createFamilies(List<Family> families) throws Exception {
@@ -161,22 +161,22 @@ public class SampleCRUDQuickstart {
             //  </CreateItem>
 
             //  Get request charge and other properties like latency, and diagnostics strings, etc.
-            System.out.println(String.format("Created item with request charge of %.2f within duration %s",
+            logger.info(String.format("Created item with request charge of %.2f within duration %s",
                     item.getRequestCharge(), item.getRequestLatency()));
 
             totalRequestCharge += item.getRequestCharge();
         }
-        System.out.println(String.format("Created %d items with total request charge of %.2f",
+        logger.info(String.format("Created %d items with total request charge of %.2f",
                 families.size(), totalRequestCharge));
 
         Family family_to_upsert = families.get(0);
-        System.out.println(String.format("Upserting the item with id %s after modifying the isRegistered field...", family_to_upsert.getId()));
+        logger.info(String.format("Upserting the item with id %s after modifying the isRegistered field...", family_to_upsert.getId()));
         family_to_upsert.setRegistered(!family_to_upsert.isRegistered());
 
         CosmosItemResponse<Family> item = container.upsertItem(family_to_upsert);
 
         //  Get upsert request charge and other properties like latency, and diagnostics strings, etc.
-        System.out.println(String.format("Upserted item with request charge of %.2f within duration %s",
+        logger.info(String.format("Upserted item with request charge of %.2f within duration %s",
                 item.getRequestCharge(), item.getRequestLatency()));
     }
 
@@ -189,11 +189,11 @@ public class SampleCRUDQuickstart {
                 CosmosItemResponse<Family> item = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
                 double requestCharge = item.getRequestCharge();
                 Duration requestLatency = item.getRequestLatency();
-                System.out.println(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
+                logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                         item.getResource().getId(), requestCharge, requestLatency));
             } catch (CosmosClientException e) {
                 e.printStackTrace();
-                System.out.println(String.format("Read Item failed with %s", e));
+                logger.info(String.format("Read Item failed with %s", e));
             }
             //  </ReadItem>
         });
@@ -212,11 +212,11 @@ public class SampleCRUDQuickstart {
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
         familiesPagedIterable.iterableByPage().forEach(cosmosItemPropertiesFeedResponse -> {
-            System.out.println("Got a page of query result with " +
+            logger.info("Got a page of query result with " +
                     cosmosItemPropertiesFeedResponse.getResults().size() + " items(s)"
                     + " and request charge of " + cosmosItemPropertiesFeedResponse.getRequestCharge());
 
-            System.out.println("Item Ids " + cosmosItemPropertiesFeedResponse
+            logger.info("Item Ids " + cosmosItemPropertiesFeedResponse
                     .getResults()
                     .stream()
                     .map(Family::getId)
@@ -232,19 +232,19 @@ public class SampleCRUDQuickstart {
     private void shutdown() {
         try {
             //Clean shutdown
-            System.out.println("Deleting Cosmos DB resources");
-            System.out.println("-Deleting container...");
+            logger.info("Deleting Cosmos DB resources");
+            logger.info("-Deleting container...");
             if (container != null)
                 container.delete();
-            System.out.println("-Deleting database...");
+            logger.info("-Deleting database...");
             if (database != null)
                 database.delete();
-            System.out.println("-Closing the client...");
+            logger.info("-Closing the client...");
         } catch (Exception err) {
-            System.err.println("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
+            logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
             err.printStackTrace();
         }
         client.close();
-        System.out.println("Done.");
+        logger.info("Done.");
     }
 }

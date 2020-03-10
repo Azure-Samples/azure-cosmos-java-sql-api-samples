@@ -58,14 +58,14 @@ public class SampleCRUDQuickstartAsync {
         SampleCRUDQuickstartAsync p = new SampleCRUDQuickstartAsync();
 
         try {
-            System.out.println("Starting ASYNC main");
+            logger.info("Starting ASYNC main");
             p.getStartedDemo();
-            System.out.println("Demo complete, please hold while resources are released");
+            logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println(String.format("Cosmos getStarted failed with %s", e));
+            logger.error(String.format("Cosmos getStarted failed with %s", e));
         } finally {
-            System.out.println("Closing the client");
+            logger.info("Closing the client");
             p.shutdown();
         }
     }
@@ -82,7 +82,7 @@ public class SampleCRUDQuickstartAsync {
         //5. Delete an item
         //6. Delete the Cosmos DB database and container resources and close the client.
 
-        System.out.println("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
         ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
         //  Setting the preferred location to Cosmos DB Account region
@@ -92,27 +92,27 @@ public class SampleCRUDQuickstartAsync {
         //  Create async client
         //  <CreateAsyncClient>
         client = new CosmosClientBuilder()
-            .setEndpoint(AccountSettings.HOST)
-            .setKey(AccountSettings.MASTER_KEY)
-            .setConnectionPolicy(defaultPolicy)
-            .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
-            .buildAsyncClient();
+                .setEndpoint(AccountSettings.HOST)
+                .setKey(AccountSettings.MASTER_KEY)
+                .setConnectionPolicy(defaultPolicy)
+                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .buildAsyncClient();
 
         //  </CreateAsyncClient>
 
         createDatabaseIfNotExists();
         createContainerIfNotExists();
 
-        Family andersenFamilyItem=Families.getAndersenFamilyItem();
-        Family wakefieldFamilyItem=Families.getWakefieldFamilyItem();
-        Family johnsonFamilyItem=Families.getJohnsonFamilyItem();
-        Family smithFamilyItem=Families.getSmithFamilyItem();
+        Family andersenFamilyItem = Families.getAndersenFamilyItem();
+        Family wakefieldFamilyItem = Families.getWakefieldFamilyItem();
+        Family johnsonFamilyItem = Families.getJohnsonFamilyItem();
+        Family smithFamilyItem = Families.getSmithFamilyItem();
 
         //  Setup family items to create
         Flux<Family> familiesToCreate = Flux.just(andersenFamilyItem,
-                                            wakefieldFamilyItem,
-                                            johnsonFamilyItem,
-                                            smithFamilyItem);
+                wakefieldFamilyItem,
+                johnsonFamilyItem,
+                smithFamilyItem);
 
         // Creates several items in the container
         createFamilies(familiesToCreate);
@@ -121,36 +121,36 @@ public class SampleCRUDQuickstartAsync {
         upsertFamily(wakefieldFamilyItem);
 
         familiesToCreate = Flux.just(andersenFamilyItem,
-                                wakefieldFamilyItem,
-                                johnsonFamilyItem,
-                                smithFamilyItem);
+                wakefieldFamilyItem,
+                johnsonFamilyItem,
+                smithFamilyItem);
 
-        System.out.println("Reading items.");
+        logger.info("Reading items.");
         readItems(familiesToCreate);
 
-        System.out.println("Querying items.");
+        logger.info("Querying items.");
         queryItems();
 
-        System.out.println("Deleting an item.");
+        logger.info("Deleting an item.");
         deleteItem(andersenFamilyItem);
     }
 
     private void createDatabaseIfNotExists() throws Exception {
-        System.out.println("Create database " + databaseName + " if not exists.");
+        logger.info("Create database " + databaseName + " if not exists.");
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
         Mono<CosmosAsyncDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
         databaseIfNotExists.flatMap(databaseResponse -> {
             database = databaseResponse.getDatabase();
-            System.out.println("Checking database " + database.getId() + " completed!\n");
+            logger.info("Checking database " + database.getId() + " completed!\n");
             return Mono.empty();
         }).block();
         //  </CreateDatabaseIfNotExists>
     }
 
     private void createContainerIfNotExists() throws Exception {
-        System.out.println("Create container " + containerName + " if not exists.");
+        logger.info("Create container " + containerName + " if not exists.");
 
         //  Create container if not exists
         //  <CreateContainerIfNotExists>
@@ -161,7 +161,7 @@ public class SampleCRUDQuickstartAsync {
         //  Create container with 400 RU/s
         containerIfNotExists.flatMap(containerResponse -> {
             container = containerResponse.getContainer();
-            System.out.println("Checking container " + container.getId() + " completed!\n");
+            logger.info("Checking container " + container.getId() + " completed!\n");
             return Mono.empty();
         }).block();
 
@@ -176,42 +176,44 @@ public class SampleCRUDQuickstartAsync {
 
         //  Combine multiple item inserts, associated success println's, and a final aggregate stats println into one Reactive stream.
         families.flatMap(family -> {
-                return container.createItem(family);
-            }) //Flux of item request responses
-            .flatMap(itemResponse -> {
-                System.out.println(String.format("Created item with request charge of %.2f within" +
-                    " duration %s",
-                    itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
-                System.out.println(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
-                return Mono.just(itemResponse.getRequestCharge());
-            }) //Flux of request charges
-            .reduce(0.0,
-                (charge_n,charge_nplus1) -> charge_n + charge_nplus1
-            ) //Mono of total charge - there will be only one item in this stream
-            .subscribe(charge -> {
-                    System.out.println(String.format("Created items with total request charge of %.2f\n",
-                charge));
-            },
-                err -> {
-                    if (err instanceof CosmosClientException) {
-                        //Client-specific errors
-                        CosmosClientException cerr = (CosmosClientException)err;
-                        cerr.printStackTrace();
-                        System.err.println(String.format("Read Item failed with %s\n", cerr));
-                    } else {
-                        //General errors
-                        err.printStackTrace();
-                    }
+            return container.createItem(family);
+        }) //Flux of item request responses
+                .flatMap(itemResponse -> {
+                    logger.info(String.format("Created item with request charge of %.2f within" +
+                                    " duration %s",
+                            itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
+                    logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
+                    return Mono.just(itemResponse.getRequestCharge());
+                }) //Flux of request charges
+                .reduce(0.0,
+                        (charge_n, charge_nplus1) -> charge_n + charge_nplus1
+                ) //Mono of total charge - there will be only one item in this stream
+                .subscribe(charge -> {
+                            logger.info(String.format("Created items with total request charge of %.2f\n",
+                                    charge));
+                        },
+                        err -> {
+                            if (err instanceof CosmosClientException) {
+                                //Client-specific errors
+                                CosmosClientException cerr = (CosmosClientException) err;
+                                cerr.printStackTrace();
+                                logger.error(String.format("Read Item failed with %s\n", cerr));
+                            } else {
+                                //General errors
+                                err.printStackTrace();
+                            }
 
-                    completionLatch.countDown();
-                },
-                () -> {completionLatch.countDown();}
-        ); //Preserve the total charge and print aggregate charge/item count stats.
+                            completionLatch.countDown();
+                        },
+                        () -> {
+                            completionLatch.countDown();
+                        }
+                ); //Preserve the total charge and print aggregate charge/item count stats.
 
         try {
             completionLatch.await();
         } catch (InterruptedException err) {
-            throw new AssertionError("Unexpected Interruption",err);
+            throw new AssertionError("Unexpected Interruption", err);
         }
 
         //  </CreateItem>
@@ -219,7 +221,7 @@ public class SampleCRUDQuickstartAsync {
 
     private void upsertFamily(Family family_to_upsert) {
         //Modify a field of the family object
-        System.out.println(String.format("Upserting the item with id %s after modifying the isRegistered field...",family_to_upsert.getId()));
+        logger.info(String.format("Upserting the item with id %s after modifying the isRegistered field...", family_to_upsert.getId()));
         family_to_upsert.setRegistered(!family_to_upsert.isRegistered());
 
         //Upsert the modified item
@@ -227,7 +229,7 @@ public class SampleCRUDQuickstartAsync {
             CosmosAsyncItemResponse<Family> item_resp = container.upsertItem(family_to_upsert).block();
 
             //  Get upsert request charge and other properties like latency, and diagnostics strings, etc.
-            System.out.println(String.format("Upserted item with request charge of %.2f within duration %s",
+            logger.info(String.format("Upserted item with request charge of %.2f within duration %s",
                     item_resp.getRequestCharge(), item_resp.getRequestLatency()));
 
             return Mono.empty();
@@ -242,36 +244,38 @@ public class SampleCRUDQuickstartAsync {
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
         familiesToCreate.flatMap(family -> {
-                            Mono<CosmosAsyncItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
-                            return asyncItemResponseMono;
-                        })
-                        .subscribe(
-                            itemResponse -> {
-                                double requestCharge = itemResponse.getRequestCharge();
-                                Duration requestLatency = itemResponse.getRequestLatency();
-                                System.out.println(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
+            Mono<CosmosAsyncItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
+            return asyncItemResponseMono;
+        })
+                .subscribe(
+                        itemResponse -> {
+                            double requestCharge = itemResponse.getRequestCharge();
+                            Duration requestLatency = itemResponse.getRequestLatency();
+                            logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                                     itemResponse.getItem().getId(), requestCharge, requestLatency));
-                            },
-                            err -> {
-                                if (err instanceof CosmosClientException) {
-                                    //Client-specific errors
-                                    CosmosClientException cerr = (CosmosClientException)err;
-                                    cerr.printStackTrace();
-                                    System.err.println(String.format("Read Item failed with %s\n", cerr));
-                                } else {
-                                    //General errors
-                                    err.printStackTrace();
-                                }
+                        },
+                        err -> {
+                            if (err instanceof CosmosClientException) {
+                                //Client-specific errors
+                                CosmosClientException cerr = (CosmosClientException) err;
+                                cerr.printStackTrace();
+                                logger.error(String.format("Read Item failed with %s\n", cerr));
+                            } else {
+                                //General errors
+                                err.printStackTrace();
+                            }
 
-                                completionLatch.countDown();
-                            },
-                            () -> {completionLatch.countDown();}
-        );
+                            completionLatch.countDown();
+                        },
+                        () -> {
+                            completionLatch.countDown();
+                        }
+                );
 
         try {
             completionLatch.await();
         } catch (InterruptedException err) {
-            throw new AssertionError("Unexpected Interruption",err);
+            throw new AssertionError("Unexpected Interruption", err);
         }
 
         //  </ReadItem>
@@ -288,67 +292,69 @@ public class SampleCRUDQuickstartAsync {
         queryOptions.setPopulateQueryMetrics(true);
 
         CosmosPagedFlux<Family> pagedFluxResponse = container.queryItems(
-            "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
+                "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
         pagedFluxResponse.byPage().subscribe(
-            fluxResponse -> {
-                System.out.println("Got a page of query result with " +
-                    fluxResponse.getResults().size() + " items(s)"
-                    + " and request charge of " + fluxResponse.getRequestCharge());
+                fluxResponse -> {
+                    logger.info("Got a page of query result with " +
+                            fluxResponse.getResults().size() + " items(s)"
+                            + " and request charge of " + fluxResponse.getRequestCharge());
 
-                System.out.println("Item Ids " + fluxResponse
-                    .getResults()
-                    .stream()
-                    .map(Family::getId)
-                    .collect(Collectors.toList()));
-            },
-            err -> {
-                if (err instanceof CosmosClientException) {
-                    //Client-specific errors
-                    CosmosClientException cerr = (CosmosClientException)err;
-                    cerr.printStackTrace();
-                    System.err.println(String.format("Read Item failed with %s\n", cerr));
-                } else {
-                    //General errors
-                    err.printStackTrace();
+                    logger.info("Item Ids " + fluxResponse
+                            .getResults()
+                            .stream()
+                            .map(Family::getId)
+                            .collect(Collectors.toList()));
+                },
+                err -> {
+                    if (err instanceof CosmosClientException) {
+                        //Client-specific errors
+                        CosmosClientException cerr = (CosmosClientException) err;
+                        cerr.printStackTrace();
+                        logger.error(String.format("Read Item failed with %s\n", cerr));
+                    } else {
+                        //General errors
+                        err.printStackTrace();
+                    }
+
+                    completionLatch.countDown();
+                },
+                () -> {
+                    completionLatch.countDown();
                 }
-
-                completionLatch.countDown();
-            },
-            () -> {completionLatch.countDown();}
         );
 
         try {
             completionLatch.await();
         } catch (InterruptedException err) {
-            throw new AssertionError("Unexpected Interruption",err);
+            throw new AssertionError("Unexpected Interruption", err);
         }
 
         // </QueryItems>
     }
 
     private void deleteItem(Family item) {
-        container.deleteItem(item.getId(),new PartitionKey(item.getLastName())).block();
+        container.deleteItem(item.getId(), new PartitionKey(item.getLastName())).block();
     }
 
     private void shutdown() {
         try {
             //Clean shutdown
-            System.out.println("Deleting Cosmos DB resources");
-            System.out.println("-Deleting container...");
+            logger.info("Deleting Cosmos DB resources");
+            logger.info("-Deleting container...");
             if (container != null)
                 container.delete().subscribe();
-            System.out.println("-Deleting database...");
+            logger.info("-Deleting database...");
             if (database != null)
                 database.delete().subscribe();
-            System.out.println("-Closing the client...");
+            logger.info("-Closing the client...");
         } catch (Exception err) {
-            System.err.println("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
+            logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
             err.printStackTrace();
         }
         client.close();
-        System.out.println("Done.");
+        logger.info("Done.");
     }
 }

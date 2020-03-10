@@ -23,14 +23,14 @@ public final class SampleConfigurations {
     // The default values are credentials of the local emulator, which are not used in any production environment.
     // <!--[SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine")]-->
     public static String MASTER_KEY =
-        System.getProperty("ACCOUNT_KEY",
-            StringUtils.defaultString(Strings.emptyToNull(
-                System.getenv().get("ACCOUNT_KEY")),
-                "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="));
+            System.getProperty("ACCOUNT_KEY",
+                    StringUtils.defaultString(Strings.emptyToNull(
+                            System.getenv().get("ACCOUNT_KEY")),
+                            "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="));
 
     public static String HOST =
-        System.getProperty("ACCOUNT_HOST",
-            StringUtils.defaultString(Strings.emptyToNull(
-                System.getenv().get("ACCOUNT_HOST")),
-                "https://localhost:8081/"));
+            System.getProperty("ACCOUNT_HOST",
+                    StringUtils.defaultString(Strings.emptyToNull(
+                            System.getenv().get("ACCOUNT_HOST")),
+                            "https://localhost:8081/"));
 }

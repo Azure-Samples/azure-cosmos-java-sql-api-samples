@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * Contains the account configurations for Sample.
- *
+ * <p>
  * For running tests, you can pass a customized endpoint configuration in one of the following
  * ways:
  * <ul>
@@ -15,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
  * command-line option.</li>
  * <li>You can set ACCOUNT_KEY and ACCOUNT_HOST as environment variables.</li>
  * </ul>
- *
+ * <p>
  * If none of the above is set, emulator endpoint will be used.
  * Emulator http cert is self signed. If you are using emulator,
  * make sure emulator https certificate is imported

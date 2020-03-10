@@ -28,7 +28,6 @@ import java.util.List;
 
 /**
  * Sample for Change Feed Processor.
- *
  */
 public class SampleChangeFeedProcessor {
 
@@ -42,7 +41,7 @@ public class SampleChangeFeedProcessor {
     private static ChangeFeedProcessor changeFeedProcessorInstance;
     private static boolean isWorkCompleted = false;
 
-    public static void main (String[]args) {
+    public static void main(String[] args) {
         logger.info("BEGIN Sample");
 
         try {
@@ -56,16 +55,16 @@ public class SampleChangeFeedProcessor {
             //Summary of the next four commands:
             //-Create an asynchronous Azure Cosmos DB client and database so that we can issue async requests to the DB
             //-Create a "feed container" and a "lease container" in the DB
-            System.out.println("-->CREATE DocumentClient");
+            logger.info("-->CREATE DocumentClient");
             CosmosAsyncClient client = getCosmosClient();
 
-            System.out.println("-->CREATE sample's database: " + DATABASE_NAME);
+            logger.info("-->CREATE sample's database: " + DATABASE_NAME);
             CosmosAsyncDatabase cosmosDatabase = createNewDatabase(client, DATABASE_NAME);
 
-            System.out.println("-->CREATE container for documents: " + COLLECTION_NAME);
+            logger.info("-->CREATE container for documents: " + COLLECTION_NAME);
             CosmosAsyncContainer feedContainer = createNewCollection(client, DATABASE_NAME, COLLECTION_NAME);
 
-            System.out.println("-->CREATE container for lease: " + COLLECTION_NAME + "-leases");
+            logger.info("-->CREATE container for lease: " + COLLECTION_NAME + "-leases");
             CosmosAsyncContainer leaseContainer = createNewLeaseCollection(client, DATABASE_NAME, COLLECTION_NAME + "-leases");
 
             //Model of a worker thread or application which leases access to monitor one or more feed container
@@ -73,17 +72,17 @@ public class SampleChangeFeedProcessor {
             //The next line causes the worker to create and start an instance of the Change Feed Processor. See the implementation of getChangeFeedProcessor() for guidance
             //on creating a handler for Change Feed events. In this stream, we also trigger the insertion of 10 documents on a separate
             //thread.
-            System.out.println("-->START Change Feed Processor on worker (handles changes asynchronously)");
+            logger.info("-->START Change Feed Processor on worker (handles changes asynchronously)");
             changeFeedProcessorInstance = getChangeFeedProcessor("SampleHost_1", feedContainer, leaseContainer);
             changeFeedProcessorInstance.start()
-                .subscribeOn(Schedulers.elastic())
-                .doOnSuccess(aVoid -> {
-                   //pass
-                })
-                .subscribe();
+                    .subscribeOn(Schedulers.elastic())
+                    .doOnSuccess(aVoid -> {
+                        //pass
+                    })
+                    .subscribe();
 
             //These two lines model an application which is inserting ten documents into the feed container
-            System.out.println("-->START application that inserts documents into feed container");
+            logger.info("-->START application that inserts documents into feed container");
             createNewDocumentsCustomPOJO(feedContainer, 10, Duration.ofSeconds(3));
             isWorkCompleted = true;
 
@@ -108,7 +107,7 @@ public class SampleChangeFeedProcessor {
                 throw new RuntimeException("The change feed processor initialization and automatic create document feeding process did not complete in the expected time");
             }
 
-            System.out.println("-->DELETE sample's database: " + DATABASE_NAME);
+            logger.info("-->DELETE sample's database: " + DATABASE_NAME);
             deleteDatabase(cosmosDatabase);
 
             Thread.sleep(500);
@@ -117,39 +116,39 @@ public class SampleChangeFeedProcessor {
             e.printStackTrace();
         }
 
-        System.out.println("END Sample");
+        logger.info("END Sample");
     }
 
     public static ChangeFeedProcessor getChangeFeedProcessor(String hostName, CosmosAsyncContainer feedContainer, CosmosAsyncContainer leaseContainer) {
         return ChangeFeedProcessor.changeFeedProcessorBuilder()
-            .setHostName(hostName)
-            .setFeedContainer(feedContainer)
-            .setLeaseContainer(leaseContainer)
-            .setHandleChanges((List<JsonNode> docs) -> {
-                System.out.println("--->setHandleChanges() START");
+                .setHostName(hostName)
+                .setFeedContainer(feedContainer)
+                .setLeaseContainer(leaseContainer)
+                .setHandleChanges((List<JsonNode> docs) -> {
+                    logger.info("--->setHandleChanges() START");
 
-                for (JsonNode document : docs) {
-                    try {
-                        //Change Feed hands the document to you in the form of a JsonNode
-                        //As a developer you have two options for handling the JsonNode document provided to you by Change Feed
-                        //One option is to operate on the document in the form of a JsonNode, as shown below. This is great
-                        //especially if you do not have a single uniform data model for all documents.
-                        System.out.println("---->DOCUMENT RECEIVED: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
-                                                                            .writeValueAsString(document));
+                    for (JsonNode document : docs) {
+                        try {
+                            //Change Feed hands the document to you in the form of a JsonNode
+                            //As a developer you have two options for handling the JsonNode document provided to you by Change Feed
+                            //One option is to operate on the document in the form of a JsonNode, as shown below. This is great
+                            //especially if you do not have a single uniform data model for all documents.
+                            logger.info("---->DOCUMENT RECEIVED: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
+                                    .writeValueAsString(document));
 
-                        //You can also transform the JsonNode to a POJO having the same structure as the JsonNode,
-                        //as shown below. Then you can operate on the POJO.
-                        CustomPOJO pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO.class);
-                        System.out.println("----=>id: " + pojo_doc.getId());
+                            //You can also transform the JsonNode to a POJO having the same structure as the JsonNode,
+                            //as shown below. Then you can operate on the POJO.
+                            CustomPOJO pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO.class);
+                            logger.info("----=>id: " + pojo_doc.getId());
 
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
-                System.out.println("--->handleChanges() END");
+                    logger.info("--->handleChanges() END");
 
-            })
-            .build();
+                })
+                .build();
     }
 
     public static CosmosAsyncClient getCosmosClient() {
@@ -236,7 +235,7 @@ public class SampleChangeFeedProcessor {
         CosmosContainerProperties containerSettings = new CosmosContainerProperties(leaseCollectionName, "/id");
         CosmosContainerRequestOptions requestOptions = new CosmosContainerRequestOptions();
 
-        leaseContainerResponse = databaseLink.createContainer(containerSettings, 400,requestOptions).block();
+        leaseContainerResponse = databaseLink.createContainer(containerSettings, 400, requestOptions).block();
 
         if (leaseContainerResponse == null) {
             throw new RuntimeException(String.format("Failed to create collection %s in database %s.", leaseCollectionName, databaseName));
@@ -252,7 +251,7 @@ public class SampleChangeFeedProcessor {
             document.setId(String.format("0%d-%s", i, suffix));
 
             containerClient.createItem(document).subscribe(doc -> {
-                System.out.println("---->DOCUMENT WRITE: " + doc);
+                logger.info("---->DOCUMENT WRITE: " + doc);
             });
 
             long remainingWork = delay.toMillis();

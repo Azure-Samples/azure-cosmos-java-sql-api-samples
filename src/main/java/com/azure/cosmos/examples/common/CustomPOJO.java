@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 package com.azure.cosmos.examples.common;
 
 public class CustomPOJO {
@@ -8,7 +11,7 @@ public class CustomPOJO {
     }
 
     public CustomPOJO(String id) {
-        this.id=id;
+        this.id = id;
     }
 
     public String getId() {
