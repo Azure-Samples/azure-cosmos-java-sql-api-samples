@@ -28,7 +28,13 @@ import java.util.List;
 
 /**
  * Sample for Change Feed Processor.
- */
+ * This sample models an application where documents are being inserted into one container (the "feed container"),
+ * and meanwhile another worker thread or worker application is pulling inserted documents from the feed container's Change Feed
+ * and operating on them in some way. For one or more workers to process the Change Feed of a container, the workers must first contact the server
+ * and "lease" access to monitor one or more partitions of the feed container. The Change Feed Processor Library
+ * handles leasing automatically for you, however you must create a separate "lease container" where the Change Feed
+ * Processor Library can store and track leases container partitions.
+*/
 public class SampleChangeFeedProcessor {
 
     public static int WAIT_FOR_WORK = 60000;
@@ -45,12 +51,6 @@ public class SampleChangeFeedProcessor {
         logger.info("BEGIN Sample");
 
         try {
-            //This sample models an application where documents are being inserted into one container (the "feed container"),
-            //and meanwhile another worker thread or worker application is pulling inserted documents from the feed container's Change Feed
-            //and operating on them in some way. For one or more workers to process the Change Feed of a container, the workers must first contact the server
-            //and "lease" access to monitor one or more partitions of the feed container. The Change Feed Processor Library
-            //handles leasing automatically for you, however you must create a separate "lease container" where the Change Feed
-            //Processor Library can store and track leases container partitions.
 
             //Summary of the next four commands:
             //-Create an asynchronous Azure Cosmos DB client and database so that we can issue async requests to the DB
