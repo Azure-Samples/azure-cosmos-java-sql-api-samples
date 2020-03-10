@@ -3,23 +3,12 @@
 
 package com.azure.cosmos.examples.crudquickstart.sync;
 
-import com.azure.cosmos.ConnectionPolicy;
-import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosClient;
-import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
-import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosContainerProperties;
-import com.azure.cosmos.CosmosContinuablePagedIterable;
-import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.CosmosItemRequestOptions;
-import com.azure.cosmos.CosmosItemResponse;
-import com.azure.cosmos.FeedOptions;
-import com.azure.cosmos.PartitionKey;
+import com.azure.cosmos.*;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
+import com.azure.cosmos.models.*;
 import com.google.common.collect.Lists;
 
 import java.time.Duration;
@@ -56,7 +45,7 @@ public class SampleCRUDQuickstart {
         SampleCRUDQuickstart p = new SampleCRUDQuickstart();
 
         try {
-            logger.info("Starting SYNC main");
+            System.out.println("Starting SYNC main");
             p.getStartedDemo();
             System.out.println("Demo complete, please hold while resources are released");
         } catch (Exception e) {
@@ -204,12 +193,12 @@ public class SampleCRUDQuickstart {
         //  <QueryItems>
         // Set some common query options
         FeedOptions queryOptions = new FeedOptions();
-        queryOptions.maxItemCount(10);
+        queryOptions.setMaxItemCount(10);
         //queryOptions.setEnableCrossPartitionQuery(true); //No longer necessary in SDK v4
         //  Set populate query metrics to get metrics around query executions
-        queryOptions.populateQueryMetrics(true);
+        queryOptions.setPopulateQueryMetrics(true);
 
-        CosmosContinuablePagedIterable<Family> familiesPagedIterable = container.queryItems(
+        CosmosPagedIterable<Family> familiesPagedIterable = container.queryItems(
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
         familiesPagedIterable.iterableByPage().forEach(cosmosItemPropertiesFeedResponse -> {

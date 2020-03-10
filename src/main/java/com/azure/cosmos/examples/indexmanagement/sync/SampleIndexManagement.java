@@ -8,6 +8,7 @@ import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
+import com.azure.cosmos.models.*;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -231,11 +232,11 @@ public class SampleIndexManagement {
         //  <QueryItems>
         // Set some common query options
         FeedOptions queryOptions = new FeedOptions();
-        queryOptions.maxItemCount(10);
+        queryOptions.setMaxItemCount(10);
         //  Set populate query metrics to get metrics around query executions
-        queryOptions.populateQueryMetrics(true);
+        queryOptions.setPopulateQueryMetrics(true);
 
-        CosmosContinuablePagedIterable<Family> familiesPagedIterable = container.queryItems(
+        CosmosPagedIterable<Family> familiesPagedIterable = container.queryItems(
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
         familiesPagedIterable.iterableByPage().forEach(cosmosItemPropertiesFeedResponse -> {

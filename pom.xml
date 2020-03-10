@@ -27,20 +27,6 @@
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
 				<version>1.6.0</version>
-				<executions>
-					<execution>
-						<id>sync</id>
-						<configuration>
-							<mainClass>com.azure.cosmos.sample.sync.SyncMain</mainClass>
-						</configuration>
-					</execution>
-					<execution>
-						<id>async</id>
-						<configuration>
-							<mainClass>com.azure.cosmos.sample.async.AsyncMain</mainClass>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
