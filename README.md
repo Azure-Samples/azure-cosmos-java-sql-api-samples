@@ -34,7 +34,6 @@ Sample code repo for Azure Cosmos DB Java SDK for SQL API. By cloning and runnin
 
 ## Prerequisites
 
-* A Java IDE such as IntelliJ IDEA or VSCode
 * Maven
 * Java SE JRE 8
 * Setting up an Azure Cosmos DB account through the Azure Portal. The **Create a database account** section of [this guide](https://docs.microsoft.com/en-us/azure/cosmos-db/create-sql-api-java) walks you through account creation. 
@@ -46,17 +45,15 @@ Clone the sample to your PC. Using your Java IDE, open pom.xml as a Maven projec
 
 ## Running the sample
 
-*If you are using Intellij IDEA as your Java IDE:* Once you have opened the project, go to the **Run/Debug Configurations** drop-down and choose **Edit Configurations**. 
-In the **Edit Configurations** dialog, click the **+** (**Add New Configuration**) button, select **Application** as the configuration type, 
- and give the new configuration a name. Once you are looking at the settings for your new Configuration, find **Environment variables** and paste
+These environment variables must be set
 
 ```
 ACCOUNT_HOST=your account hostname;ACCOUNT_KEY=your account master key
 ```
 
-which gives the sample read/write access to your account.
+in order to give the samples read/write access to your account.
 
-To choose which sample will run, populate the **Main class** field of the Configuration with 
+To run a sample, specify its Main Class 
 
 ```
 com.azure.cosmos.examples.sample.synchronicity.MainClass
