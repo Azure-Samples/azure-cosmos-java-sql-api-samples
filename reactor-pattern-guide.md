@@ -40,36 +40,71 @@ How this differs from imperative programming, is that the coder is describing th
 
 [Reactive Streams](http://www.reactive-streams.org/) is an industry standard for declarative dataflow programming in an asynchronous environment. More detail on design principles can be found in the [Reactive Manifesto](https://www.reactivemanifesto.org/). It is the basis for the asynchronous programming libraries which have been used in the Cosmos DB Async Java SDKs.
 
-### 2. ***Reactive Streams Implementations***
+### 2. ***Available Reactive Streams Frameworks for Java/JVM***
 [RxJava](https://github.com/ReactiveX/RxJava) ([ReactiveX](reactivex.io/) for JVM) is no longer being used after Java SDK v2.x.x.
 
 [Project Reactor](https://projectreactor.io/) or just *Reactor* is the Reactive Programming framework used in Java SDK v3.x.x and above.
 
 The purpose of the rest of this document is to help you start using Reactor with as little trouble as possible. This includes suggestions for upgrading your code from RxJava to Reactor and also Reactor design pattern guidelines.
 
-## Getting started quickly with Reactor
+## Reactor Design Patterns
 
-### 1. ***At a Glance: RxJava vs Project Reactive: Design Pattern Comparison***
+To write a program using Reactor, you will need to describe one or more Reactive Streams. In typical uses of Reactor, you describe a stream
+by (1) creating a *Publisher* (which originates data asynchronously) and a *Subscriber* (which consumes data and operates on it asynchronously), and (2)
+describing a pipeline from Publisher to Subscriber, in which the data from Publisher is transformed at each pipeline stage before eventually
+ending in Subscriber. In this section we will discuss this process in more detail and demonstrate how Reactor lets you define the transforming operation at each
+pipeline stage.
 
-### 2. ***Design Patterns with Project Reactive: Building Publish-Subscribe Pipelines***
+### 1. ***Describing a Reactive Stream (A Publisher-Subscriber Pipeline)***
 
-# => Functionality
+Here is a simple Reactive Stream:
 
-# => Terminology
+```java
+Flux.just("Hello","Cosmos DB")
+    .subscribe(System.out::println);
+```
 
-# Diagrams
+The Publisher is ``` Flux.just("Hello","Cosmos DB") ```. ```Flux.just()``` is a *Reactor factory method* which allows you to define a Publisher.
+``` Flux.just("Hello","Cosmos DB") ``` will asynchronously send ```Hello``` and ```Cosmos DB``` as two Strings to the next stage of the Publisher-Subscriber
+pipeline.
 
-# Tips and Tricks
+Here, the Publisher-Subscriber pipeline is simple - the next pipeline stage after the Publisher is the Subscriber, ```.subscribe(System.out::println)```, which
+will receive the two Strings as they arrive from upstream and process them by applying ```System.out::println``` to each one, again asynchronously.
+The output would be
 
-# Troubleshooting
+```java
+Hello
+Cosmos DB
+```
 
-# Hazards
+This is a simple Publisher-Subscriber pipeline with no operations to transform the data.
+The call to ```subscribe()``` is what ultimately triggers data to flow through the Reactive Stream
+and carry out the logic of your program. Simply calling
 
-C10K problem
+```java
+Flux.just("Hello","Cosmos DB");
+```
 
-# Examples
+without calling ```subscribe()``` will **not** execute the logic of your program; this line will simply return a ```Flux<String>``` which represents
+the pipeline of operations starting from the Publisher (which in this case, consists only of the Publisher). This ```Flux<String>``` can be stored in a
+variable and used like any other variable. For example you can return its value and use that value elsewhere in the program, i.e. by subscribing to it in another function:
 
-# 5. For More Information
+```java
+private Flux<String> some_function() {
+    return Flux.just("Hello","Cosmos DB");
+}
+
+public void calling_function() {
+    Flux<String> str_flux = some_function(); //Returns a representation of a Reactive Stream
+    str_flux.subscribe(System.out::println); //Produces the same output as the original example, by subscribing to the Reactive Stream
+}
+```
+
+
+## Reactor vs RxJava
+
+
+## For More Information
 
 * If you would like to learn more about Project Reactor and Reactive Streams, or get started writing code using Reactor, you can visit [the Project Reactor website.](https://projectreactor.io/)
 
