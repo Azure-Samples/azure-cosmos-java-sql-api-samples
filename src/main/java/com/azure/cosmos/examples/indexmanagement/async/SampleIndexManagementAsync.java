@@ -3,13 +3,31 @@
 
 package com.azure.cosmos.examples.indexmanagement.async;
 
-import com.azure.cosmos.*;
+import com.azure.cosmos.ConnectionPolicy;
+import com.azure.cosmos.ConsistencyLevel;
+import com.azure.cosmos.CosmosAsyncClient;
+import com.azure.cosmos.CosmosAsyncContainer;
+import com.azure.cosmos.CosmosAsyncDatabase;
+import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosClientException;
+import com.azure.cosmos.CosmosPagedFlux;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.models.*;
+import com.azure.cosmos.models.CosmosAsyncContainerResponse;
+import com.azure.cosmos.models.CosmosAsyncDatabaseResponse;
+import com.azure.cosmos.models.CosmosAsyncItemResponse;
+import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.ExcludedPath;
+import com.azure.cosmos.models.FeedOptions;
+import com.azure.cosmos.models.IncludedPath;
+import com.azure.cosmos.models.IndexingMode;
+import com.azure.cosmos.models.IndexingPolicy;
+import com.azure.cosmos.models.PartitionKey;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -18,9 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SampleIndexManagementAsync {
 
@@ -48,14 +63,14 @@ public class SampleIndexManagementAsync {
         SampleIndexManagementAsync p = new SampleIndexManagementAsync();
 
         try {
-            System.out.println("Starting ASYNC main");
+            logger.info("Starting ASYNC main");
             p.indexManagementDemo();
-            System.out.println("Demo complete, please hold while resources are released");
+            logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println(String.format("Cosmos getStarted failed with %s", e));
+            logger.error(String.format("Cosmos getStarted failed with %s", e));
         } finally {
-            System.out.println("Closing the client");
+            logger.info("Closing the client");
             p.shutdown();
         }
     }
@@ -67,7 +82,7 @@ public class SampleIndexManagementAsync {
         //Look at the implementation of createContainerIfNotExistsWithSpecifiedIndex() for the demonstration of
         //indexing capabilities.
 
-        System.out.println("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
         ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
         //  Setting the preferred location to Cosmos DB Account region
@@ -90,10 +105,10 @@ public class SampleIndexManagementAsync {
         //Here is where index management is performed
         createContainerIfNotExistsWithSpecifiedIndex();
 
-        Family andersenFamilyItem=Families.getAndersenFamilyItem();
-        Family wakefieldFamilyItem=Families.getWakefieldFamilyItem();
-        Family johnsonFamilyItem=Families.getJohnsonFamilyItem();
-        Family smithFamilyItem=Families.getSmithFamilyItem();
+        Family andersenFamilyItem = Families.getAndersenFamilyItem();
+        Family wakefieldFamilyItem = Families.getWakefieldFamilyItem();
+        Family johnsonFamilyItem = Families.getJohnsonFamilyItem();
+        Family smithFamilyItem = Families.getSmithFamilyItem();
 
         //  Setup family items to create
         Flux<Family> familiesToCreate = Flux.just(andersenFamilyItem,
@@ -108,29 +123,29 @@ public class SampleIndexManagementAsync {
                 johnsonFamilyItem,
                 smithFamilyItem);
 
-        System.out.println("Reading items.");
+        logger.info("Reading items.");
         readItems(familiesToCreate);
 
-       System.out.println("Querying items.");
+        logger.info("Querying items.");
         queryItems();
     }
 
     private void createDatabaseIfNotExists() throws Exception {
-        System.out.println("Create database " + databaseName + " if not exists.");
+        logger.info("Create database " + databaseName + " if not exists.");
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
         Mono<CosmosAsyncDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
         databaseIfNotExists.flatMap(databaseResponse -> {
             database = databaseResponse.getDatabase();
-            System.out.println("Checking database " + database.getId() + " completed!\n");
+            logger.info("Checking database " + database.getId() + " completed!\n");
             return Mono.empty();
         }).block();
         //  </CreateDatabaseIfNotExists>
     }
 
     private void createContainerIfNotExistsWithSpecifiedIndex() throws Exception {
-        System.out.println("Create container " + containerName + " if not exists.");
+        logger.info("Create container " + containerName + " if not exists.");
 
         //  Create container if not exists
         //  <CreateContainerIfNotExists>
@@ -198,7 +213,7 @@ public class SampleIndexManagementAsync {
         //  Create container with 400 RU/s
         containerIfNotExists.flatMap(containerResponse -> {
             container = containerResponse.getContainer();
-            System.out.println("Checking container " + container.getId() + " completed!\n");
+            logger.info("Checking container " + container.getId() + " completed!\n");
             return Mono.empty();
         }).block();
 
@@ -216,25 +231,25 @@ public class SampleIndexManagementAsync {
             return container.createItem(family);
         }) //Flux of item request responses
                 .flatMap(itemResponse -> {
-                    System.out.println(String.format("Created item with request charge of %.2f within" +
+                    logger.info(String.format("Created item with request charge of %.2f within" +
                                     " duration %s",
                             itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
-                    System.out.println(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
+                    logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
                     return Mono.just(itemResponse.getRequestCharge());
                 }) //Flux of request charges
                 .reduce(0.0,
-                        (charge_n,charge_nplus1) -> charge_n + charge_nplus1
+                        (charge_n, charge_nplus1) -> charge_n + charge_nplus1
                 ) //Mono of total charge - there will be only one item in this stream
                 .subscribe(charge -> {
-                        System.out.println(String.format("Created items with total request charge of %.2f\n",
+                            logger.info(String.format("Created items with total request charge of %.2f\n",
                                     charge));
                         },
                         err -> {
                             if (err instanceof CosmosClientException) {
                                 //Client-specific errors
-                                CosmosClientException cerr = (CosmosClientException)err;
+                                CosmosClientException cerr = (CosmosClientException) err;
                                 cerr.printStackTrace();
-                                System.out.println(String.format("Read Item failed with %s\n", cerr));
+                                logger.info(String.format("Read Item failed with %s\n", cerr));
                             } else {
                                 //General errors
                                 err.printStackTrace();
@@ -242,13 +257,15 @@ public class SampleIndexManagementAsync {
 
                             completionLatch.countDown();
                         },
-                        () -> {completionLatch.countDown();}
+                        () -> {
+                            completionLatch.countDown();
+                        }
                 ); //Preserve the total charge and print aggregate charge/item count stats.
 
         try {
             completionLatch.await();
         } catch (InterruptedException err) {
-            throw new AssertionError("Unexpected Interruption",err);
+            throw new AssertionError("Unexpected Interruption", err);
         }
 
         //  </CreateItem>
@@ -269,15 +286,15 @@ public class SampleIndexManagementAsync {
                         itemResponse -> {
                             double requestCharge = itemResponse.getRequestCharge();
                             Duration requestLatency = itemResponse.getRequestLatency();
-                            System.out.println(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
+                            logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                                     itemResponse.getItem().getId(), requestCharge, requestLatency));
                         },
                         err -> {
                             if (err instanceof CosmosClientException) {
                                 //Client-specific errors
-                                CosmosClientException cerr = (CosmosClientException)err;
+                                CosmosClientException cerr = (CosmosClientException) err;
                                 cerr.printStackTrace();
-                                System.out.println(String.format("Read Item failed with %s\n", cerr));
+                                logger.info(String.format("Read Item failed with %s\n", cerr));
                             } else {
                                 //General errors
                                 err.printStackTrace();
@@ -285,13 +302,15 @@ public class SampleIndexManagementAsync {
 
                             completionLatch.countDown();
                         },
-                        () -> {completionLatch.countDown();}
+                        () -> {
+                            completionLatch.countDown();
+                        }
                 );
 
         try {
             completionLatch.await();
         } catch (InterruptedException err) {
-            throw new AssertionError("Unexpected Interruption",err);
+            throw new AssertionError("Unexpected Interruption", err);
         }
 
         //  </ReadItem>
@@ -313,11 +332,11 @@ public class SampleIndexManagementAsync {
 
         pagedFluxResponse.byPage().subscribe(
                 fluxResponse -> {
-                    System.out.println("Got a page of query result with " +
+                    logger.info("Got a page of query result with " +
                             fluxResponse.getResults().size() + " items(s)"
                             + " and request charge of " + fluxResponse.getRequestCharge());
 
-                    System.out.println("Item Ids " + fluxResponse
+                    logger.info("Item Ids " + fluxResponse
                             .getResults()
                             .stream()
                             .map(Family::getId)
@@ -326,9 +345,9 @@ public class SampleIndexManagementAsync {
                 err -> {
                     if (err instanceof CosmosClientException) {
                         //Client-specific errors
-                        CosmosClientException cerr = (CosmosClientException)err;
+                        CosmosClientException cerr = (CosmosClientException) err;
                         cerr.printStackTrace();
-                        System.err.println(String.format("Read Item failed with %s\n", cerr));
+                        logger.error(String.format("Read Item failed with %s\n", cerr));
                     } else {
                         //General errors
                         err.printStackTrace();
@@ -336,13 +355,15 @@ public class SampleIndexManagementAsync {
 
                     completionLatch.countDown();
                 },
-                () -> {completionLatch.countDown();}
+                () -> {
+                    completionLatch.countDown();
+                }
         );
 
         try {
             completionLatch.await();
         } catch (InterruptedException err) {
-            throw new AssertionError("Unexpected Interruption",err);
+            throw new AssertionError("Unexpected Interruption", err);
         }
 
         // </QueryItems>
@@ -351,19 +372,19 @@ public class SampleIndexManagementAsync {
     private void shutdown() {
         try {
             //Clean shutdown
-            System.out.println("Deleting Cosmos DB resources");
-            System.out.println("-Deleting container...");
+            logger.info("Deleting Cosmos DB resources");
+            logger.info("-Deleting container...");
             if (container != null)
                 container.delete().subscribe();
-            System.out.println("-Deleting database...");
+            logger.info("-Deleting database...");
             if (database != null)
                 database.delete().subscribe();
-            System.out.println("-Closing the client...");
+            logger.info("-Closing the client...");
         } catch (Exception err) {
-            System.err.println("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
+            logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
             err.printStackTrace();
         }
         client.close();
-        System.out.println("Done.");
+        logger.info("Done.");
     }
 }
