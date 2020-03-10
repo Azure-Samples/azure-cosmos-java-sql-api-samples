@@ -73,24 +73,33 @@ public class SampleChangeFeedProcessor {
             //The next line causes the worker to create and start an instance of the Change Feed Processor. See the implementation of getChangeFeedProcessor() for guidance
             //on creating a handler for Change Feed events. In this stream, we also trigger the insertion of 10 documents on a separate
             //thread.
+            System.out.println("-->START Change Feed Processor on worker (handles changes asynchronously)");
             changeFeedProcessorInstance = getChangeFeedProcessor("SampleHost_1", feedContainer, leaseContainer);
             changeFeedProcessorInstance.start()
                 .subscribeOn(Schedulers.elastic())
                 .doOnSuccess(aVoid -> {
-                    //Insert 10 documents into the feed container
-                    createNewDocumentsCustomPOJO(feedContainer, 10, Duration.ofSeconds(3));
-                    isWorkCompleted = true;
+                   //pass
                 })
                 .subscribe();
 
-            //Worker loops while its Change Feed Processor instance asynchronously handles incoming Change Feed events from the feed container
+            //These two lines model an application which is inserting ten documents into the feed container
+            System.out.println("-->START application that inserts documents into feed container");
+            createNewDocumentsCustomPOJO(feedContainer, 10, Duration.ofSeconds(3));
+            isWorkCompleted = true;
+
+            //This loop models the Worker main loop, which spins while its Change Feed Processor instance asynchronously
+            //handles incoming Change Feed events from the feed container. Of course in this sample, polling
+            //isWorkCompleted is unnecessary because items are being added to the feed container on the same thread, and you
+            //can see just above isWorkCompleted is set to true.
+            //But conceptually the worker is part of a different thread or application than the one which is inserting
+            //into the feed container; so this code illustrates the worker waiting and listening for changes to the feed container
             long remainingWork = WAIT_FOR_WORK;
             while (!isWorkCompleted && remainingWork > 0) {
                 Thread.sleep(100);
                 remainingWork -= 100;
             }
 
-            //In this application we have a flag isWorkCompleted indicating when all documents have been processed. When all documents have been processed, clean up
+            //When all documents have been processed, clean up
             if (isWorkCompleted) {
                 if (changeFeedProcessorInstance != null) {
                     changeFeedProcessorInstance.stop().subscribe();
@@ -129,7 +138,7 @@ public class SampleChangeFeedProcessor {
                                                                             .writeValueAsString(document));
 
                         //You can also transform the JsonNode to a POJO having the same structure as the JsonNode,
-                        //as shown below.
+                        //as shown below. Then you can operate on the POJO.
                         CustomPOJO pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO.class);
                         System.out.println("----=>id: " + pojo_doc.getId());
 
@@ -236,34 +245,6 @@ public class SampleChangeFeedProcessor {
         return leaseContainerResponse.getContainer();
     }
 
-    public static void createNewDocuments(CosmosAsyncContainer containerClient, int count, Duration delay) {
-        String suffix = RandomStringUtils.randomAlphabetic(10);
-        for (int i = 0; i <= count; i++) {
-            CustomPOJO document = new CustomPOJO();
-            document.setId(String.format("0%d-%s", i, suffix));
-
-            containerClient.createItem(document).subscribe(doc -> {
-                try {
-                    System.out.println("---->DOCUMENT WRITE: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
-                                                                     .writeValueAsString(doc));
-                } catch (JsonProcessingException e) {
-                    System.err.println(String.format("Failure in processing json %s", e.getMessage()));
-                }
-            });
-
-            long remainingWork = delay.toMillis();
-            try {
-                while (remainingWork > 0) {
-                    Thread.sleep(100);
-                    remainingWork -= 100;
-                }
-            } catch (InterruptedException iex) {
-                // exception caught
-                break;
-            }
-        }
-    }
-
     public static void createNewDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count, Duration delay) {
         String suffix = RandomStringUtils.randomAlphabetic(10);
         for (int i = 0; i <= count; i++) {
@@ -286,19 +267,4 @@ public class SampleChangeFeedProcessor {
             }
         }
     }
-
-    public static boolean ensureWorkIsDone(Duration delay) {
-        long remainingWork = delay.toMillis();
-        try {
-            while (!isWorkCompleted && remainingWork > 0) {
-                Thread.sleep(100);
-                remainingWork -= 100;
-            }
-        } catch (InterruptedException iex) {
-            return false;
-        }
-
-        return remainingWork > 0;
-    }
-
 }
