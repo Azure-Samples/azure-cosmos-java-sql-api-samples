@@ -3,21 +3,31 @@
 
 package com.azure.cosmos.examples.crudquickstart.sync;
 
-import com.azure.cosmos.*;
+import com.azure.cosmos.ConnectionPolicy;
+import com.azure.cosmos.ConsistencyLevel;
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosClientException;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.CosmosPagedIterable;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.models.*;
+import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosItemRequestOptions;
+import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.FeedOptions;
+import com.azure.cosmos.models.PartitionKey;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SampleCRUDQuickstart {
 
@@ -45,7 +55,7 @@ public class SampleCRUDQuickstart {
         SampleCRUDQuickstart p = new SampleCRUDQuickstart();
 
         try {
-            System.out.println("Starting SYNC main");
+            logger.info("Starting SYNC main");
             p.getStartedDemo();
             System.out.println("Demo complete, please hold while resources are released");
         } catch (Exception e) {
@@ -79,11 +89,11 @@ public class SampleCRUDQuickstart {
         //  Create sync client
         //  <CreateSyncClient>
         client = new CosmosClientBuilder()
-            .setEndpoint(AccountSettings.HOST)
-            .setKey(AccountSettings.MASTER_KEY)
-            .setConnectionPolicy(defaultPolicy)
-            .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
-            .buildClient();
+                .setEndpoint(AccountSettings.HOST)
+                .setKey(AccountSettings.MASTER_KEY)
+                .setConnectionPolicy(defaultPolicy)
+                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .buildClient();
 
         //  </CreateSyncClient>
 
@@ -128,7 +138,7 @@ public class SampleCRUDQuickstart {
         //  Create container if not exists
         //  <CreateContainerIfNotExists>
         CosmosContainerProperties containerProperties =
-            new CosmosContainerProperties(containerName, "/lastName");
+                new CosmosContainerProperties(containerName, "/lastName");
 
         //  Create container with 400 RU/s
         container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
@@ -152,15 +162,15 @@ public class SampleCRUDQuickstart {
 
             //  Get request charge and other properties like latency, and diagnostics strings, etc.
             System.out.println(String.format("Created item with request charge of %.2f within duration %s",
-                item.getRequestCharge(), item.getRequestLatency()));
+                    item.getRequestCharge(), item.getRequestLatency()));
 
             totalRequestCharge += item.getRequestCharge();
         }
         System.out.println(String.format("Created %d items with total request charge of %.2f",
-            families.size(), totalRequestCharge));
+                families.size(), totalRequestCharge));
 
         Family family_to_upsert = families.get(0);
-        System.out.println(String.format("Upserting the item with id %s after modifying the isRegistered field...",family_to_upsert.getId()));
+        System.out.println(String.format("Upserting the item with id %s after modifying the isRegistered field...", family_to_upsert.getId()));
         family_to_upsert.setRegistered(!family_to_upsert.isRegistered());
 
         CosmosItemResponse<Family> item = container.upsertItem(family_to_upsert);
@@ -180,7 +190,7 @@ public class SampleCRUDQuickstart {
                 double requestCharge = item.getRequestCharge();
                 Duration requestLatency = item.getRequestLatency();
                 System.out.println(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
-                    item.getResource().getId(), requestCharge, requestLatency));
+                        item.getResource().getId(), requestCharge, requestLatency));
             } catch (CosmosClientException e) {
                 e.printStackTrace();
                 System.out.println(String.format("Read Item failed with %s", e));
@@ -203,20 +213,20 @@ public class SampleCRUDQuickstart {
 
         familiesPagedIterable.iterableByPage().forEach(cosmosItemPropertiesFeedResponse -> {
             System.out.println("Got a page of query result with " +
-                cosmosItemPropertiesFeedResponse.getResults().size() + " items(s)"
-                + " and request charge of " + cosmosItemPropertiesFeedResponse.getRequestCharge());
+                    cosmosItemPropertiesFeedResponse.getResults().size() + " items(s)"
+                    + " and request charge of " + cosmosItemPropertiesFeedResponse.getRequestCharge());
 
             System.out.println("Item Ids " + cosmosItemPropertiesFeedResponse
-                .getResults()
-                .stream()
-                .map(Family::getId)
-                .collect(Collectors.toList()));
+                    .getResults()
+                    .stream()
+                    .map(Family::getId)
+                    .collect(Collectors.toList()));
         });
         //  </QueryItems>
     }
 
     private void deleteItem(Family item) {
-        container.deleteItem(item.getId(),new PartitionKey(item.getLastName()),new CosmosItemRequestOptions());
+        container.deleteItem(item.getId(), new PartitionKey(item.getLastName()), new CosmosItemRequestOptions());
     }
 
     private void shutdown() {
