@@ -327,10 +327,10 @@ public class SampleCRUDQuickstartAsync {
             System.out.println("Deleting Cosmos DB resources");
             System.out.println("-Deleting container...");
             if (container != null)
-                container.delete();
+                container.delete().subscribe();
             System.out.println("-Deleting database...");
             if (database != null)
-                database.delete();
+                database.delete().subscribe();
             System.out.println("-Closing the client...");
         } catch (Exception err) {
             System.err.println("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");

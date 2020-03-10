@@ -53,7 +53,7 @@ public class SampleIndexManagement {
             System.err.println(String.format("Cosmos getStarted failed with %s", e));
         } finally {
             System.out.println("Closing the client");
-            p.close();
+            p.shutdown();
         }
     }
 
@@ -250,5 +250,24 @@ public class SampleIndexManagement {
                     .collect(Collectors.toList()));
         });
         //  </QueryItems>
+    }
+
+    private void shutdown() {
+        try {
+            //Clean shutdown
+            System.out.println("Deleting Cosmos DB resources");
+            System.out.println("-Deleting container...");
+            if (container != null)
+                container.delete();
+            System.out.println("-Deleting database...");
+            if (database != null)
+                database.delete();
+            System.out.println("-Closing the client...");
+        } catch (Exception err) {
+            System.err.println("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
+            err.printStackTrace();
+        }
+        client.close();
+        System.out.println("Done.");
     }
 }
