@@ -12,10 +12,10 @@ import com.azure.cosmos.*;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
+import com.azure.cosmos.models.*;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -144,7 +144,7 @@ public class SampleStoredProcedureAsync {
     private void readAllSprocs() throws Exception {
 
         FeedOptions feedOptions = new FeedOptions();
-        CosmosContinuablePagedFlux<CosmosStoredProcedureProperties> fluxResponse =
+        CosmosPagedFlux<CosmosStoredProcedureProperties> fluxResponse =
                 container.getScripts().readAllStoredProcedures(feedOptions);
 
         final CountDownLatch completionLatch = new CountDownLatch(1);

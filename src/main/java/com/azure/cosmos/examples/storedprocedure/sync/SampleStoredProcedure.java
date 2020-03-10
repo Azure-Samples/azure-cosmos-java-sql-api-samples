@@ -7,13 +7,11 @@ import com.azure.cosmos.*;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
-import com.azure.cosmos.implementation.Utils;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.azure.cosmos.models.*;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.UUID;
 import java.util.Iterator;
 
 public class SampleStoredProcedure {
@@ -133,7 +131,7 @@ public class SampleStoredProcedure {
         System.out.println("Listing all stored procedures associated with container " + containerName + "\n");
 
         FeedOptions feedOptions = new FeedOptions();
-        CosmosContinuablePagedIterable<CosmosStoredProcedureProperties> feedResponseIterable =
+        CosmosPagedIterable<CosmosStoredProcedureProperties> feedResponseIterable =
                 container.getScripts().readAllStoredProcedures(feedOptions);
 
         Iterator<CosmosStoredProcedureProperties> feedResponseIterator = feedResponseIterable.iterator();

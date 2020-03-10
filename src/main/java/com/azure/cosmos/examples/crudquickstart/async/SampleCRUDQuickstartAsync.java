@@ -9,6 +9,7 @@ import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
+import com.azure.cosmos.models.*;
 import com.google.common.collect.Lists;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -170,7 +171,7 @@ public class SampleCRUDQuickstartAsync {
                 System.out.println(String.format("Created item with request charge of %.2f within" +
                     " duration %s",
                     itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
-                System.out.println(String.format("Item ID: %s\n", itemResponse.getResource().getId()));
+                System.out.println(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
                 return Mono.just(itemResponse.getRequestCharge());
             }) //Flux of request charges
             .reduce(0.0,
@@ -238,7 +239,7 @@ public class SampleCRUDQuickstartAsync {
                                 double requestCharge = itemResponse.getRequestCharge();
                                 Duration requestLatency = itemResponse.getRequestLatency();
                                 System.out.println(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
-                                    itemResponse.getResource().getId(), requestCharge, requestLatency));
+                                    itemResponse.getItem().getId(), requestCharge, requestLatency));
                             },
                             err -> {
                                 if (err instanceof CosmosClientException) {
@@ -270,12 +271,12 @@ public class SampleCRUDQuickstartAsync {
         // Set some common query options
 
         FeedOptions queryOptions = new FeedOptions();
-        queryOptions.maxItemCount(10);
+        queryOptions.setMaxItemCount(10);
         //queryOptions.setEnableCrossPartitionQuery(true); //No longer needed in SDK v4
         //  Set populate query metrics to get metrics around query executions
-        queryOptions.populateQueryMetrics(true);
+        queryOptions.setPopulateQueryMetrics(true);
 
-        CosmosContinuablePagedFlux<Family> pagedFluxResponse = container.queryItems(
+        CosmosPagedFlux<Family> pagedFluxResponse = container.queryItems(
             "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
         final CountDownLatch completionLatch = new CountDownLatch(1);
