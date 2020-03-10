@@ -48,10 +48,10 @@ public class SampleChangeFeedProcessor {
         try {
             //This sample models an application where documents are being inserted into one container (the "feed container"),
             //and meanwhile another worker thread or worker application is pulling inserted documents from the feed container's Change Feed
-            //and operating on them in some way. For one or more workers to process the Change Feed, the workers must first contact the server
+            //and operating on them in some way. For one or more workers to process the Change Feed of a container, the workers must first contact the server
             //and "lease" access to monitor one or more partitions of the feed container. The Change Feed Processor Library
             //handles leasing automatically for you, however you must create a separate "lease container" where the Change Feed
-            //Processor Library can store and track leases.
+            //Processor Library can store and track leases container partitions.
 
             //Summary of the next four commands:
             //-Create an asynchronous Azure Cosmos DB client and database so that we can issue async requests to the DB
@@ -68,7 +68,9 @@ public class SampleChangeFeedProcessor {
             System.out.println("-->CREATE container for lease: " + COLLECTION_NAME + "-leases");
             CosmosAsyncContainer leaseContainer = createNewLeaseCollection(client, DATABASE_NAME, COLLECTION_NAME + "-leases");
 
-            //Now, create and start the Change Feed Processor. See the implementation of getChangeFeedProcessor() for guidance
+            //Model of a worker thread or application which leases access to monitor one or more feed container
+            //partitions via the Change Feed. In a real-world application you might deploy this code in an Azure function.
+            //The next line causes the worker to create and start an instance of the Change Feed Processor. See the implementation of getChangeFeedProcessor() for guidance
             //on creating a handler for Change Feed events. In this stream, we also trigger the insertion of 10 documents on a separate
             //thread.
             changeFeedProcessorInstance = getChangeFeedProcessor("SampleHost_1", feedContainer, leaseContainer);
@@ -81,15 +83,14 @@ public class SampleChangeFeedProcessor {
                 })
                 .subscribe();
 
-            //Model of a worker thread or application which leases access to monitor one or more feed container
-            //partitions via the Change Feed. In a real-world application you might deploy this code in an Azure function
+            //Worker loops while its Change Feed Processor instance asynchronously handles incoming Change Feed events from the feed container
             long remainingWork = WAIT_FOR_WORK;
             while (!isWorkCompleted && remainingWork > 0) {
                 Thread.sleep(100);
                 remainingWork -= 100;
             }
 
-            //When all documents have been processed, clean up
+            //In this application we have a flag isWorkCompleted indicating when all documents have been processed. When all documents have been processed, clean up
             if (isWorkCompleted) {
                 if (changeFeedProcessorInstance != null) {
                     changeFeedProcessorInstance.stop().subscribe();
