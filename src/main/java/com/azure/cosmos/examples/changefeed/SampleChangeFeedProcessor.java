@@ -34,7 +34,7 @@ import java.util.List;
  * and "lease" access to monitor one or more partitions of the feed container. The Change Feed Processor Library
  * handles leasing automatically for you, however you must create a separate "lease container" where the Change Feed
  * Processor Library can store and track leases container partitions.
-*/
+ */
 public class SampleChangeFeedProcessor {
 
     public static int WAIT_FOR_WORK = 60000;

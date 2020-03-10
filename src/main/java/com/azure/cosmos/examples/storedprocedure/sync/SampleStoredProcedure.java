@@ -46,12 +46,11 @@ public class SampleStoredProcedure {
 
     /**
      * Stored Procedure Example
-     *
+     * <p>
      * This sample code demonstrates creation, execution, and effects of stored procedures
      * using Java SDK. A stored procedure is created which will insert a JSON object into
      * a Cosmos DB container. The sample executes the stored procedure and then performs
      * a point-read to confirm that the stored procedure had the intended effect.
-     *
      */
     //  <Main>
     public static void main(String[] args) {
