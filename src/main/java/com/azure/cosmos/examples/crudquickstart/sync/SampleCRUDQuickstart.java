@@ -56,7 +56,7 @@ public class SampleCRUDQuickstart {
         SampleCRUDQuickstart p = new SampleCRUDQuickstart();
 
         try {
-            System.out.println("Starting SYNC main");
+            logger.info("Starting SYNC main");
             p.getStartedDemo();
             System.out.println("Demo complete, please hold while resources are released");
         } catch (Exception e) {
