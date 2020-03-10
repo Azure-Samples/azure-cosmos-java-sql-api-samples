@@ -55,7 +55,7 @@ public class SampleIndexManagementAsync {
 
     /**
      * Run a Hello CosmosDB console application.
-     *
+     * <p>
      * This sample is similar to SampleCRUDQuickstartAsync, but modified to show indexing capabilities of Cosmos DB.
      * Look at the implementation of createContainerIfNotExistsWithSpecifiedIndex() for the demonstration of
      * indexing capabilities.

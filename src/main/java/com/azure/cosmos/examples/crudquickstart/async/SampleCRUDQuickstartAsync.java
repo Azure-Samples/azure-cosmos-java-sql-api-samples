@@ -50,7 +50,7 @@ public class SampleCRUDQuickstartAsync {
 
     /**
      * Run a Hello CosmosDB console application.
-     *
+     * <p>
      * This is a simple sample application intended to demonstrate Create, Read, Update, Delete (CRUD) operations
      * with Azure Cosmos DB Java SDK, as applied to databases, containers and items. This sample will
      * 1. Create asynchronous client, database and container instances
