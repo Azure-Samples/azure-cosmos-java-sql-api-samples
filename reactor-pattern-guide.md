@@ -1,4 +1,4 @@
-# Guide to Reactive Programming Programming and Reactor Design Patterns with Azure Cosmos DB Java SDK
+# Reactive Pattern Guide: A Guide for Reactive Programming with Reactor
 
 ## Background: Reactive Programming, Reactive Streams, Reactor, Rx Java, and Project Reactive
 
