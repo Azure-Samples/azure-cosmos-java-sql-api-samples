@@ -1,23 +1,5 @@
 # Guide to Reactive Programming Programming and Reactor Design Patterns with Azure Cosmos DB Java SDK
 
-## Introduction
-
-The purpose of this document is to enable
-* users with RxJava experience (i.e. from working with Cosmos DB Async Java SDK v2.x.x)
-* and users who are only familiar with the Cosmos DB Legacy Sync SDK
-
-to get started programming with the **Cosmos DB Async Java SDK v3.x.x, v4.x.x and above** by providing background, Reactive Streams programming guidelines, and one-to-one use-case comparison between Project Reactive and RxJava. For Async Java SDK v3.x.x and above, non-blocking requests are implemented using [Project Reactive](https://projectreactor.io/), superseding RxJava which was used in the Async Java SDK v2.x.x. 
-
-**Overview of Asynchronous Library by Cosmos DB Java Async SDK Version**
-| Java Async SDK Version | Async Library    |
-| :--------------------: | :--------------: |
-| 1.x.x                  | RxJava           |
-| 2.x.x                  | RxJava           |
-| 3.x.x                  | Project Reactive |
-| 4.x.x                  | Project Reactive | 
-
-
-
 ## Background: Reactive Programming, Reactive Streams, Reactor, Rx Java, and Project Reactive
 
 ### 1. ***Reactive Programming and Standards***
