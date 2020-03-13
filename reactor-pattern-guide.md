@@ -1,4 +1,4 @@
-# Reactive Pattern Guide: A Guide for Reactive Programming with Reactor
+# Reactive Pattern Guide
 
 ## Background: Reactive Programming, Reactive Streams, Reactor, Rx Java, and Project Reactive
 
