@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SampleRequestThroughputAsync {
 
@@ -89,35 +90,33 @@ public class SampleRequestThroughputAsync {
         Scheduler customScheduler = Schedulers.fromExecutor(ex);
 
         int number_of_docs = 10;
-        Flux.fromIterable(generateDocs(number_of_docs)) //Publisher
-                .subscribeOn(customScheduler)
-                .flatMap(doc -> {
-                    logger.info("Sending request...");
-                    // Stream operation 1: insert doc into container
-                    return container.createItem(doc);
-                })
-                .delayElements(Duration.ofSeconds(1))
-                .map(itemResponse -> {
-                    // Stream operation 2: simulated network response time
-                    //simulateNetworkResponseTime();
 
-                    return itemResponse;
-                })
-                .flatMap(itemResponse -> {
-                    // Stream operation 3: print item response
-                    logger.info(String.format("Inserted item with request charge of %.2f within duration %s",
-                            itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
-                    return Mono.empty();
-                })
-                .subscribe(voidItem -> {}, err -> {},
-                        () -> {
-                            logger.info("Finished inserting {} documents.",number_of_docs);
-                            docsInserted.set(true);
-                        }
-                );
+        AtomicInteger numberOfDocsInserted = new AtomicInteger(0);
+
+        generateDocs(number_of_docs).forEach(doc -> {
+            // Insert 10 docs into Cosmos DB
+            logger.info("Sending request...");
+
+            // Publisher: createItem inserts a doc & publishes request response...
+            container.createItem(doc)
+                    .flatMap(itemResponse -> {
+                        // ...Streaming operation: lambda prints request response...
+                        logger.info(String.format("Inserted item (return code %d) with request charge of %.2f within duration %s",
+                                itemResponse.getStatusCode(), itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
+                        return Mono.empty();
+                    }).subscribe(voidItem->{}, err->{}, () -> {
+                        // ...Subscribing to the publisher triggers execution.
+                        // Subscriber onComplete() lambda increments throughput counter
+                        numberOfDocsInserted.incrementAndGet();
+            });
+        });
 
         logger.info("Doing other things while docs are being inserted...");
-        while (!docsInserted.get()) doOtherThings();
+        while (numberOfDocsInserted.get() < number_of_docs) doOtherThings();
+
+        logger.info("Done.");
+
+        /*
 
         logger.info("Deleting resources.");
 
@@ -140,7 +139,7 @@ public class SampleRequestThroughputAsync {
         client.close();
 
         logger.info("Done with demo.");
-
+        */
     }
 
     /* Intentionally exaggerated 2sec network response time for requests */
