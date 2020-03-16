@@ -2,19 +2,39 @@
 // Licensed under the MIT License.
 package com.azure.cosmos.examples.changefeed;
 
-import com.azure.cosmos.ChangeFeedProcessor;
-import com.azure.cosmos.ConnectionPolicy;
-import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosAsyncClient;
-import com.azure.cosmos.CosmosAsyncContainer;
-import com.azure.cosmos.CosmosAsyncDatabase;
-import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
 import com.azure.cosmos.examples.common.CustomPOJO;
-import com.azure.cosmos.implementation.Utils;
-import com.azure.cosmos.models.CosmosAsyncContainerResponse;
-import com.azure.cosmos.models.CosmosContainerProperties;
-import com.azure.cosmos.models.CosmosContainerRequestOptions;
+
+
+import com.azure.data.cosmos.ChangeFeedProcessor;
+import com.azure.data.cosmos.ConnectionPolicy;
+import com.azure.data.cosmos.ConsistencyLevel;
+import com.azure.data.cosmos.CosmosClient;
+
+import com.azure.data.cosmos.CosmosClientBuilder;
+import com.azure.data.cosmos.CosmosClientException;
+
+import com.azure.data.cosmos.CosmosContainer;
+
+import com.azure.data.cosmos.CosmosContainerProperties;
+
+import com.azure.data.cosmos.CosmosDatabase;
+
+import com.azure.data.cosmos.CosmosItem;
+
+import com.azure.data.cosmos.CosmosItemProperties;
+
+import com.azure.data.cosmos.CosmosItemResponse;
+
+import com.azure.data.cosmos.FeedOptions;
+
+import com.azure.data.cosmos.FeedResponse;
+
+import reactor.core.publisher.Flux;
+
+import reactor.core.publisher.Mono;
+
+import reactor.core.scheduler.Schedulers;
+import com.azure.data.cosmos.internal.Utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,7 +76,7 @@ public class SampleChangeFeedProcessor {
             //-Create an asynchronous Azure Cosmos DB client and database so that we can issue async requests to the DB
             //-Create a "feed container" and a "lease container" in the DB
             logger.info("-->CREATE DocumentClient");
-            CosmosAsyncClient client = getCosmosClient();
+            CosmosClient client = getCosmosClient();
 
             logger.info("-->CREATE sample's database: " + DATABASE_NAME);
             CosmosAsyncDatabase cosmosDatabase = createNewDatabase(client, DATABASE_NAME);
@@ -151,14 +171,14 @@ public class SampleChangeFeedProcessor {
                 .build();
     }
 
-    public static CosmosAsyncClient getCosmosClient() {
+    public static CosmosClient getCosmosClient() {
 
         return new CosmosClientBuilder()
-                .setEndpoint(SampleConfigurations.HOST)
-                .setKey(SampleConfigurations.MASTER_KEY)
-                .setConnectionPolicy(ConnectionPolicy.getDefaultPolicy())
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
-                .buildAsyncClient();
+                .endpoint(SampleConfigurations.HOST)
+                .key(SampleConfigurations.MASTER_KEY)
+                .connectionPolicy(ConnectionPolicy.defaultPolicy())
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .build();
     }
 
     public static CosmosAsyncDatabase createNewDatabase(CosmosAsyncClient client, String databaseName) {
@@ -169,8 +189,8 @@ public class SampleChangeFeedProcessor {
         cosmosDatabase.delete().block();
     }
 
-    public static CosmosAsyncContainer createNewCollection(CosmosAsyncClient client, String databaseName, String collectionName) {
-        CosmosAsyncDatabase databaseLink = client.getDatabase(databaseName);
+    public static CosmosAsyncContainer createNewCollection(CosmosClient client, String databaseName, String collectionName) {
+        CosmosDatabase databaseLink = client.getDatabase(databaseName);
         CosmosAsyncContainer collectionLink = databaseLink.getContainer(collectionName);
         CosmosAsyncContainerResponse containerResponse = null;
 
