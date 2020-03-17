@@ -49,7 +49,7 @@ public class SampleRequestThroughput {
         database = client.createDatabaseIfNotExists("ContosoInventoryDB").getDatabase();
         logger.info("Got DB.");
         CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
-        container = database.createContainerIfNotExists(containerProperties, 100000).getContainer();
+        container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
         logger.info("Got container.");
         // Resources are ready.
         //

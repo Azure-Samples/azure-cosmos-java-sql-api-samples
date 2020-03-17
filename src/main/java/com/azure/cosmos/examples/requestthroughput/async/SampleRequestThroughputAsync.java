@@ -33,9 +33,9 @@ public class SampleRequestThroughputAsync {
     private static CosmosAsyncClient client;
     private static CosmosAsyncDatabase database;
     private static CosmosAsyncContainer container;
-    private static AtomicBoolean resourcesCreated = new AtomicBoolean(false);
-    private static AtomicInteger numberOfDocsInserted = new AtomicInteger(0);
-    private static AtomicBoolean resourcesDeleted = new AtomicBoolean(false);
+    private static AtomicBoolean resources_created = new AtomicBoolean(false);
+    private static AtomicInteger number_docs_inserted = new AtomicInteger(0);
+    private static AtomicBoolean resources_deleted = new AtomicBoolean(false);
 
     public static void requestThroughputDemo() {
         ConnectionPolicy my_connection_policy = ConnectionPolicy.getDefaultPolicy();
@@ -54,7 +54,7 @@ public class SampleRequestThroughputAsync {
             database = databaseResponse.getDatabase();
             logger.info("Got DB.");
             CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
-            return database.createContainerIfNotExists(containerProperties, 100000);
+            return database.createContainerIfNotExists(containerProperties, 400);
         }).flatMap(containerResponse -> {
             container = containerResponse.getContainer();
             logger.info("Got container.");
@@ -67,12 +67,12 @@ public class SampleRequestThroughputAsync {
         databaseContainerIfNotExist.subscribe(voidItem -> {}, err -> {},
                 () -> {
                     logger.info("Finished creating resources.\n\n");
-                    resourcesCreated.set(true);
+                    resources_created.set(true);
         });
 
         // ...so we can do other things until async response arrives!
         logger.info("Doing other things until async resource creation completes......");
-        while (!resourcesCreated.get()) Profile.doOtherThings();
+        while (!resources_created.get()) Profile.doOtherThings();
 
         // Container is created. Generate many docs to insert.
         int number_of_docs = 4000000;
@@ -82,6 +82,11 @@ public class SampleRequestThroughputAsync {
         // Insert many docs into container...
         logger.info("Inserting {} documents...", number_of_docs);
         docs.forEach(doc -> {
+            try {
+                Thread.sleep(12);
+            } catch (Exception err) {
+                logger.error("Error throttling programmatically: ",err);
+            }
             // ...by describing logic of item insertion using Reactor. Then subscribe() to execute.
             container.createItem(doc)
                     // ^Publisher: upon subscription, createItem inserts a doc &
@@ -89,7 +94,7 @@ public class SampleRequestThroughputAsync {
                     .flatMap(itemResponse -> {
                         // ...Streaming operation: count each doc & check success...
                         if (itemResponse.getStatusCode() == 201)
-                            numberOfDocsInserted.getAndIncrement();
+                            number_docs_inserted.getAndIncrement();
                         else
                             logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());
                         return Mono.empty();
@@ -98,7 +103,7 @@ public class SampleRequestThroughputAsync {
 
         // Do other things until async response arrives
         logger.info("Doing other things until async doc inserts complete...");
-        while (numberOfDocsInserted.get() < number_of_docs) Profile.doOtherThings();
+        while (number_docs_inserted.get() < number_of_docs) Profile.doOtherThings();
 
         // Inserts are complete. Cleanup (asynchronously!)
         logger.info("Deleting resources.");
@@ -107,12 +112,12 @@ public class SampleRequestThroughputAsync {
                 .subscribe(dbItem -> {}, err -> {},
                         () -> {
                             logger.info("Finished deleting resources.");
-                            resourcesDeleted.set(true);
+                            resources_deleted.set(true);
                         });
 
         // Do other things until async response arrives
         logger.info("Do other things until async resource delete completes...");
-        while (!resourcesDeleted.get()) Profile.doOtherThings();
+        while (!resources_deleted.get()) Profile.doOtherThings();
 
         // Close client. This is always sync.
         logger.info("Closing client...");
