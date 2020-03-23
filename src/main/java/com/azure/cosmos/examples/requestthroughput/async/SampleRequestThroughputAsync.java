@@ -55,12 +55,12 @@ public class SampleRequestThroughputAsync {
         // Describe the logic of database and container creation using Reactor...
         Mono<Void> databaseContainerIfNotExist = client.createDatabaseIfNotExists("ContosoInventoryDB").flatMap(databaseResponse -> {
             database = databaseResponse.getDatabase();
-            logger.info("Got DB.");
+            logger.info("\n\n\n\nCreated database ContosoInventoryDB.\n\n\n\n");
             CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
             return database.createContainerIfNotExists(containerProperties, 100000);
         }).flatMap(containerResponse -> {
             container = containerResponse.getContainer();
-            logger.info("Got container.");
+            logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
             return Mono.empty();
         });
 
@@ -136,14 +136,19 @@ public class SampleRequestThroughputAsync {
         //while (number_docs_inserted.get() < number_of_docs) Profile.doOtherThings();
         double toc_time=0.0;
         int current_docs_inserted=0;
-        double current_total_charge=0.0;
+        double current_total_charge=0.0, rps=0.0, rups=0.0;
         while (number_docs_inserted.get() < number_of_docs) {
             toc_time=Profile.toc_ms();
             current_docs_inserted=number_docs_inserted.get();
             current_total_charge=total_charge.get();
             if (toc_time >= 1000.0) {
                 Profile.tic();
-                logger.info("Requests per second: {} RU/s: {}\n\n\n\n\n",1000.0*((double)(current_docs_inserted-last_docs_inserted))/toc_time,1000.0*((double)(current_total_charge-last_total_charge))/toc_time);
+                rps=1000.0*((double)(current_docs_inserted-last_docs_inserted))/toc_time;
+                rups=1000.0*((double)(current_total_charge-last_total_charge))/toc_time;
+                logger.info(String.format("\n\n\n\n" +
+                        "%12s          %12s","Req/sec","RU/s") + "\n"
+                        + "----------------------------------" + "\n"
+                        + String.format("%12f          %12f",rps,rups) + "\n\n\n\n");
                 last_docs_inserted=current_docs_inserted;
                 last_total_charge=current_total_charge;
             }
