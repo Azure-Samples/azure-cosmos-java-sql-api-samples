@@ -57,7 +57,7 @@ public class SampleRequestThroughputAsync {
             database = databaseResponse.getDatabase();
             logger.info("Got DB.");
             CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
-            return database.createContainerIfNotExists(containerProperties, 10000000);
+            return database.createContainerIfNotExists(containerProperties, 100000);
         }).flatMap(containerResponse -> {
             container = containerResponse.getContainer();
             logger.info("Got container.");
@@ -143,11 +143,17 @@ public class SampleRequestThroughputAsync {
             current_total_charge=total_charge.get();
             if (toc_time >= 1000.0) {
                 Profile.tic();
-                logger.info("Requests per second: {} RU/s: {}",1000.0*((double)(current_docs_inserted-last_docs_inserted))/toc_time,1000.0*((double)(current_total_charge-last_total_charge))/toc_time);
+                logger.info("Requests per second: {} RU/s: {}\n\n\n\n\n",1000.0*((double)(current_docs_inserted-last_docs_inserted))/toc_time,1000.0*((double)(current_total_charge-last_total_charge))/toc_time);
                 last_docs_inserted=current_docs_inserted;
                 last_total_charge=current_total_charge;
             }
         }
+
+
+	System.out.println("Done.");
+	while(true);
+
+	/*
 
         // Inserts are complete. Cleanup (asynchronously!)
         logger.info("Deleting resources.");
@@ -163,9 +169,13 @@ public class SampleRequestThroughputAsync {
         logger.info("Do other things until async resource delete completes...");
         while (!resources_deleted.get()) Profile.doOtherThings();
 
+
+
         // Close client. This is always sync.
         logger.info("Closing client...");
         client.close();
         logger.info("Done with demo.");
+	*/
+
     }
 }
