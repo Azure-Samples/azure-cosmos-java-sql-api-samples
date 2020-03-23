@@ -79,14 +79,22 @@ public class SampleRequestThroughputAsync {
         logger.info("Generating {} documents...", number_of_docs);
         ArrayList<JsonNode> docs = Profile.generateDocs(number_of_docs);
 
+
+
+
         // Insert many docs into container...
         logger.info("Inserting {} documents...", number_of_docs);
+
+        Profile.tic();
+        int last_docs_inserted=0;
+
         docs.forEach(doc -> {
             try {
                 //Thread.sleep(12);
             } catch (Exception err) {
                 logger.error("Error throttling programmatically: ",err);
             }
+
             // ...by describing logic of item insertion using Reactor. Then subscribe() to execute.
             container.createItem(doc)
                     // ^Publisher: upon subscription, createItem inserts a doc &
@@ -103,7 +111,18 @@ public class SampleRequestThroughputAsync {
 
         // Do other things until async response arrives
         logger.info("Doing other things until async doc inserts complete...");
-        while (number_docs_inserted.get() < number_of_docs) Profile.doOtherThings();
+        //while (number_docs_inserted.get() < number_of_docs) Profile.doOtherThings();
+        double toc_time=0.0;
+        int current_docs_inserted=0;
+        while (number_docs_inserted.get() < number_of_docs) {
+            toc_time=Profile.toc_ms();
+            current_docs_inserted=number_docs_inserted.get();
+            if (toc_time >= 1000.0) {
+                Profile.tic();
+                logger.info("Requests per second: {}",((double)(current_docs_inserted-last_docs_inserted))/toc_time);
+                last_docs_inserted=current_docs_inserted;
+            }
+        }
 
         // Inserts are complete. Cleanup (asynchronously!)
         logger.info("Deleting resources.");
