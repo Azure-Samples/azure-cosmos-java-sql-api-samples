@@ -10,8 +10,10 @@ import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.util.concurrent.AtomicDouble;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -36,6 +38,7 @@ public class SampleRequestThroughputAsync {
     private static AtomicBoolean resources_created = new AtomicBoolean(false);
     private static AtomicInteger number_docs_inserted = new AtomicInteger(0);
     private static AtomicBoolean resources_deleted = new AtomicBoolean(false);
+    private static AtomicDouble total_charge = new AtomicDouble(0.0);
 
     public static void requestThroughputDemo() {
         ConnectionPolicy my_connection_policy = ConnectionPolicy.getDefaultPolicy();
@@ -87,7 +90,9 @@ public class SampleRequestThroughputAsync {
 
         Profile.tic();
         int last_docs_inserted=0;
+        double last_total_charge=0.0;
 
+        /*
         docs.forEach(doc -> {
             try {
                 //Thread.sleep(12);
@@ -109,18 +114,38 @@ public class SampleRequestThroughputAsync {
                     }).subscribe(); // ...Subscribing to the publisher triggers stream execution.
         });
 
+         */
+
+        Flux.fromIterable(docs).flatMap(doc -> container.createItem(doc))
+                // ^Publisher: upon subscription, createItem inserts a doc &
+                // publishes request response to the next operation...
+                .flatMap(itemResponse -> {
+                    // ...Streaming operation: count each doc & check success...
+
+                    if (itemResponse.getStatusCode() == 201) {
+                        number_docs_inserted.getAndIncrement();
+                        total_charge.getAndAdd(itemResponse.getRequestCharge());
+                    }
+                    else
+                        logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());
+                    return Mono.empty();
+                }).subscribe(); // ...Subscribing to the publisher triggers stream execution.
+
         // Do other things until async response arrives
         logger.info("Doing other things until async doc inserts complete...");
         //while (number_docs_inserted.get() < number_of_docs) Profile.doOtherThings();
         double toc_time=0.0;
         int current_docs_inserted=0;
+        double current_total_charge=0.0;
         while (number_docs_inserted.get() < number_of_docs) {
             toc_time=Profile.toc_ms();
             current_docs_inserted=number_docs_inserted.get();
+            current_total_charge=total_charge.get();
             if (toc_time >= 1000.0) {
                 Profile.tic();
-                logger.info("Requests per second: {}",((double)(current_docs_inserted-last_docs_inserted))/toc_time);
+                logger.info("Requests per second: {} RU/s: {}",1000.0*((double)(current_docs_inserted-last_docs_inserted))/toc_time,1000.0*((double)(current_total_charge-last_total_charge))/toc_time);
                 last_docs_inserted=current_docs_inserted;
+                last_total_charge=current_total_charge;
             }
         }
 
