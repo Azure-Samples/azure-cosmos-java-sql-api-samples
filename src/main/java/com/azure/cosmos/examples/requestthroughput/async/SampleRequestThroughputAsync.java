@@ -93,30 +93,6 @@ public class SampleRequestThroughputAsync {
         int last_docs_inserted=0;
         double last_total_charge=0.0;
 
-        /*
-        docs.forEach(doc -> {
-            try {
-                //Thread.sleep(12);
-            } catch (Exception err) {
-                logger.error("Error throttling programmatically: ",err);
-            }
-
-            // ...by describing logic of item insertion using Reactor. Then subscribe() to execute.
-            container.createItem(doc)
-                    // ^Publisher: upon subscription, createItem inserts a doc &
-                    // publishes request response to the next operation...
-                    .flatMap(itemResponse -> {
-                        // ...Streaming operation: count each doc & check success...
-                        if (itemResponse.getStatusCode() == 201)
-                            number_docs_inserted.getAndIncrement();
-                        else
-                            logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());
-                        return Mono.empty();
-                    }).subscribe(); // ...Subscribing to the publisher triggers stream execution.
-        });
-
-         */
-
         Flux.fromIterable(docs).flatMap(doc -> container.createItem(doc))
                 // ^Publisher: upon subscription, createItem inserts a doc &
                 // publishes request response to the next operation...
@@ -145,7 +121,7 @@ public class SampleRequestThroughputAsync {
             if (toc_time >= 1000.0) {
                 Profile.tic();
                 rps=1000.0*((double)(current_docs_inserted-last_docs_inserted))/toc_time;
-                rups=1000.0*((double)(current_total_charge-last_total_charge))/toc_time;
+                rups=1000.0*(current_total_charge-last_total_charge)/toc_time;
                 logger.info(String.format("\n\n\n\n" +
                         "Async Throughput Profiler Result, Last 1000ms:" + "\n\n" +
                         "%8s          %8s", StringUtils.center("Req/sec",8),StringUtils.center("RU/s",8)) + "\n"
