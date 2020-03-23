@@ -54,7 +54,7 @@ public class SampleRequestThroughputAsync {
             database = databaseResponse.getDatabase();
             logger.info("Got DB.");
             CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
-            return database.createContainerIfNotExists(containerProperties, 400);
+            return database.createContainerIfNotExists(containerProperties, 10000000);
         }).flatMap(containerResponse -> {
             container = containerResponse.getContainer();
             logger.info("Got container.");
@@ -83,7 +83,7 @@ public class SampleRequestThroughputAsync {
         logger.info("Inserting {} documents...", number_of_docs);
         docs.forEach(doc -> {
             try {
-                Thread.sleep(12);
+                //Thread.sleep(12);
             } catch (Exception err) {
                 logger.error("Error throttling programmatically: ",err);
             }
