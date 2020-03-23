@@ -11,6 +11,7 @@ import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.util.concurrent.AtomicDouble;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -146,9 +147,10 @@ public class SampleRequestThroughputAsync {
                 rps=1000.0*((double)(current_docs_inserted-last_docs_inserted))/toc_time;
                 rups=1000.0*((double)(current_total_charge-last_total_charge))/toc_time;
                 logger.info(String.format("\n\n\n\n" +
-                        "%12s          %12s","Req/sec","RU/s") + "\n"
+                        "Async Throughput Profiler Result, Last 1000ms:" + "\n\n" +
+                        "%8s          %8s", StringUtils.center("Req/sec",8),StringUtils.center("RU/s",8)) + "\n"
                         + "----------------------------------" + "\n"
-                        + String.format("%12f          %12f",rps,rups) + "\n\n\n\n");
+                        + String.format("%8f          %8f",rps,rups) + "\n\n\n\n");
                 last_docs_inserted=current_docs_inserted;
                 last_total_charge=current_total_charge;
             }
