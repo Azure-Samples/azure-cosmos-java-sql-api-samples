@@ -132,12 +132,6 @@ public class SampleRequestThroughputAsync {
             }
         }
 
-
-	System.out.println("Done.");
-	while(true);
-
-	/*
-
         // Inserts are complete. Cleanup (asynchronously!)
         logger.info("Deleting resources.");
         container.delete()
@@ -152,13 +146,10 @@ public class SampleRequestThroughputAsync {
         logger.info("Do other things until async resource delete completes...");
         while (!resources_deleted.get()) Profile.doOtherThings();
 
-
-
         // Close client. This is always sync.
         logger.info("Closing client...");
         client.close();
         logger.info("Done with demo.");
-	*/
 
     }
 }

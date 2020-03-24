@@ -119,12 +119,6 @@ public class SampleRequestThroughput {
                 logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());
         }
 
-
-        System.out.println("Done.");
-        while (true);
-
-        /*
-
         // Clean up
         logger.info("Deleting resources.");
         container.delete();
@@ -136,6 +130,5 @@ public class SampleRequestThroughput {
 
         logger.info("Done with demo.");
 
-         */
     }
 }
