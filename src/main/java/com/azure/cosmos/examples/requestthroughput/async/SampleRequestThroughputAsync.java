@@ -58,7 +58,7 @@ public class SampleRequestThroughputAsync {
             database = databaseResponse.getDatabase();
             logger.info("\n\n\n\nCreated database ContosoInventoryDB.\n\n\n\n");
             CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
-            return database.createContainerIfNotExists(containerProperties, 100000);
+            return database.createContainerIfNotExists(containerProperties, 400);
         }).flatMap(containerResponse -> {
             container = containerResponse.getContainer();
             logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
@@ -79,7 +79,7 @@ public class SampleRequestThroughputAsync {
         while (!resources_created.get()) Profile.doOtherThings();
 
         // Container is created. Generate many docs to insert.
-        int number_of_docs = 4000000;
+        int number_of_docs = 50000;
         logger.info("Generating {} documents...", number_of_docs);
         ArrayList<JsonNode> docs = Profile.generateDocs(number_of_docs);
 
