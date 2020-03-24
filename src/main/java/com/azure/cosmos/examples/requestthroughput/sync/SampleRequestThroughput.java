@@ -63,11 +63,11 @@ public class SampleRequestThroughput {
         // performing other tasks.
         database = client.createDatabaseIfNotExists("ContosoInventoryDB").getDatabase();
         logger.info("\n\n\n\nCreated database ContosoInventoryDB.\n\n\n\n");
-        IndexingPolicy indexingPolicy = new IndexingPolicy();
-        indexingPolicy.setIndexingMode(IndexingMode.NONE);
-        indexingPolicy.setAutomatic(false);
+        //IndexingPolicy indexingPolicy = new IndexingPolicy();
+        //indexingPolicy.setIndexingMode(IndexingMode.NONE);
+        //indexingPolicy.setAutomatic(false);
         CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
-        containerProperties.setIndexingPolicy(indexingPolicy);
+        //containerProperties.setIndexingPolicy(indexingPolicy);
         container = database.createContainerIfNotExists(containerProperties, 100000).getContainer();
         logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
         // Resources are ready.
