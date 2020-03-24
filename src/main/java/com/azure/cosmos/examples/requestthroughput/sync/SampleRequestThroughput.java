@@ -88,7 +88,8 @@ public class SampleRequestThroughput {
                         "Sync Throughput Profiler Result, Last 1000ms:" + "\n\n" +
                         "%8s          %8s", StringUtils.center("Req/sec",8),StringUtils.center("RU/s",8)) + "\n"
                         + "----------------------------------" + "\n"
-                        + String.format("%8.1f          %8.1f",rps,rups) + "\n\n\n\n");
+                        + String.format("%8.1f          %8.1f",rps,rups) + "\n\n"
+                        + itemResponse.getRequestLatency().toString() + "\n\n\n\n");
                 last_docs_inserted=current_docs_inserted;
                 last_total_charge=current_total_charge;
             }
