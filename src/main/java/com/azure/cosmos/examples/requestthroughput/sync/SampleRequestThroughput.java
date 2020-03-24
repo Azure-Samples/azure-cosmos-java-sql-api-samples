@@ -34,10 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * This throughput profiling sample issues high-throughput document insert requests to an Azure Cosmos DB container.
  * Run this code in a geographically colocated VM for best performance.
  *
- * Example configuration
- * -Provision 100000 RU/s container throughput
- * -Generate 4M documents
- * -Result: ~60K RU/s actual throughput
  */
 
 public class SampleRequestThroughput {
