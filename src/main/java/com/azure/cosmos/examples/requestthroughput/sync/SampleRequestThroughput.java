@@ -12,11 +12,16 @@ import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.util.concurrent.AtomicDouble;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SampleRequestThroughput {
 
@@ -33,6 +38,13 @@ public class SampleRequestThroughput {
     private static CosmosClient client;
     private static CosmosDatabase database;
     private static CosmosContainer container;
+    private static AtomicInteger number_docs_inserted = new AtomicInteger(0);
+    private static AtomicDouble total_charge = new AtomicDouble(0.0);
+    private static int last_docs_inserted=0;
+    private static double last_total_charge=0.0;
+    private static double toc_time=0.0;
+    private static int current_docs_inserted=0;
+    private static double current_total_charge=0.0, rps=0.0, rups=0.0;
 
     public static void requestThroughputDemo() {
         ConnectionPolicy my_connection_policy = ConnectionPolicy.getDefaultPolicy();
@@ -61,11 +73,6 @@ public class SampleRequestThroughput {
         logger.info("Inserting {} documents...", number_of_docs);
 
         Profile.tic();
-        int last_docs_inserted=0;
-        double last_total_charge=0.0;
-        double toc_time=0.0;
-        int current_docs_inserted=0;
-        double current_total_charge=0.0, rps=0.0, rups=0.0;
 
         // Insert many docs synchronously.
         // The client blocks waiting for a response to each insert request,
@@ -73,13 +80,19 @@ public class SampleRequestThroughput {
         // While the client is waiting for a response, the thread is blocked from other tasks
         for(JsonNode doc : docs) {
             CosmosItemResponse<JsonNode> itemResponse = container.createItem(doc);
-            if (itemResponse.getStatusCode() != 201)
+            if (itemResponse.getStatusCode() == 201) {
+                number_docs_inserted.getAndIncrement();
+                total_charge.getAndAdd(itemResponse.getRequestCharge());
+            }
+            else
                 logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());
+        }
 
-            //Profiler code
+        //Profiler code - it's good for this part to be async
+        Flux.interval(Duration.ofMillis(10)).take(180000).flatMap(tick -> {
             toc_time=Profile.toc_ms();
-            current_docs_inserted++;
-            current_total_charge+=itemResponse.getRequestCharge();
+            current_docs_inserted=number_docs_inserted.get();
+            current_total_charge=total_charge.get();
             if (toc_time >= 1000.0) {
                 Profile.tic();
                 rps=1000.0*((double)(current_docs_inserted-last_docs_inserted))/toc_time;
@@ -88,13 +101,12 @@ public class SampleRequestThroughput {
                         "Sync Throughput Profiler Result, Last 1000ms:" + "\n\n" +
                         "%8s          %8s", StringUtils.center("Req/sec",8),StringUtils.center("RU/s",8)) + "\n"
                         + "----------------------------------" + "\n"
-                        + String.format("%8.1f          %8.1f",rps,rups) + "\n\n"
-                        + itemResponse.getRequestLatency().toString() + "\n\n\n\n");
+                        + String.format("%8.1f          %8.1f",rps,rups) + "\n\n\n\n");
                 last_docs_inserted=current_docs_inserted;
                 last_total_charge=current_total_charge;
             }
-        }
-
+            return Mono.empty();
+        }).blockLast();
         System.out.println("Done.");
         while (true);
 
