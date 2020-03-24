@@ -11,6 +11,8 @@ import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.IndexingMode;
+import com.azure.cosmos.models.IndexingPolicy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.apache.commons.lang3.StringUtils;
@@ -61,7 +63,10 @@ public class SampleRequestThroughput {
         // performing other tasks.
         database = client.createDatabaseIfNotExists("ContosoInventoryDB").getDatabase();
         logger.info("\n\n\n\nCreated database ContosoInventoryDB.\n\n\n\n");
+        IndexingPolicy indexingPolicy = new IndexingPolicy();
+        indexingPolicy.setIndexingMode(IndexingMode.NONE);
         CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
+        containerProperties.setIndexingPolicy(indexingPolicy);
         container = database.createContainerIfNotExists(containerProperties, 100000).getContainer();
         logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
         // Resources are ready.
