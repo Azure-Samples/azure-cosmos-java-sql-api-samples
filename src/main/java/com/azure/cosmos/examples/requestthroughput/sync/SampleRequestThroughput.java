@@ -104,6 +104,7 @@ public class SampleRequestThroughput {
             if (itemResponse.getStatusCode() == 201) {
                 number_docs_inserted.getAndIncrement();
                 total_charge.getAndAdd(itemResponse.getRequestCharge());
+                logger.info("{}",itemResponse.getRequestLatency());
             }
             else
                 logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());
