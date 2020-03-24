@@ -89,7 +89,7 @@ public class SampleRequestThroughput {
         }
 
         //Profiler code - it's good for this part to be async
-        Flux.interval(Duration.ofMillis(10)).take(180000).flatMap(tick -> {
+        Flux.interval(Duration.ofMillis(10)).flatMap(tick -> {
             toc_time=Profile.toc_ms();
             current_docs_inserted=number_docs_inserted.get();
             current_total_charge=total_charge.get();
@@ -106,7 +106,7 @@ public class SampleRequestThroughput {
                 last_total_charge=current_total_charge;
             }
             return Mono.empty();
-        }).blockLast();
+        }).subscribe();
         System.out.println("Done.");
         while (true);
 
