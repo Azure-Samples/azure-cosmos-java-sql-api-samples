@@ -115,7 +115,6 @@ public class SampleRequestThroughputAsync {
         int current_docs_inserted=0;
         double current_total_charge=0.0, rps=0.0, rups=0.0;
         while (number_docs_inserted.get() < number_of_docs) {
-            logger.info("Entered profiler.");
             toc_time=Profile.toc_ms();
             current_docs_inserted=number_docs_inserted.get();
             current_total_charge=total_charge.get();
