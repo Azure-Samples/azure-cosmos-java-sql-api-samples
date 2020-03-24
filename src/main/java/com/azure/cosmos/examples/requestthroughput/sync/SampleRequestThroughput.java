@@ -7,6 +7,7 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.ThrottlingRetryOptions;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
@@ -50,11 +51,14 @@ public class SampleRequestThroughput {
 
     public static void requestThroughputDemo() {
         ConnectionPolicy my_connection_policy = ConnectionPolicy.getDefaultPolicy();
+        ThrottlingRetryOptions retry_options = new ThrottlingRetryOptions();
+        retry_options.setMaxRetryWaitTime(Duration.ZERO);
+        my_connection_policy.setThrottlingRetryOptions(retry_options);
 
         client = new CosmosClientBuilder()
                 .setEndpoint(AccountSettings.HOST)
                 .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(ConnectionPolicy.getDefaultPolicy())
+                .setConnectionPolicy(my_connection_policy)
                 .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
