@@ -83,9 +83,6 @@ public class SampleRequestThroughputAsync {
         logger.info("Generating {} documents...", number_of_docs);
         ArrayList<JsonNode> docs = Profile.generateDocs(number_of_docs);
 
-
-
-
         // Insert many docs into container...
         logger.info("Inserting {} documents...", number_of_docs);
 
