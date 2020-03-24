@@ -26,6 +26,20 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/*
+ * Sync Request Throughput Sample
+ *
+ * Please note that perf testing incurs costs for provisioning container throughput and storage.
+ *
+ * This throughput profiling sample issues high-throughput document insert requests to an Azure Cosmos DB container.
+ * Run this code in a geographically colocated VM for best performance.
+ *
+ * Example configuration
+ * -Provision 100000 RU/s container throughput
+ * -Generate 4M documents
+ * -Result: ~60K RU/s actual throughput
+ */
+
 public class SampleRequestThroughput {
 
     protected static Logger logger = LoggerFactory.getLogger(SampleRequestThroughput.class.getSimpleName());
@@ -72,12 +86,12 @@ public class SampleRequestThroughput {
         //indexingPolicy.setAutomatic(false);
         CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
         //containerProperties.setIndexingPolicy(indexingPolicy);
-        container = database.createContainerIfNotExists(containerProperties, 100000).getContainer();
+        container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
         logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
         // Resources are ready.
         //
         // Create many docs to insert into the container
-        int number_of_docs = 4000000;
+        int number_of_docs = 50000;
         logger.info("Generating {} documents...", number_of_docs);
         ArrayList<JsonNode> docs = Profile.generateDocs(number_of_docs);
         logger.info("Inserting {} documents...", number_of_docs);
