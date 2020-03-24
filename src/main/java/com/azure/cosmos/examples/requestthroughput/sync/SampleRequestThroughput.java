@@ -74,22 +74,9 @@ public class SampleRequestThroughput {
 
         Profile.tic();
 
-        // Insert many docs synchronously.
-        // The client blocks waiting for a response to each insert request,
-        // which limits throughput.
-        // While the client is waiting for a response, the thread is blocked from other tasks
-        for(JsonNode doc : docs) {
-            CosmosItemResponse<JsonNode> itemResponse = container.createItem(doc);
-            if (itemResponse.getStatusCode() == 201) {
-                number_docs_inserted.getAndIncrement();
-                total_charge.getAndAdd(itemResponse.getRequestCharge());
-            }
-            else
-                logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());
-        }
-
         //Profiler code - it's good for this part to be async
         Flux.interval(Duration.ofMillis(10)).map(tick -> {
+            //logger.info("In profiler.");
             toc_time=Profile.toc_ms();
             current_docs_inserted=number_docs_inserted.get();
             current_total_charge=total_charge.get();
@@ -107,6 +94,22 @@ public class SampleRequestThroughput {
             }
             return tick;
         }).subscribe();
+
+        // Insert many docs synchronously.
+        // The client blocks waiting for a response to each insert request,
+        // which limits throughput.
+        // While the client is waiting for a response, the thread is blocked from other tasks
+        for(JsonNode doc : docs) {
+            CosmosItemResponse<JsonNode> itemResponse = container.createItem(doc);
+            if (itemResponse.getStatusCode() == 201) {
+                number_docs_inserted.getAndIncrement();
+                total_charge.getAndAdd(itemResponse.getRequestCharge());
+            }
+            else
+                logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());
+        }
+
+
         System.out.println("Done.");
         while (true);
 
