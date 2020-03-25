@@ -85,20 +85,6 @@ public void calling_function() {
 This approach of defining Reactive Streams and then subscribing to them later can be useful - **just remember that the logic of your Reactive Stream will
 not be executed until you ```subscribe()``` to it.**
 
-TODO:
-* Introduce ```Mono``` and ```Flux```
-* Reactor Factory Methods
-* Operations to transform data - ```flatMap()```, ```reduce()```, nested imperative code
-* More about ```subscribe()``` and ```onNext()```/```onComplete```/```onError``` and ```block()```
-* ```subscribeOn()```, ```publishOn```, schedulers
-* ```onSuccess()```
-
-## Reactor vs RxJava
-
-* Compare all of the above between Reactor and RxJava
-* rxJava observeOn <-> reactive stream publishOn
-* rxJava subscribeOn <-> reactive stream subscribeOn
-
 ## For More Information
 
 * If you would like to learn more about Project Reactor and Reactive Streams, or get started writing code using Reactor, you can visit [the Project Reactor website.](https://projectreactor.io/)
