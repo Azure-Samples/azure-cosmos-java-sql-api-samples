@@ -27,7 +27,7 @@ How this differs from imperative programming, is that the coder is describing th
 
 [Project Reactor](https://projectreactor.io/) or just *Reactor* is the Reactive Programming framework used in Java SDK v3.x.x and above.
 
-The purpose of the rest of this document is to help you start using Reactor with as little trouble as possible. This includes suggestions for upgrading your code from RxJava to Reactor and also Reactor design pattern guidelines.
+The purpose of the rest of this document is to help you start using Reactor with as little trouble as possible. 
 
 ## Reactor Design Patterns
 
