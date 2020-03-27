@@ -36,11 +36,11 @@ Reactive Streams frameworks implement the Reactive Streams Standard for specific
 
 To write a program using Reactor, you will need to describe one or more async operation pipelines for processing Reactive Streams. In typical uses of Reactor, you describe a pipeline by
 
-1. Creating a ```Publisher``` (which pushes events and data into the pipeline asynchronously) and a ```Subscriber``` (which consumes events and data from the pipeline and operates on them asynchronously). These are both interfaces defined by Reactor.
+1. creating a ```Publisher``` (which pushes events and data into the pipeline asynchronously) and a ```Subscriber``` (which consumes events and data from the pipeline and operates on them asynchronously), and
 
-and
+2. describing each stage in the pipeline programmatically, in terms of how it processes data from the previous stage.
 
-2. Describing each stage in the pipeline programmatically, in terms of how it processes data from the previous stage.
+```Publisher``` and ```Subscriber``` are both interfaces defined by Reactor.
 
 Reactor follows a "hybrid push-pull model": the ```Publisher``` pushes events and data into the pipeline as they are available, but ***only*** once you request events and data from the ```Publisher``` by **subscribing**.
 
