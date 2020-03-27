@@ -105,10 +105,12 @@ which means that every time an ```onNext``` signal reaches the end of the operat
 In the HTTP example I touch on earlier, ```subscribe()``` is analogous to your program, and the rest of the pipeline is analogous to the HTTP request dependency which your program services on an on-availability basis. In ```subscribe()``` you typically want to handle the pipeline output with some finality, i.e. by printing it to the terminal, displaying it in a GUI, running a calculation on it, etc. or doing something else before discarding the data entirely. That said, Reactor does allow you to call ```subscribe()``` with no arguments and just discard incoming events and data - in that case you would implement all of the logic of your program in the preceding pipeline stages, including saving the results to a global variable or printing them to the terminal.
 
 That was a lot. So let’s step back for a moment and mention a few key points.
-* Keep in mind that Reactor is following a hybrid push-pull model where async events are published at a rate requested by the subscriber.
+* Keep in mind that Reactor is following a hybrid push-pull model where async events are published at a rate requested by the ```Subscriber```.
 * Observe that a ```Subscription``` for N events is a type of pull operation from the ```Subscriber```. The ```Publisher``` controls the rate and timing of pushing events, until it exhausts the N events requested by the ```Subscriber```, and then it stops
 * This enables the implementation of ***backpressure***, whereby the ```Subscriber``` can size ```Subscription``` counts to adjust the rate of ```Publisher``` events if they are coming too slow or too fast to process.
-* ```subscribe()``` is Reactor’s built-in ```Subscription generator```, by default it requests all events from the ```Publisher``` ("unbounded request".) [See the Project Reactor documentation here](https://projectreactor.io/docs/core/3.1.2.RELEASE/reference/) for more guidance on customizing the subscription process.
+* ```subscribe()``` is Reactor’s built-in ```Subscription``` generator, by default it requests all events from the ```Publisher``` ("unbounded request".) [See the Project Reactor documentation here](https://projectreactor.io/docs/core/3.1.2.RELEASE/reference/) for more guidance on customizing the subscription process.
+
+And the most important takeaway: **Nothing happens until you subscribe.**
 
 ### 2. ```Flux<T>```, ```Mono<T>```, and ```subscribe()```
 
