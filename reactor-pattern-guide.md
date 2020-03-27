@@ -26,7 +26,7 @@ How this differs from imperative programming, is that the coder is describing th
 
 ### 2. Reactive Streams Frameworks for Java/JVM
 
-Reactive Streams frameworks implement the Reactive Streams Standard for specific programming languages. [RxJava](https://github.com/ReactiveX/RxJava) ([ReactiveX](https://reactivex.io/) for JVM) was the basis of past Azure Java SDKs, but will not be going forward.
+Reactive Streams frameworks implement the Reactive Streams Standard for specific programming languages. [RxJava](https://github.com/ReactiveX/RxJava) ([ReactiveX](http://reactivex.io/) for JVM) was the basis of past Azure Java SDKs, but will not be going forward.
 
 [Project Reactor](https://projectreactor.io/) or just *Reactor* is the Reactive Programming framework being used for new Azure Java SDKs. The purpose of the rest of this document is to help you get started with Reactor.
 
@@ -170,4 +170,4 @@ Again, ```Mono.just()``` is a Reactor factory method which creates the single-ev
 
 * [A gentle introduction to Reactor from tech.io](https://tech.io/playgrounds/929/reactive-programming-with-reactor-3/Intro)
 
-* [RxJava](https://github.com/ReactiveX/RxJava) ([ReactiveX](https://reactivex.io/) for JVM), a project of ReactiveX **which is no longer used in new Azure SDKs**
+* [RxJava](https://github.com/ReactiveX/RxJava) ([ReactiveX](http://reactivex.io/) for JVM), a project of ReactiveX **which is no longer used in new Azure SDKs**
