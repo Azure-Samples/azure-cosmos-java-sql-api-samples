@@ -1,10 +1,10 @@
-# Reactive Pattern Guide
+# Reactor Pattern Guide
 
-## Background: Reactive Programming, Reactive Streams, Reactor, Rx Java, and Project Reactive
+## Background
 
-### 1. ***Reactive Programming and Standards***
+### 1. Reactive Programming and the Reactive Streams Standard
 
-Reactive Programming is a declarative programming paradigm in which program operation and control flow are described as a stream of data items passing through a pipeline of operations in which each operation affects the data which flows downstream.
+Reactive Programming is a declarative programming paradigm in which program operation and control flow are described as a stream of data items passing through a pipeline of operations. Each operation affects the data which flows downstream from it. Reactive Programming is a useful technique (through not the only technique) for event-driven asynchronous programming.
 
 **Imperative programming** is the more common or "familiar" programming paradigm in which program operation and control flow are expressed by sequential commands which manipulate program state (variables). A simple imperative program in pseudocode is
 
@@ -14,22 +14,23 @@ Reactive Programming is a declarative programming paradigm in which program oper
     Then do operation3 on variable z
     And then print the result
 
-Reactive Programming is a **declarative** paradigm - specifically a **dataflow** paradigm - in which the programmer must describe a directed graph of operations which represents the logic of the program. A simple declarative dataflow representation of the above program in pseudocode is:
+Specifically, Reactive Programming is a **declarative dataflow** paradigm - the programmer must describe a directed acyclic graph (DAG) of operations which represents the logic of the program and the flow of data. A simple declarative dataflow representation of the above program in pseudocode is:
 
     asynchronous data source => operation1 => operation2 => operation3 => print
 
-How this differs from imperative programming, is that the coder is describing the high-level process of execution but letting the language implementation decide when and how to implement these operations. This is exemplified by the concept of *back-pressure* which is baked into some implementations of Reactive Programming. Back-pressure essentially rate-limits dataflow in a Reactive Stream based on the slowest pipelined operation. An imperative implementation of back-pressure would require the programmer to describe a complicated flow-control process - whereas in a declarative dataflow language with back-pressure, the programmer specifies the directed graph of pipelined operations while the language handles scheduling of operations at the implementation level to ensure that no operation receives data faster than it can process.
+How this differs from imperative programming, is that the coder is describing the high-level process of execution but letting the language implementation decide when and how to implement these operations. This is exemplified by the concept of *back-pressure* which is baked into some implementations of Reactive Programming. Back-pressure essentially rate-limits dataflow in a Reactive Stream based on what the recipient of the data can handle. An imperative implementation of back-pressure would require the programmer to describe a complicated flow-control process for each async operation to respond to events. In a declarative dataflow language with back-pressure, the programmer specifies the directed graph of pipelined operations while the language handles scheduling of operations at the implementation level to ensure that no operation receives data faster than it can process.
 
-[Reactive Streams](http://www.reactive-streams.org/) is an industry standard for declarative dataflow programming in an asynchronous environment. More detail on design principles can be found in the [Reactive Manifesto](https://www.reactivemanifesto.org/). It is the basis for the asynchronous programming libraries which have been used in the Cosmos DB Async Java SDKs.
+[Reactive Streams](http://www.reactive-streams.org/) is an industry standard for declarative dataflow programming in an asynchronous environment. More detail on design principles can be found in the [Reactive Manifesto](https://www.reactivemanifesto.org/). It is the basis for new Azure's new async SDKs.
 
-### 2. ***Available Reactive Streams Frameworks for Java/JVM***
-[RxJava](https://github.com/ReactiveX/RxJava) ([ReactiveX](reactivex.io/) for JVM) is no longer being used after Java SDK v2.x.x.
+### 2. Reactive Streams Frameworks for Java/JVM
 
-[Project Reactor](https://projectreactor.io/) or just *Reactor* is the Reactive Programming framework used in Java SDK v3.x.x and above.
+Reactive Streams frameworks implement the Reactive Streams Standard for specific programming languages. [RxJava](https://github.com/ReactiveX/RxJava) ([ReactiveX](reactivex.io/) for JVM) was the basis of past Azure Java SDKs, but will not be going forward.
 
-The purpose of the rest of this document is to help you start using Reactor with as little trouble as possible. 
+[Project Reactor](https://projectreactor.io/) or just *Reactor* is the Reactive Programming framework being used for new Azure Java SDKs. The purpose of the rest of this document is to help you get started with Reactor.
 
-## Reactor Design Patterns
+## Reactor design patterns
+
+### 1. Assembly and execution
 
 To write a program using Reactor, you will need to describe one or more Reactive Streams. In typical uses of Reactor, you describe a stream by (1) creating a *Publisher* (which originates data asynchronously) and a *Subscriber* (which consumes data and operates on it asynchronously), and (2) describing a pipeline from Publisher to Subscriber, in which the data from Publisher is transformed at each pipeline stage before eventually ending in Subscriber. 
 
@@ -76,6 +77,8 @@ That was a lot. So let’s step back for a moment and mention a few key points.
 * So keep in mind that Reactor is following a hybrid push-pull model where async events are published at a rate requested by the subscriber. This enables the implementation of backpressure, whereby the subscriber can size subscriptions to adjust the rate of publisher events if they are coming too slow or too fast to process.
 * subscribe() is Reactor’s built-in subscription generator, it 
 
+### 2. ```Flux<T>```, ```Mono<T>```, and ```subscribe()```
+
 Flux supports publishers with 0, 1, or N events, where N can be finite or infinite. The assembly stage for a publisher with N=3 events is shown below
 
 ```java
@@ -119,10 +122,13 @@ err -> {
 });
 ```
 
+Mono example
 
 ```java
 Mono<String> exampleMono = Mono
 ```
+
+### 3. A selection of useful Reactor operations
 
 ## For More Information
 
