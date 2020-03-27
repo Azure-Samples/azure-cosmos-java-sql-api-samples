@@ -151,7 +151,7 @@ Let’s break this down. Remember we said that the argument to ```subscribe()```
 
 As it turns out, we can supply additional code to ```subscribe()``` in the form of Java 8 lambdas and handle ```onComplete``` and ```onError``` as well as ```onNext```! Picking apart the code snippet above,
 
-* ```strIn -> {...}``` defines a lambda for handling ```onNext```, where ```strIn``` is the associated data item for each signal (the name ```strIn``` is my choice, any variable name will do).
+* ```strIn -> {...}``` defines a lambda for handling ```onNext```, where ```strIn``` represents the data item associated with each incoming ```onNext``` signal (the name ```strIn``` is my choice, any variable name will do).
 * ```err -> {...}``` defines a lambda for handling ```onError```, where ```err``` is the ```Exception```.
 * ```() -> {...}``` defines a lambda for handling ```onComplete```, and notice there is no data associated (empty parentheses). The ```Publisher``` will issue ```onComplete``` when it has exhausted all events that it was created to issue.
 
