@@ -31,59 +31,98 @@ The purpose of the rest of this document is to help you start using Reactor with
 
 ## Reactor Design Patterns
 
-To write a program using Reactor, you will need to describe one or more Reactive Streams. In typical uses of Reactor, you describe a stream
-by (1) creating a *Publisher* (which originates data asynchronously) and a *Subscriber* (which consumes data and operates on it asynchronously), and (2)
-describing a pipeline from Publisher to Subscriber, in which the data from Publisher is transformed at each pipeline stage before eventually
-ending in Subscriber. In this section we will discuss this process in more detail and demonstrate how Reactor lets you define the transforming operation at each
-pipeline stage.
+To write a program using Reactor, you will need to describe one or more Reactive Streams. In typical uses of Reactor, you describe a stream by (1) creating a *Publisher* (which originates data asynchronously) and a *Subscriber* (which consumes data and operates on it asynchronously), and (2) describing a pipeline from Publisher to Subscriber, in which the data from Publisher is transformed at each pipeline stage before eventually ending in Subscriber. 
 
-### 1. ***Describing a Reactive Stream (A Publisher-Subscriber Pipeline)***
+Reactor follows a "hybrid push-pull model": your code is triggered on an event-driven basis by the Publisher, but ***only*** once you signal the Publisher via a Subscription.
 
-Here is a simple Reactive Stream:
+Consider a "typical" program you might be used to writing. You are writing a piece of code, but it takes a dependency on other code with unpredictable response time. For example, maybe you wrote a function to perform a calculation, and one input comes from calling a function that requests data over TCP/IP. You might typically deal with this by implementing a control flow in which you first call the dependency code, wait for it to return output, and then provide that output to the other piece of code as input. So your code is “pulling” output from its dependency on an on-demand basis. This can be inefficient if there is latency in the dependency (as is the case for a TCP/IP request); the next piece of code has to wait.
+
+In a "push" model the dependency signals the next piece of code to consume output when it becomes available; otherwise, your code is dormant, freeing up CPU cycles. This is a more event-driven concept. But in order for the dependency to signal the next piece of code, it has to know that it is a dependency – in a Reactive program we have to define the dependency relations in advance.
 
 ```java
-Flux.just("Hello","Cosmos DB")
-    .subscribe(System.out::println);
+Assembly phase (define dependency relations as a pipeline)
+Subscribe phase (execute pipeline on incoming events)
+
+Flux<String> reminderPipeline = 
+ReminderAsyncService.getRemindersPublisher()
+                    .flatMap(reminder -> “Don’t forget: ” + reminder)
+                    .flatMap(strIn -> LocalDateTime.now().toString() + “: ”+ strIn); // Nothing executed yet
+
+reminderPipeline.subscribe(System.out::println); // Async – returns immediately
+while (true) doOtherThings(); // We’re freed up to do other tasks 😊
 ```
 
-The Publisher is ``` Flux.just("Hello","Cosmos DB") ```. ```Flux.just()``` is a *Reactor factory method* which allows you to define a Publisher.
-``` Flux.just("Hello","Cosmos DB") ``` will asynchronously send ```Hello``` and ```Cosmos DB``` as two Strings to the next stage of the Publisher-Subscriber
-pipeline.
-
-Here, the Publisher-Subscriber pipeline is simple - the next pipeline stage after the Publisher is the Subscriber, ```.subscribe(System.out::println)```, which
-will receive the two Strings as they arrive from upstream and process them by applying ```System.out::println``` to each one, again asynchronously.
-The output would be
+A Flux in Reactor represents … and is the general-purpose class for doing so. In the assembly phase, you are describing program logic as an async operation pipeline, but not actually executing it yet. So ReminderAsyncService.getRemindersPublisher() returns a Flux<String> representing just the reminders publisher. ReminderAsyncService.getRemindersPublisher().flatMap(reminder -> “Don’t forget: ” + reminder) returns an augmented Flux<String> that represents the reminders publisher followed by the “Don’t forget: ” + reminder operation that consumes the publisher’s output and prepends “Don’t forget: ”. And ReminderAsyncService.getRemindersPublisher().flatMap(reminder -> “Don’t forget: ” + reminder).flatMap(strIn -> LocalDateTime.now().toString() + “: ”+ strIn) returns an even further augmented Flux<String> that represents the reminders publisher followed by the “Don’t forget: ” + reminder operation, followed subsequently by an operation which prepends a timestamp to the output of the previous step. In each case, the output is Flux<T>, where T is the output type of the transformation applied at that stage. So hypothetically if you defined an async operation pipeline which ate int’s and spat out Strings, the output of the assembly phase would be a Flux<String> representing the pipeline.
+In the subscription phase you execute what you defined in the assembly phase. Here is how that works. You call
+    
+    ```java
+	reminderPipeline.subscribe(System.out::println); //Async – returns immediately
+    ```
+    
+and subscribe() will generate a Subscription instance requesting all events that RemindersPublisher will ever produce. Reactor framework propagates this Subscription instance backwards up the pipeline to the RemindersPublisher instance. The RemindersPublisher instance reads this Subscription and responds by pushing an event into the pipeline every time there is a new reminder. The publisher will continue to push an event every time a reminder becomes available, until it has pushed as many events as were requested in the Subscription (which is infinity in this case, so the publisher will just keep going.)
+When I say that the publisher pushes events into the pipeline, I mean that the publisher issues an onNext signal to the next pipeline stage (“Don’t forget:” + reminder) paired with a String argument containing the reminder. flatMap() responds to an onNext signal by taking the String argument and applying the specified transformation to it (in this case, prepending the words “Don’t forget:”). This signal propagates down the pipeline: the “Don’t forget:” + reminder stage issues an onNext signal to the next stage with its output as the argument; then the LocalDateTime.now().toString() + “:” + strIn stage issues an onNext signal to the next stage with its output as the argument. Now what happens after that is special – we reached the last pipeline stage, so what happens to final-stage onNext signal and its associated String argument? The answer is that the Subscription created by the subscribe() call implements a method for handling onNext signals, which you can customize for your application. This method is expected to handle the pipeline output with some finality, i.e. by printing it to the terminal, displaying it in a GUI, or doing something else before discarding the data entirely. Therefore the Subscription instance serves a dual purpose as the true “last stage” of the pipeline. The argument to subscribe() is the content of the onNext handler. Since we called
 
 ```java
-Hello
-Cosmos DB
+reminderPipeline.subscribe(System.out::println); //Async – returns immediately
 ```
 
-This is a simple Publisher-Subscriber pipeline with no operations to transform the data.
-The call to ```subscribe()``` is what ultimately triggers data to flow through the Reactive Stream
-and carry out the logic of your program. Simply calling
+with System.out::println as the argument, now each time Subscription.onNext() is called the associated String output from the pipeline will be printed to the terminal using System.out::println.
+
+That was a lot. So let’s step back for a moment and mention a few key points.
+* Assembly phase is when you define a series of async operations and a dependency graph (pipeline) connecting them. 
+* Subscribe phase is when you actually execute that logic by creating a subscription. The Subscription doubles as the terminal pipeline stage.
+* The async operation pipeline starts with a publisher, which will push events into the pipeline once it receives a Subscription for N events in the subscribe phase. 
+* Observe that a Subscription for N events is a type of pull operation, because one piece of code (Subscription) is calling for output from other code that is depends on (Publisher). Publisher controls the rate and timing of events, until it exhausts the N events requested by the Subscriber.
+* So keep in mind that Reactor is following a hybrid push-pull model where async events are published at a rate requested by the subscriber. This enables the implementation of backpressure, whereby the subscriber can size subscriptions to adjust the rate of publisher events if they are coming too slow or too fast to process.
+* subscribe() is Reactor’s built-in subscription generator, it 
+
+Flux supports publishers with 0, 1, or N events, where N can be finite or infinite. The assembly stage for a publisher with N=3 events is shown below
 
 ```java
-Flux.just("Hello","Cosmos DB");
+Flux<String> reminderPipeline = 
+    Flux.just(“Wash the dishes”,“Mow the lawn”,”Sleep”) // Publisher, 3 events
+        .flatMap(reminder -> “Don’t forget: ” + reminder)
+        .flatMap(strIn -> LocalDateTime.now().toString() + “: ”+ strIn); // Nothing executed yet
 ```
 
-without calling ```subscribe()``` will **not** execute the logic of your program; this line will simply return a ```Flux<String>``` which represents
-the pipeline of operations starting from the Publisher (which in this case, consists only of the Publisher). This ```Flux<String>``` can be stored in a
-variable and used like any other variable. For example you can return its value and use that value elsewhere in the program, i.e. by subscribing to it in another function:
+And upon subscription,
 
 ```java
-private Flux<String> some_function() {
-    return Flux.just("Hello","Cosmos DB");
-}
-
-public void calling_function() {
-    Flux<String> str_flux = some_function(); //Returns a representation of a Reactive Stream
-    str_flux.subscribe(System.out::println); //Produces the same output as the original example, by subscribing to the Reactive Stream
-}
+reminderPipeline.subscribe(System.out::println);
 ```
 
-This approach of defining Reactive Streams and then subscribing to them later can be useful - **just remember that the logic of your Reactive Stream will
-not be executed until you ```subscribe()``` to it.**
+will output the three Strings shown (corresponding to three publisher events pushed into the pipeline) and then stop. Suppose now we want to add two special behaviors to our program: (1) After all N Strings have been printed, print “End of reminders.” so the user knows we are finished. (2) Print any exceptions which occur during execution. A modification to the subscribe() call handles all of this:
+
+```java
+reminderPipeline.subscribe(strIn -> {
+    System.out.println(strIn);
+},
+err -> {
+    err.printStackTrace();
+},
+() -> {
+    System.out.println(“End of reminders.”);
+});
+```
+
+Let’s break this down. Remember we said that the argument to subscribe() determines how it handles incoming signals such as onNext? Reactor actually has three important signals which propagate state information along the pipeline: onNext, onComplete, and onError. As shown below, we just modified the subscribe() argument to handle all three:
+
+```java
+reminderPipeline.subscribe(strIn -> {
+    System.out.println(strIn);
+},
+err -> {
+    err.printStackTrace();
+},
+() -> {
+    System.out.println(“End of reminders.”);
+});
+```
+
+
+```java
+Mono<String> exampleMono = Mono
+```
 
 ## For More Information
 
