@@ -71,10 +71,10 @@ where *sample.synchronicity.MainClass* can be
 *Build and execute from command line without an IDE:* From top-level directory of repo:
 ```
 mvn clean package
-mvn exec:java -Dexec.mainClass="com.azure.cosmos.examples.changefeed.sample" -DACCOUNT_HOST=your account hostname -DACCOUNT_KEY=your account master key
+mvn exec:java -Dexec.mainClass="com.azure.cosmos.examples.sample.synchronicity.MainClass" -DACCOUNT_HOST=your account hostname -DACCOUNT_KEY=your account master key
 ```
 
-where *sample*, *your account hostname*, and *your account master key* are to be filled in as above. This will rebuild and run the selected sample.
+where *sample.synchronicity.MainClass*, *your account hostname*, and *your account master key* are to be filled in as above. This will rebuild and run the selected sample.
 
 ## Key concepts
 
