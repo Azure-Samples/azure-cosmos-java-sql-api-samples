@@ -170,4 +170,4 @@ Again, ```Mono.just()``` is a Reactor factory method which creates the single-ev
 
 * [A gentle introduction to Reactor from tech.io](https://tech.io/playgrounds/929/reactive-programming-with-reactor-3/Intro)
 
-* Reactive Extensions for the JVM (RxJava), a project of ReactiveX **which is no longer used by Cosmos DB** but was previously used to facilitate non-blocking access in Async Java SDK v2.x.x and below.
+* [RxJava](https://github.com/ReactiveX/RxJava) ([ReactiveX](reactivex.io/) for JVM), a project of ReactiveX **which is no longer used in new Azure SDKs**
