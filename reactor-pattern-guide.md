@@ -6,7 +6,7 @@ The purpose of this guide is to help you get started using Reactor-based Java SD
 
 ### 1. Reactive Programming and the Reactive Streams Standard
 
-Reactive Programming is a declarative programming paradigm in which program operation and control flow are described as a stream of events and data passing through a pipeline of operations. Each operation affects the data which flows downstream from it. Reactive Programming is a useful technique (through not the only technique) for event-driven asynchronous programming; it is an alternative to explicitly callback-based programming.
+Reactive Programming is a declarative programming paradigm in which program operation and control flow are described as a stream of events and data passing through a pipeline of operations. Each operation affects the data which flows downstream from it. Reactive Programming is a useful technique (through not the only technique) for event-driven asynchronous programming; for example it is an alternative to explicitly callback-based programming.
 
 **Imperative programming** is the more common or "familiar" programming paradigm in which program operation and control flow are expressed by sequential commands which manipulate program state (variables). A simple imperative program in pseudocode is
 
