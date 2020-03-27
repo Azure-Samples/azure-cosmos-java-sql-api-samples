@@ -63,15 +63,20 @@ reminderPipeline.subscribe(System.out::println); // Async – returns immediatel
 while (true) doOtherThings(); // We’re freed up to do other tasks 😊
 ```
 
-The ```Flux<T>``` class internally represents an async operation pipeline as a DAG and provides instance methods for operating on the pipeline. As we will see ```Flux<T>``` is not the only Reactor class for representing pipelines but it is the general-purpose option. 
+The ```Flux<T>``` class internally represents an async operation pipeline as a DAG and provides instance methods for operating on the pipeline. As we will see ```Flux<T>``` is not the only Reactor class for representing pipelines but it is the general-purpose option. The type ```T``` is always the output type of the final pipeline stage; so hypothetically, if you defined an async operation pipeline which published ```Integer```s at one end and processed them into ```String```s at the other end, the representation of the pipeline would be a ```Flux<String>```.
 
 In the **Assembly phase** shown above, you describe program logic as an async operation pipeline (a ```Flux<T>```), but don't actually execute it just yet. Let's break down how the async operation pipeline is built in the **Assembly phase** snippet above:
 
 * **Stage 1**: ```ReminderAsyncService.getRemindersPublisher()``` returns a ```Flux<String>``` representing a ```Publisher``` instance for publishing reminders. 
 
-* **Stage 2**: ```.flatMap(reminder -> “Don’t forget: ” + reminder)``` modifies the ```Flux<String>``` from **Stage 1** and returns an augmented ```Flux<String>``` that represents a two-stage pipeline consisting of the ```RemindersPublisher``` followed by the ```reminder -> “Don’t forget: ” + reminder``` operation which prepends "Don't forget: " to the ```reminder``` string (```reminder``` is a variable that can have any name and represents the previous stage output.)
+* **Stage 2**: ```.flatMap(reminder -> “Don’t forget: ” + reminder)``` modifies the ```Flux<String>``` from **Stage 1** and returns an augmented ```Flux<String>``` that represents a two-stage pipeline. The pipeline consists of 
+    * the ```RemindersPublisher```, followed by 
+    * the ```reminder -> “Don’t forget: ” + reminder``` operation which prepends "Don't forget: " to the ```reminder``` string (```reminder``` is a variable that can have any name and represents the previous stage output.)
 	
-* **Stage 3**: ```.flatMap(strIn -> LocalDateTime.now().toString() + “: ”+ strIn)``` modifies the ```Flux<String>``` from **Stage 2** and returns a further-augmented ```Flux<String>``` that represents a three-stage pipeline consisting of the ```RemindersPublisher```, the **Stage 2** operation, and finally the ```strIn -> LocalDateTime.now().toString() + “: ”+ strIn``` operation, which timestamps the **Stage 2** output string.  So hypothetically if you defined an async operation pipeline which ate int’s and spat out Strings, the output of the assembly phase would be a Flux<String> representing the pipeline.
+* **Stage 3**: ```.flatMap(strIn -> LocalDateTime.now().toString() + “: ”+ strIn)``` modifies the ```Flux<String>``` from **Stage 2** and returns a further-augmented ```Flux<String>``` that represents a three-stage pipeline. The pipeline consists of 
+    * the ```RemindersPublisher```, 
+    * the **Stage 2** operation, and finally 
+    * the ```strIn -> LocalDateTime.now().toString() + “: ”+ strIn``` operation, which timestamps the **Stage 2** output string.  
 	
 Although we "ran" the Assembly phase code, all it did was build up the structure of your program, not run it. In the **Subscribe phase** you execute the pipeline that you defined in the Assembly phase. Here is how that works. You call
     
