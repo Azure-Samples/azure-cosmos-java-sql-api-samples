@@ -147,7 +147,7 @@ err -> {
 });
 ```
 
-Let’s break this down. Remember we said that the argument to ```subscribe()``` determines how the ```Subscriber``` handles ```onNext```? There are two additional signals which Reactor uses to propagate events along the pipeline (and others we won't touch on here!): ```onComplete```, and ```onError```. Both signals denote completion of the Stream; only ```onComplete``` represents successful completion. The ```onError``` signal is associated with an ```Exception``` instance related to an error; the ```onComplete``` signal has no associated data. 
+Let’s break this down. Remember we said that the argument to ```subscribe()``` determines how the ```Subscriber``` handles ```onNext```? I will mention two additional signals which Reactor uses to propagate status information along the pipeline: ```onComplete```, and ```onError```. Both signals denote completion of the Stream; only ```onComplete``` represents successful completion. The ```onError``` signal is associated with an ```Exception``` instance related to an error; the ```onComplete``` signal has no associated data. 
 
 As it turns out, we can supply additional code to ```subscribe()``` in the form of Java 8 lambdas and handle ```onComplete``` and ```onError``` as well as ```onNext```! Picking apart the code snippet above,
 
