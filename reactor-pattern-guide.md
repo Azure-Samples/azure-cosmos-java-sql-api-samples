@@ -108,8 +108,8 @@ In ```subscribe()``` you typically want to handle the pipeline output with some 
 
 That was a lot. So let’s step back for a moment and mention a few key points.
 * Keep in mind that Reactor is following a hybrid push-pull model where async events are published at a rate requested by the ```Subscriber```.
-* Observe that a ```Subscription``` for N events is a type of pull operation from the ```Subscriber```. The ```Publisher``` controls the rate and timing of pushing events, until it exhausts the N events requested by the ```Subscriber```, and then it stops
-* This enables the implementation of ***backpressure***, whereby the ```Subscriber``` can size ```Subscription``` counts to adjust the rate of ```Publisher``` events if they are coming too slow or too fast to process.
+* Observe that a ```Subscription``` for N events is a type of pull operation from the ```Subscriber```. The ```Publisher``` controls the rate and timing of pushing events, until it exhausts the N events requested by the ```Subscriber```, and then it stops. This is the "hybrid push-pull" approach.
+* This approach enables the implementation of ***backpressure***, whereby the ```Subscriber``` can size ```Subscription``` counts to adjust the rate of ```Publisher``` events if they are coming too slow or too fast to process.
 * ```subscribe()``` is Reactor’s built-in ```Subscription``` generator, by default it requests all events from the ```Publisher``` ("unbounded request".) [See the Project Reactor documentation here](https://projectreactor.io/docs/core/3.1.2.RELEASE/reference/) for more guidance on customizing the subscription process.
 
 And the most important takeaway: **Nothing happens until you subscribe.**
