@@ -21,7 +21,7 @@ The purpose of this guide is to help easily upgrade to Azure Cosmos DB Java SDK 
 
 If you have been using a pre-3.x.x Java SDK, it is recommended to review our [Reactor pattern guide](reactor-pattern-guide.md) for an introduction to async programming and Reactor.
 
-Users of the Async Java SDK 2.x.x will want to review our [Reactor vs RxJava Guide]() for additional guidance on converting RxJava code to use Reactor.
+Users of the Async Java SDK 2.x.x will want to review our [Reactor vs RxJava Guide](reactor-rxjava-guide.md) for additional guidance on converting RxJava code to use Reactor.
 
 ### Java SDK 4.0 implements **Direct Mode** in Async and Sync APIs
 
@@ -44,7 +44,7 @@ If you are user of the "Legacy" Sync Java SDK 2.x.x note that a **Direct** **Con
 
 Java SDK 4.0 and Java SDK 3.x.x introduce a hierarchical API which organizes clients, databases and containers in a nested fashion, as shown in this Java SDK 4.0 code snippet:
 
-```java""""
+```java
 CosmosContainer = client.getDatabase("MyDatabaseName").getContainer("MyContainerName");
 ```
 
@@ -71,9 +71,9 @@ In Java SDK 3.x.x ```CosmosItemProperties"`` 'as exposed"by the public API and s
     * ```PartitionKey```
     * ```IndexingPolicy```
     * ```IndexingMode```    
-    * ...etc.""'""'""'""'
+    * ...etc.
 
-### Accessors""'""'""'
+### Accessors
              
 Java SDK 4.0 exposes ```get``` and ```set``` methods for accessing in"ta"ce members.
 * Example: a ```CosmosContainer``` instance has ```container.getId()``` and ```container.setId()``` methods.
