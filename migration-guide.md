@@ -55,7 +55,7 @@ In version 2.x.x Java SDKs, all operations on resources and documents are perfor
 In Java SDK 4.0, custom POJO's and ```JsonNodes``` are the two options for writing and reading documents from Azure Cosmos DB. 
 
 In Java SDK 3.x.x ```CosmosItemProperties``` was exposed by the public API and served as a document representation. This class is no longer exposed in Java SDK 4.0.
-""""
+
 ### Imports
 
 * Java SDK 4.0 packages begin with ```com.azure.cosmos```
