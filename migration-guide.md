@@ -25,7 +25,7 @@ Users of the Async Java SDK 2.x.x will want to review our [Reactor vs RxJava Gui
 
 ### Java SDK 4.0 implements **Direct Mode** in Async and Sync APIs
 
-If you are user of the "Legacy" Sync Java SDK 2.x.x note that a **Direct** **ConnectionMode** based on TCP is implemented in Java SDK 4.0 for both the Async and Sync APIs.
+If you are user of the "Legacy" Sync Java SDK 2.x.x note that a **Direct** **ConnectionMode** based on TCP (as opposed to HTTP) is implemented in Java SDK 4.0 for both the Async and Sync APIs.
 
 ## Important API changes
 
