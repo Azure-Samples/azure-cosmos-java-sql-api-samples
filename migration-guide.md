@@ -54,11 +54,24 @@ In version 2.x.x Java SDKs, all operations on resources and documents are perfor
 
 In Java SDK 4.0, custom POJO's and ```JsonNodes``` are the two options for writing and reading documents from Azure Cosmos DB. 
 
+In Java SDK 3.x.x ```CosmosItemProperties``` was exposed by the public API and served as a document representation. This class is no longer exposed in Java SDK 4.0.
+
 ### Imports
 
 * Java SDK 4.0 packages begin with ```com.azure.cosmos```
+    * Java SDK 3.x.x packages begin with ```com.azure.data.cosmos```
 
-* Java SDK 3.x.x packages begin with ```com.azure.data.cosmos```
+* Java SDK 4.0 places a number of classes in a nested package, ```com.azure.cosmos.models```. This includes
+    * ```CosmosContainerResponse```
+    * ```CosmosDatabaseResponse```
+    * ```CosmosItemResponse```
+    * And Async API analogs of all of the above...
+    * ```CosmosContainerProperties```
+    * ```FeedOptions```
+    * ```PartitionKey```
+    * ```IndexingPolicy```
+    * ```IndexingMode```    
+    * ...etc.
 
 ### Accessors
 
@@ -77,7 +90,6 @@ This is different from Java SDK 3.x.x which exposes a fluent interface.
 ```java
 ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
 //  Setting the preferred location to Cosmos DB Account region
-//  West US is just an example. User should set preferred location to the Cosmos DB region closest to the application
 defaultPolicy.setPreferredLocations(Lists.newArrayList("Your Account Location"));
 // Use Direct Mode for best performance
 defaultPolicy.setConnectionMode(ConnectionMode.DIRECT);
@@ -91,27 +103,51 @@ client = new CosmosClientBuilder()
         .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
         .buildAsyncClient();
 
-// Describe the logic of database and container creation using Reactor...
-Mono<Void> databaseContainerIfNotExist = 
-            // Create database with specified name
-            client.createDatabaseIfNotExists("YourDatabaseName")
-                    .flatMap(databaseResponse -> {
-    database = databaseResponse.getDatabase();
-    // Container properties - name and partition key
-    CosmosContainerProperties containerProperties = 
-        new CosmosContainerProperties("YourContainerName", "/id");
-    // Create container with specified properties & provisioned throughput
-    return database.createContainerIfNotExists(containerProperties, 400);
-}).flatMap(containerResponse -> {
-    container = containerResponse.getContainer();
-    return Mono.empty();
+
+// Create database with specified name
+client.createDatabaseIfNotExists("YourDatabaseName")
+      .flatMap(databaseResponse -> {
+        database = databaseResponse.getDatabase();
+        // Container properties - name and partition key
+        CosmosContainerProperties containerProperties = 
+            new CosmosContainerProperties("YourContainerName", "/id");
+        // Create container with specified properties & provisioned throughput
+        return database.createContainerIfNotExists(containerProperties, 400);
+    }).flatMap(containerResponse -> {
+        container = containerResponse.getContainer();
+        return Mono.empty();
 }).subscribe();
 ```
 
 **Java SDK 3.x.x Async API:**
 
 ```java
+ConnectionPolicy defaultPolicy = ConnectionPolicy.defaultPolicy();
+//  Setting the preferred location to Cosmos DB Account region
+defaultPolicy.preferredLocations(Lists.newArrayList("Your Account Location"));
 
+//  Create async client
+//  <CreateAsyncClient>
+client = new CosmosClientBuilder()
+        .endpoint("your.hostname")
+        .key("yourmasterkey")
+        .connectionPolicy(defaultPolicy)
+        .consistencyLevel(ConsistencyLevel.EVENTUAL)
+        .build();
+
+// Create database with specified name
+client.createDatabaseIfNotExists("YourDatabaseName")
+      .flatMap(databaseResponse -> {
+        database = databaseResponse.database();
+        // Container properties - name and partition key
+        CosmosContainerProperties containerProperties = 
+            new CosmosContainerProperties("YourContainerName", "/id");
+        // Create container with specified properties & provisioned throughput
+        return database.createContainerIfNotExists(containerProperties, 400);
+    }).flatMap(containerResponse -> {
+        container = containerResponse.container();
+        return Mono.empty();
+}).subscribe();        
 ```
 
 ### Item operations
@@ -124,21 +160,25 @@ int number_of_docs = 50000;
 ArrayList<JsonNode> docs = generateManyDocs(number_of_docs);
 
 // Insert many docs into container...
-Flux.fromIterable(docs).flatMap(doc -> container.createItem(doc))
-        // ^Publisher: upon subscription, createItem inserts a doc &
-        // publishes request response to the next operation...
-        .flatMap(itemResponse -> {
-            // ...Streaming operation: count each doc...
-            number_docs_inserted.getAndIncrement();
-            return Mono.empty();
-}).subscribe(); // ...Subscribing or blocking triggers stream execution.
+Flux.fromIterable(docs)
+    .flatMap(doc -> container.createItem(doc))
+    .subscribe(); // ...Subscribing triggers stream execution.
 ```
 
 **Java SDK 3.x.x Async API:**
 
 ```java
+// Container is created. Generate many docs to insert.
+int number_of_docs = 50000;
+ArrayList<JsonNode> docs = generateManyDocs(number_of_docs);
 
+// Insert many docs into container...
+Flux.fromIterable(docs)
+    .flatMap(doc -> container.createItem(doc))
+    .subscribe(); // ...Subscribing triggers stream execution.
 ```
+(the same)
+
 
 ### Indexing
 
@@ -175,7 +215,31 @@ CosmosAsyncContainer containerIfNotExists = database.createContainerIfNotExists(
 **Java SDK 3.x.x Async API:**
 
 ```java
+CosmosContainerProperties containerProperties = new CosmosContainerProperties(containerName, "/lastName");
 
+// Custom indexing policy
+IndexingPolicy indexingPolicy = new IndexingPolicy();
+indexingPolicy.setIndexingMode(IndexingMode.CONSISTENT); //To turn indexing off set IndexingMode.NONE
+
+// Included paths
+List<IncludedPath> includedPaths = new ArrayList<>();
+IncludedPath includedPath = new IncludedPath();
+includedPath.path("/*");
+includedPaths.add(includedPath);
+indexingPolicy.setIncludedPaths(includedPaths);
+
+// Excluded paths
+List<ExcludedPath> excludedPaths = new ArrayList<>();
+ExcludedPath excludedPath = new ExcludedPath();
+excludedPath.path("/name/*");
+excludedPaths.add(excludedPath);
+indexingPolicy.excludedPaths(excludedPaths);
+
+containerProperties.indexingPolicy(indexingPolicy);
+
+CosmosContainer containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400)
+                                               .block()
+                                               .container();
 ```
 
 ### Stored procedures
@@ -225,7 +289,43 @@ container.getScripts()
 **Java SDK 3.x.x Async API:**
 
 ```java
+logger.info("Creating stored procedure...\n");
 
+sprocId = "createMyDocument";
+String sprocBody = "function createMyDocument() {\n" +
+        "var documentToCreate = {\"id\":\"test_doc\"}\n" +
+        "var context = getContext();\n" +
+        "var collection = context.getCollection();\n" +
+        "var accepted = collection.createDocument(collection.getSelfLink(), documentToCreate,\n" +
+        "    function (err, documentCreated) {\n" +
+        "if (err) throw new Error('Error' + err.message);\n" +
+        "context.getResponse().setBody(documentCreated.id)\n" +
+        "});\n" +
+        "if (!accepted) return;\n" +
+        "}";
+CosmosStoredProcedureProperties storedProcedureDef = new CosmosStoredProcedureProperties(sprocId, sprocBody);
+container.getScripts()
+        .createStoredProcedure(storedProcedureDef,
+                new CosmosStoredProcedureRequestOptions()).block();
+
+// ...
+
+logger.info(String.format("Executing stored procedure %s...\n\n", sprocId));
+
+CosmosStoredProcedureRequestOptions options = new CosmosStoredProcedureRequestOptions();
+options.partitionKey(new PartitionKey("test_doc"));
+
+container.getScripts()
+        .getStoredProcedure(sprocId)
+        .execute(null, options)
+        .flatMap(executeResponse -> {
+            logger.info(String.format("Stored procedure %s returned %s (HTTP %d), at cost %.3f RU.\n",
+                    sprocId,
+                    executeResponse.responseAsString(),
+                    executeResponse.statusCode(),
+                    executeResponse.requestCharge()));
+            return Mono.empty();
+        }).block();
 ```
 
 ### Change Feed
@@ -233,28 +333,64 @@ container.getScripts()
 **Java SDK 4.0 Async API:**
 
 ```java
-ChangeFeedProcessor.changeFeedProcessorBuilder()
-                .setHostName(hostName)
-                .setFeedContainer(feedContainer)
-                .setLeaseContainer(leaseContainer)
-                .setHandleChanges((List<JsonNode> docs) -> {
+ChangeFeedProcessor changeFeedProcessorInstance = 
+     ChangeFeedProcessor.changeFeedProcessorBuilder()
+                        .setHostName(hostName)
+                        .setFeedContainer(feedContainer)
+                        .setLeaseContainer(leaseContainer)
+                        .setHandleChanges((List<JsonNode> docs) -> {
+                            logger.info("--->setHandleChanges() START");
+
+                            for (JsonNode document : docs) {
+                                try {
+                                    //Change Feed hands the document to you in the form of a JsonNode
+                                    //As a developer you have two options for handling the JsonNode document provided to you by Change Feed
+                                    //One option is to operate on the document in the form of a JsonNode, as shown below. This is great
+                                    //especially if you do not have a single uniform data model for all documents.
+                                    logger.info("---->DOCUMENT RECEIVED: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
+                                            .writeValueAsString(document));
+
+                                    //You can also transform the JsonNode to a POJO having the same structure as the JsonNode,
+                                    //as shown below. Then you can operate on the POJO.
+                                    CustomPOJO pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO.class);
+                                    logger.info("----=>id: " + pojo_doc.getId());
+
+                                } catch (JsonProcessingException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            logger.info("--->handleChanges() END");
+
+                        })
+                        .build();
+
+// ...
+
+ changeFeedProcessorInstance.start()
+                            .subscribeOn(Schedulers.elastic())
+                            .subscribe();
+```
+
+**Java SDK 3.x.x Async API:**
+
+```java
+ChangeFeedProcessor changeFeedProcessorInstance = 
+     ChangeFeedProcessor.Builder()
+                .hostName(hostName)
+                .feedContainer(feedContainer)
+                .leaseContainer(leaseContainer)
+                .handleChanges((List<CosmosItemProperties> docs) -> {
                     logger.info("--->setHandleChanges() START");
 
-                    for (JsonNode document : docs) {
+                    for (CosmosItemProperties document : docs) {
                         try {
-                            //Change Feed hands the document to you in the form of a JsonNode
-                            //As a developer you have two options for handling the JsonNode document provided to you by Change Feed
-                            //One option is to operate on the document in the form of a JsonNode, as shown below. This is great
-                            //especially if you do not have a single uniform data model for all documents.
-                            logger.info("---->DOCUMENT RECEIVED: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
-                                    .writeValueAsString(document));
 
-                            //You can also transform the JsonNode to a POJO having the same structure as the JsonNode,
-                            //as shown below. Then you can operate on the POJO.
-                            CustomPOJO pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO.class);
-                            logger.info("----=>id: " + pojo_doc.getId());
+                            // You are given the document as a CosmosItemProperties instance which you may
+                            // cast to the desired type.
+                            CustomPOJO pojo_doc = document.getObject(CustomPOJO.class);
+                            logger.info("----=>id: " + pojo_doc.id());
 
-                        } catch (JsonProcessingException e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
@@ -262,12 +398,12 @@ ChangeFeedProcessor.changeFeedProcessorBuilder()
 
                 })
                 .build();
-```
 
-**Java SDK 3.x.x Async API:**
+// ...
 
-```java
-
+ changeFeedProcessorInstance.start()
+                            .subscribeOn(Schedulers.elastic())
+                            .subscribe();
 ```
 
 ### Container TTL
@@ -347,11 +483,11 @@ public class SalesOrder
     }
 
     public String id() {return this.id;}
-    public void id(String new_id) {this.id = new_id;}
-    public String customerId() {return this.customerId;}
-    public void customerId(String new_cid) {this.customerId = new_cid;}
+    public SalesOrder id(String new_id) {this.id = new_id; return this;}
+    public String customerId() {return this.customerId; return this;}
+    public SalesOrder customerId(String new_cid) {this.customerId = new_cid;}
     public Integer ttl() {return this.ttl;}
-    public void ttl(Integer new_ttl) {this.ttl = new_ttl;}
+    public SalesOrder ttl(Integer new_ttl) {this.ttl = new_ttl; return this;}
 
     //...
 }
