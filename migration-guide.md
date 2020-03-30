@@ -12,8 +12,8 @@ The purpose of this guide is to help easily upgrade to Azure Cosmos DB Java SDK 
 |-------------------------|--------------|----------------------|-----------------------------------------|-------------------|-----------------------------------------------------------|------------------------------------------------------------------------------------------|
 | Async 2.x.x             | June 2018    | Async(RxJava)        | com.microsoft.azure::azure-cosmosdb     |                   | [API](https://azure.github.io/azure-cosmosdb-java/2.0.0/) | [Release Notes](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-api-sdk-async-java) |
 | "Legacy" Sync 2.x.x     | Sept 2018    | Sync                 | com.microsoft.azure::azure-documentdb   |                   | [API](https://azure.github.io/azure-cosmosdb-java/2.0.0/) | [Release Notes](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-api-sdk-java)       |
-| 3.x.x                   | July 2019    | Async(Reactor)/Sync  | com.microsoft.azure::azure-cosmos       |                   | [API](https://azure.github.io/azure-cosmosdb-java/3.0.0/) | -                                                                                        |
-| 4.0                     | April 2020   | Async(Reactor)/Sync  | com.azure::azure-cosmos                 |                   | -                                                         | -                                                                                        |
+| 3.x.x                   | July 2019    | Async(Reactor)/Sync  | com.microsoft.azure::azure-cosmos       | com.azure.data.cosmos | [API](https://azure.github.io/azure-cosmosdb-java/3.0.0/) | -                                                                                        |
+| 4.0                     | April 2020   | Async(Reactor)/Sync  | com.azure::azure-cosmos                 | com.azure.cosmos      | -                                                         | -                                                                                        |
 
 ## Important implementation changes
 
@@ -36,9 +36,23 @@ Users of the Async Java SDK 2.x.x will want to review our [Reactor vs RxJava Gui
     * **Java SDK 3.x.x**: classes belong to the Async API unless the name has ```Sync``` after Cosmos.
     * **Async Java SDK 2.x.x**: similar class names to **Sync Java SDK 2.x.x** but the class name starts with ```Async```.
 
-### Representing items
+### Hierarchical API
+
+Java SDK 4.0 and Java SDK 3.x.x introduce a hierarchical API which organizes clients, databases and containers in a nested fashion, as shown in this Java SDK 4.0 code snippet:
+
+```java
+CosmosContainer = client.getDatabase("MyDatabaseName").getContainer("MyContainerName");
+```
+
+In version 2.x.x Java SDKs, all operations on resources and documents are performed through the client instance.
+
+### Representing documents
+
+In Java SDK 4.0, custom POJO's and ```JsonNodes``` are the two options for writing and reading documents from Azure Cosmos DB. 
 
 ### Imports
+
+
 
 ### Accessors
 
