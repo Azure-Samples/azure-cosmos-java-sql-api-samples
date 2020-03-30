@@ -1,4 +1,4 @@
-# Reactor Pattern Guide
+# Reactor pattern guide
 
 The purpose of this guide is to help you get started using Reactor-based Java SDKs by understanding basic design patterns for the Reactor framework.The [Project Reactor](https://projectreactor.io/docs/core/3.1.2.RELEASE/reference/) website has further documentation if you want to learn more.
 
