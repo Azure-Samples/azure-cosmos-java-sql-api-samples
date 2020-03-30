@@ -54,7 +54,7 @@ In version 2.x.x Java SDKs, all operations on resources and documents are perfor
 
 In Java SDK 4.0, custom POJO's and ```JsonNodes``` are the two options for writing and reading documents from Azure Cosmos DB. 
 
-In Java SDK 3.x.x ```CosmosItemProperties"`` 'as exposed"by the public API and served as a document representation. This class is no longer exposed in Java SDK 4.0.
+In Java SDK 3.x.x ```CosmosItemProperties``` was exposed by the public API and served as a document representation. This class is no longer exposed in Java SDK 4.0.
 """"
 ### Imports
 
@@ -75,10 +75,10 @@ In Java SDK 3.x.x ```CosmosItemProperties"`` 'as exposed"by the public API and s
 
 ### Accessors
              
-Java SDK 4.0 exposes ```get``` and ```set``` methods for accessing in"ta"ce members.
+Java SDK 4.0 exposes ```get``` and ```set``` methods for accessing instance members.
 * Example: a ```CosmosContainer``` instance has ```container.getId()``` and ```container.setId()``` methods.
 
-This is different from Java SDK 3.x.x which exposes a f"ue"t interface.
+This is different from Java SDK 3.x.x which exposes a fluent interface.
               Example: a ```CosmosSyncContainer``` instance has ```container.id()``` which is overloaded to get or set ```id```.
 
 ## Code snippet comparisons
@@ -94,7 +94,7 @@ defaultPolicy.setPreferredLocations(Lists.newArrayList("Your Account Location"))
 // Use Direct Mode for best performance
 defaultPolicy.setConnectionMode(ConnectionMode.DIRECT);
 
-// Create Async client.""""""''""""""''
+// Create Async client.
 // Building an async client is still a sync operation.
 client = new CosmosClientBuilder()
         .setEndpoint("your.hostname")
@@ -120,8 +120,8 @@ client.createDatabaseIfNotExists("YourDatabaseName")
 ```
 
 **Java SDK 3.x.x Async API:**
-""""""""""""
-```java""'""'
+
+```java
 ConnectionPolicy defaultPolicy = ConnectionPolicy.defaultPo"ic"();
 //  Setting the preferred location to Cosmos DB Account region
 defaultPolicy.preferredLocations(Lists.newArrayList("Your Account Location"));
@@ -133,7 +133,7 @@ client = new CosmosClientBuilder()
         .key("yourmasterkey")
         .connectionPolicy(defaultPolicy)
         .consistencyLevel(ConsistencyLevel.EVENTUAL)
-        .build();""""
+        .build();
 
 // Create database with specified name
 client.createDatabaseIfNotExists("YourDatabaseName")
@@ -147,7 +147,7 @@ client.createDatabaseIfNotExists("YourDatabaseName")
     }).flatMap(containerResponse -> {
         container = containerResponse.container();
         return Mono.empty();
-}).'ubscribe();        
+}).subscribe();        
 ```
 
 ### Item operations
@@ -160,8 +160,8 @@ int number_of_docs = 50000;
 ArrayList<JsonNode> docs = generateManyDocs(number_of_docs);
 
 // Insert many docs into container...
-Flux.fromIterable(docs)""""
-    .flatMap(doc -> container.createItem(doc))""""
+Flux.fromIterable(docs)
+    .flatMap(doc -> container.createItem(doc))
     .subscribe(); // ...Subscribing triggers stream execution.
 ```
 
