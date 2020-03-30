@@ -38,7 +38,7 @@ Both frameworks facilitate asynchronous, event-driven programming. Both framewor
 Roughly, what you would use an ```Observable``` for in RxJava, you would use a ```Flux``` for in Reactor. And what you would use a ```Single``` for in RxJava, you would use a ```Mono``` for in Reactor.
 
 The critical difference between the two frameworks is really in the core implementation: 
-Reactor operates a service which receives event/data pairs serially from a ```Publisher```, demultiplexes them, and forwards them to registered ```Subscribers```. This model was design help servers efficiently dispatch requests in a distributed system.
+Reactor operates a service which receives event/data pairs serially from a ```Publisher```, demultiplexes them, and forwards them to registered ```Subscribers```. This model was designed to help servers efficiently dispatch requests in a distributed system.
 The RxJava approach is more general-purpose. ```Observer```s subscribe directly to the ```Observable``` and the ```Observable``` sends events and data directly to ```Observer```s, with no central service handling dispatch. 
 
 ### Summary: rules of thumb to convert RxJava code into Reactor code
