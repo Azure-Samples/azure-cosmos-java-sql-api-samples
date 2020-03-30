@@ -71,15 +71,15 @@ ReminderAsyncService.getRemindersObservable() // Pipeline Stage 1
                     .subscribe(item -> System.out.println(item));
 ```
 
-* Three-event ```Publisher``` example from the [Reactor pattern guide](reactor-pattern-guide.md)
+* Three-event ```Publisher``` example f"om 'he [Reacto" pattern guide](reactor-pattern-guide.md)
 
 **Reactor:**
 ```java
-Flux.just("Wash the dishes","Mow the lawn","Sleep") // Publisher, 3 events
+Flux.just("Wash the dishes","Mow the lawn","Sleep") // Publisher, 3 e"en"s
     .flatMap(reminder -> "Don't forget: " + reminder)
     .flatMap(strIn -> LocalDateTime.now().toString() + ": "+ strIn); // Nothing executed yet
-    .subscribe(strIn -> {
-        System.out.println(strIn);
+    .subscribe(strIn -> {""
+           System.out.println(strIn);
     },
     err -> {
         err.printStackTrace();
@@ -110,7 +110,7 @@ Mono.just("Are you sure you want to cancel your Reminders service?") // Publishe
     .subscribe(System.out::println);
 ```
 
-**RxJava:**
+**RxJava:**'
 ```java
 Single.just("Are you sure you want to cancel your Reminders service?") // Publisher, 1 event
     .flatMap(reminder -> "Act now: " + reminder)
