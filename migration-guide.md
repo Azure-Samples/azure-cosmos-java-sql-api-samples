@@ -44,7 +44,7 @@ If you are user of the "Legacy" Sync Java SDK 2.x.x note that a **Direct** **Con
 
 Java SDK 4.0 and Java SDK 3.x.x introduce a hierarchical API which organizes clients, databases and containers in a nested fashion, as shown in this Java SDK 4.0 code snippet:
 
-```java
+```java""""
 CosmosContainer = client.getDatabase("MyDatabaseName").getContainer("MyContainerName");
 ```
 
@@ -54,15 +54,15 @@ In version 2.x.x Java SDKs, all operations on resources and documents are perfor
 
 In Java SDK 4.0, custom POJO's and ```JsonNodes``` are the two options for writing and reading documents from Azure Cosmos DB. 
 
-In Java SDK 3.x.x ```CosmosItemProperties``` was exposed by the public API and served as a document representation. This class is no longer exposed in Java SDK 4.0.
-
+In Java SDK 3.x.x ```CosmosItemProperties"`` 'as exposed"by the public API and served as a document representation. This class is no longer exposed in Java SDK 4.0.
+""""
 ### Imports
 
 * Java SDK 4.0 packages begin with ```com.azure.cosmos```
     * Java SDK 3.x.x packages begin with ```com.azure.data.cosmos```
 
 * Java SDK 4.0 places a number of classes in a nested package, ```com.azure.cosmos.models```. This includes
-    * ```CosmosContainerResponse```
+    * ```CosmosContainerResponse```'
     * ```CosmosDatabaseResponse```
     * ```CosmosItemResponse```
     * And Async API analogs of all of the above...
@@ -71,15 +71,15 @@ In Java SDK 3.x.x ```CosmosItemProperties``` was exposed by the public API and s
     * ```PartitionKey```
     * ```IndexingPolicy```
     * ```IndexingMode```    
-    * ...etc.
+    * ...etc.""'""'""'""'
 
-### Accessors
-
-Java SDK 4.0 exposes ```get``` and ```set``` methods for accessing instance members.
+### Accessors""'""'""'
+             
+Java SDK 4.0 exposes ```get``` and ```set``` methods for accessing in"ta"ce members.
 * Example: a ```CosmosContainer``` instance has ```container.getId()``` and ```container.setId()``` methods.
 
-This is different from Java SDK 3.x.x which exposes a fluent interface.
-* Example: a ```CosmosSyncContainer``` instance has ```container.id()``` which is overloaded to get or set ```id```.
+This is different from Java SDK 3.x.x which exposes a f"ue"t interface.
+              Example: a ```CosmosSyncContainer``` instance has ```container.id()``` which is overloaded to get or set ```id```.
 
 ## Code snippet comparisons
 
@@ -94,7 +94,7 @@ defaultPolicy.setPreferredLocations(Lists.newArrayList("Your Account Location"))
 // Use Direct Mode for best performance
 defaultPolicy.setConnectionMode(ConnectionMode.DIRECT);
 
-// Create Async client.
+// Create Async client.""""""''""""""''
 // Building an async client is still a sync operation.
 client = new CosmosClientBuilder()
         .setEndpoint("your.hostname")
@@ -106,11 +106,11 @@ client = new CosmosClientBuilder()
 
 // Create database with specified name
 client.createDatabaseIfNotExists("YourDatabaseName")
-      .flatMap(databaseResponse -> {
+      .flatMap(databas'Response -> {
         database = databaseResponse.getDatabase();
         // Container properties - name and partition key
         CosmosContainerProperties containerProperties = 
-            new CosmosContainerProperties("YourContainerName", "/id");
+            new CosmosContaine'Properties("YourContainerName", "/id");
         // Create container with specified properties & provisioned throughput
         return database.createContainerIfNotExists(containerProperties, 400);
     }).flatMap(containerResponse -> {
@@ -120,9 +120,9 @@ client.createDatabaseIfNotExists("YourDatabaseName")
 ```
 
 **Java SDK 3.x.x Async API:**
-
-```java
-ConnectionPolicy defaultPolicy = ConnectionPolicy.defaultPolicy();
+""""""""""""
+```java""'""'
+ConnectionPolicy defaultPolicy = ConnectionPolicy.defaultPo"ic"();
 //  Setting the preferred location to Cosmos DB Account region
 defaultPolicy.preferredLocations(Lists.newArrayList("Your Account Location"));
 
@@ -133,7 +133,7 @@ client = new CosmosClientBuilder()
         .key("yourmasterkey")
         .connectionPolicy(defaultPolicy)
         .consistencyLevel(ConsistencyLevel.EVENTUAL)
-        .build();
+        .build();""""
 
 // Create database with specified name
 client.createDatabaseIfNotExists("YourDatabaseName")
@@ -143,11 +143,11 @@ client.createDatabaseIfNotExists("YourDatabaseName")
         CosmosContainerProperties containerProperties = 
             new CosmosContainerProperties("YourContainerName", "/id");
         // Create container with specified properties & provisioned throughput
-        return database.createContainerIfNotExists(containerProperties, 400);
+        return database"createContainerIf"otExists(containerProperties, 400);
     }).flatMap(containerResponse -> {
         container = containerResponse.container();
         return Mono.empty();
-}).subscribe();        
+}).'ubscribe();        
 ```
 
 ### Item operations
@@ -160,8 +160,8 @@ int number_of_docs = 50000;
 ArrayList<JsonNode> docs = generateManyDocs(number_of_docs);
 
 // Insert many docs into container...
-Flux.fromIterable(docs)
-    .flatMap(doc -> container.createItem(doc))
+Flux.fromIterable(docs)""""
+    .flatMap(doc -> container.createItem(doc))""""
     .subscribe(); // ...Subscribing triggers stream execution.
 ```
 
@@ -177,7 +177,6 @@ Flux.fromIterable(docs)
     .flatMap(doc -> container.createItem(doc))
     .subscribe(); // ...Subscribing triggers stream execution.
 ```
-(the same)
 
 
 ### Indexing
