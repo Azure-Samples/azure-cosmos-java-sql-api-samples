@@ -31,7 +31,7 @@ If you are user of the "Legacy" Sync Java SDK 2.x.x note that a **Direct** **Con
 
 ### Naming conventions 
 
-![Java SDK naming conventions](media/java_sdk_naming_conventions.jpg)
+![Java SDK naming conventions](media/java_sdk_naming_conventions.JPG)
 
 * Java SDK 3.x.x and 4.0 refer to clients, resources, etc. as ```Cosmos```*X*; for example ```CosmosClient```, ```CosmosDatabase```, ```CosmosContainer```..., whereas version 2.x.x Java SDKs did not have a uniform naming scheme.
 
