@@ -20,6 +20,7 @@ import com.azure.cosmos.models.CosmosAsyncContainerResponse;
 import com.azure.cosmos.models.CosmosAsyncDatabaseResponse;
 import com.azure.cosmos.models.CosmosAsyncItemResponse;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.google.common.collect.Lists;
@@ -165,6 +166,22 @@ public class SampleCRUDQuickstartAsync {
         }).block();
 
         //  </CreateContainerIfNotExists>
+
+        //Modify existing container
+
+
+        Mono<CosmosAsyncContainerResponse> propertiesReplace = container.replace(containerProperties, new CosmosContainerRequestOptions());
+        propertiesReplace.flatMap(containerResponse -> {
+            logger.info("setupContainer(): Container " + container.getId() + " in " + database.getId() +
+                    "has been updated with it's new properties.");
+            return Mono.empty();
+        }).onErrorResume((exception) -> {
+            logger.error("setupContainer(): Unable to update properties for container " + containerProperties.getId() +
+                    " in database " + database.getId() +
+                    ". e: " + exception.getLocalizedMessage());
+            return Mono.empty();
+        }).block();
+
     }
 
     private void createFamilies(Flux<Family> families) throws Exception {
