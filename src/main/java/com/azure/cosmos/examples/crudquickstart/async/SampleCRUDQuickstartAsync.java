@@ -20,6 +20,7 @@ import com.azure.cosmos.models.CosmosAsyncContainerResponse;
 import com.azure.cosmos.models.CosmosAsyncDatabaseResponse;
 import com.azure.cosmos.models.CosmosAsyncItemResponse;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.google.common.collect.Lists;
@@ -158,13 +159,24 @@ public class SampleCRUDQuickstartAsync {
         Mono<CosmosAsyncContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400);
 
         //  Create container with 400 RU/s
-        containerIfNotExists.flatMap(containerResponse -> {
-            container = containerResponse.getContainer();
-            logger.info("Checking container " + container.getId() + " completed!\n");
+        CosmosAsyncContainerResponse cosmosContainerResponse = containerIfNotExists.block();
+        container = cosmosContainerResponse.getContainer();
+        //  </CreateContainerIfNotExists>
+
+        //Modify existing container
+        containerProperties = cosmosContainerResponse.getProperties();
+        Mono<CosmosAsyncContainerResponse> propertiesReplace = container.replace(containerProperties, new CosmosContainerRequestOptions());
+        propertiesReplace.flatMap(containerResponse -> {
+            logger.info("setupContainer(): Container " + container.getId() + " in " + database.getId() +
+                    "has been updated with it's new properties.");
+            return Mono.empty();
+        }).onErrorResume((exception) -> {
+            logger.error("setupContainer(): Unable to update properties for container " + container.getId() +
+                    " in database " + database.getId() +
+                    ". e: " + exception.getLocalizedMessage());
             return Mono.empty();
         }).block();
 
-        //  </CreateContainerIfNotExists>
     }
 
     private void createFamilies(Flux<Family> families) throws Exception {
