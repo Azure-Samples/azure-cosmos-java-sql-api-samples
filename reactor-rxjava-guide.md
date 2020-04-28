@@ -71,11 +71,11 @@ ReminderAsyncService.getRemindersObservable() // Pipeline Stage 1
                     .subscribe(item -> System.out.println(item));
 ```
 
-* Three-event ```Publisher``` example f"om 'he [Reacto" pattern guide](reactor-pattern-guide.md)
+* Three-event ```Publisher``` example from the [Reactor pattern guide](reactor-pattern-guide.md)
 
 **Reactor:**
 ```java
-Flux.just("Wash the dishes","Mow the lawn","Sleep") // Publisher, 3 e"en"s
+Flux.just("Wash the dishes","Mow the lawn","Sleep") // Publisher, 3 events
     .flatMap(reminder -> "Don't forget: " + reminder)
     .flatMap(strIn -> LocalDateTime.now().toString() + ": "+ strIn); // Nothing executed yet
     .subscribe(strIn -> {""
