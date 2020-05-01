@@ -13,8 +13,10 @@ import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.CosmosPagedIterable;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
+import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
+import com.azure.cosmos.examples.common.SimpleFamilyMemberPOJO;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
@@ -27,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class SampleTTLQuickstart {
@@ -95,25 +98,36 @@ public class SampleTTLQuickstart {
         createDatabaseIfNotExists();
         createContainerIfNotExists();
 
-        //  Setup family items to create
-        ArrayList<Family> familiesToCreate = new ArrayList<>();
-        familiesToCreate.add(Families.getAndersenFamilyItem());
-        familiesToCreate.add(Families.getWakefieldFamilyItem());
-        familiesToCreate.add(Families.getJohnsonFamilyItem());
-        familiesToCreate.add(Families.getSmithFamilyItem());
+        //  Enable TTL for items in a container but do not set a default TTL
+        CosmosContainerProperties containerProperties = new CosmosContainerProperties(containerName, "/lastName");
+        containerProperties.setDefaultTimeToLiveInSeconds(-1);
+        container.replace(containerProperties);
 
-        // Creates several items in the container
-        // Also applies an upsert operation to one of the items (create if not present, otherwise replace)
-        createFamilies(familiesToCreate);
+        // Enable TTL for items in a container and set a default TTL
+        containerProperties.setDefaultTimeToLiveInSeconds(90 * 60 * 60 * 24);
+        container.replace(containerProperties);
 
-        logger.info("Reading items.");
-        readItems(familiesToCreate);
+        // Set item TTL as a POJO field
+        SimpleFamilyMemberPOJO famPOJO = new SimpleFamilyMemberPOJO();
+        famPOJO.setLastName("Andrews");
+        famPOJO.setId(UUID.randomUUID().toString());
+        famPOJO.setTtl(5); //5 sec TTL
+        container.createItem(famPOJO, new PartitionKey(famPOJO.getLastName()), new CosmosItemRequestOptions());
 
-        logger.info("Querying items.");
-        queryItems();
+        //  Reset time-to-live - TTL value stays the same, this just resets the timer (reset _ts)
+        CosmosItemResponse<SimpleFamilyMemberPOJO> itemResponseReset = container.upsertItem(famPOJO, new CosmosItemRequestOptions());
 
-        logger.info("Delete an item.");
-        deleteItem(familiesToCreate.get(0));
+        //  Remove (null) the item TTL field to accept container default.
+        famPOJO.setTtl(null);
+        container.upsertItem(famPOJO, new CosmosItemRequestOptions());
+
+        //  Set the item TTL field to -1 to disable TTL for that item
+        famPOJO.setTtl(-1);
+        container.upsertItem(famPOJO, new CosmosItemRequestOptions());
+
+        //  Disable TTL on the container by deleting (nulling) the property
+        containerProperties.setDefaultTimeToLiveInSeconds(null);
+        container.replace(containerProperties);
     }
 
     private void createDatabaseIfNotExists() throws Exception {
