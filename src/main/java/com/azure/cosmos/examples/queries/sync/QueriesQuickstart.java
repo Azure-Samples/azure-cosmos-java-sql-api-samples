@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package com.azure.cosmos.examples.documentcrud.sync;
+package com.azure.cosmos.examples.queries.sync;
 
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
@@ -13,21 +13,25 @@ import com.azure.cosmos.CosmosPagedIterable;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
+import com.azure.cosmos.implementation.http.HttpResponse;
 import com.azure.cosmos.models.AccessCondition;
 import com.azure.cosmos.models.AccessConditionType;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerRequestOptions;
+import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.PartitionKey;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-public class DocumentCRUDQuickstart {
+public class QueriesQuickstart {
 
     private CosmosClient client;
 
@@ -46,23 +50,28 @@ public class DocumentCRUDQuickstart {
     }
 
     /**
-     * Sample to demonstrate the following document CRUD operations:
-     * -Create
-     * -Read by ID
-     * -Read all
-     * -Query
-     * -Replace
-     * -Upsert
-     * -Replace with conditional ETag check
-     * -Read document only if document has changed
-     * -Delete
+     * Sample to demonstrate Azure Cosmos DB queries via Java SQL API, including queries for:
+     * -All documents
+     * -Equality using ==
+     * -Inequality using != and NOT
+     * -Using range operators like >, <, >=, <=
+     * -Using range operators against Strings
+     * -With ORDER BY
+     * -With aggregate functions
+     * -With subdocuments
+     * -With intra-document joins
+     * -With String, math and array operators
+     * -With parameterized SQL using SqlQuerySpec
+     * -With explicit paging
+     * -Query partitioned collections in parallel
+     * -With ORDER BY for partitioned collections
      */
     public static void main(String[] args) {
-        DocumentCRUDQuickstart p = new DocumentCRUDQuickstart();
+        QueriesQuickstart p = new QueriesQuickstart();
 
         try {
             logger.info("Starting SYNC main");
-            p.documentCRUDDemo();
+            p.queriesDemo();
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
@@ -73,7 +82,7 @@ public class DocumentCRUDQuickstart {
         }
     }
 
-    private void documentCRUDDemo() throws Exception {
+    private void queriesDemo() throws Exception {
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
