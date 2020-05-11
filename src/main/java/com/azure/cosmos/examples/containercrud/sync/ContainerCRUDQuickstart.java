@@ -91,6 +91,7 @@ public class ContainerCRUDQuickstart {
         logger.info("Done.");
     }
 
+    // Container create
     private void createContainerIfNotExists() throws Exception {
         logger.info("Create container " + containerName + " if not exists.");
 
@@ -98,7 +99,7 @@ public class ContainerCRUDQuickstart {
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/lastName");
 
-        //  Create container with 400 RU/s
+        //  Create container with 200 RU/s
         container = database.createContainerIfNotExists(containerProperties, 200).getContainer();
 
         logger.info("Done.");
@@ -143,7 +144,7 @@ public class ContainerCRUDQuickstart {
 
     // Container delete
     private void deleteAContainer() throws Exception {
-        logger.info("Last step: delete container " + containerName + " by ID.");
+        logger.info("Delete container " + containerName + " by ID.");
 
         // Delete container
         CosmosContainerResponse containerResp = database.getContainer(containerName).delete(new CosmosContainerRequestOptions());
