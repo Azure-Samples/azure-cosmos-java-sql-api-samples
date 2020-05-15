@@ -28,8 +28,8 @@ public class Address {
         this.city = city;
     }
 
-    private String state;
-    private String county;
-    private String city;
+    private String state="";
+    private String county="";
+    private String city="";
 }
 

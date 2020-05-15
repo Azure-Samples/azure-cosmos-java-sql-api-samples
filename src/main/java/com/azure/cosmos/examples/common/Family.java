@@ -63,12 +63,12 @@ public class Family {
         this.isRegistered = isRegistered;
     }
 
-    private String id;
-    private String lastName;
-    private String district;
-    private Parent[] parents;
-    private Child[] children;
-    private Address address;
-    private boolean isRegistered;
+    private String id="";
+    private String lastName="";
+    private String district="";
+    private Parent[] parents={};
+    private Child[] children={};
+    private Address address=new Address();
+    private boolean isRegistered=false;
 }
 
