@@ -8,6 +8,7 @@ import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
+import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosClientException;
 import com.azure.cosmos.CosmosPagedFlux;
@@ -26,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
 public class SampleDocumentationSnippetsAsync {
@@ -38,7 +40,7 @@ public class SampleDocumentationSnippetsAsync {
     protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class.getSimpleName());
 
     /**
-     * This file organizes Azure Docs Azure Cosmos DB code snippets to enable easily upgrading to new Maven artifacts.
+     * This file organizes Azure Docs Azure Cosmos DB async code snippets to enable easily upgrading to new Maven artifacts.
      * Usage: upgrade pom.xml to the latest Java SDK Maven artifact; rebuild this project; correct any public surface changes.
      * <p>
      * -
@@ -46,6 +48,31 @@ public class SampleDocumentationSnippetsAsync {
     //  <Main>
     public static void main(String[] args) {
         // Do nothing. This file is meant to be built but not executed.
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/tutorial-global-distribution-sql-api
+     * Tutorial: Set up Azure Cosmos DB global distribution using the SQL API
+     */
+
+    /** Preferred locations */
+    public static void TutorialSetUpAzureCosmosDBGlobalDistributionUsingTheSqlApiPreferredLocationsAsync() {
+        String MASTER_KEY = "";
+        String HOST = "";
+
+        //  <TutorialGlobalDistributionPreferredLocationAsync>
+
+        ConnectionPolicy policy = new ConnectionPolicy();
+        policy.setUsingMultipleWriteLocations(true);
+        policy.setPreferredLocations(Arrays.asList("East US", "West US", "Canada Central"));
+        CosmosAsyncClient client =
+                new CosmosClientBuilder()
+                        .setEndpoint(HOST)
+                        .setKey(MASTER_KEY)
+                        .setConnectionPolicy(policy)
+                        .buildAsyncClient();
+
+        //  </TutorialGlobalDistributionPreferredLocationAsync>
     }
 
 }
