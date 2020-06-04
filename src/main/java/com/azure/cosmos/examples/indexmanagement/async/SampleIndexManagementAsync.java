@@ -154,16 +154,12 @@ public class SampleIndexManagementAsync {
 
         // Included paths
         List<IncludedPath> includedPaths = new ArrayList<>();
-        IncludedPath includedPath = new IncludedPath();
-        includedPath.setPath("/*");
-        includedPaths.add(includedPath);
+        includedPaths.add(new IncludedPath("/*"));
         indexingPolicy.setIncludedPaths(includedPaths);
 
         // Excluded paths
         List<ExcludedPath> excludedPaths = new ArrayList<>();
-        ExcludedPath excludedPath = new ExcludedPath();
-        excludedPath.setPath("/name/*");
-        excludedPaths.add(excludedPath);
+        excludedPaths.add(new ExcludedPath("/name/*"));
         indexingPolicy.setExcludedPaths(excludedPaths);
 
         // Spatial indices - if you need them, here is how to set them up:

@@ -143,16 +143,12 @@ public class SampleIndexManagement {
 
         // Included paths
         List<IncludedPath> includedPaths = new ArrayList<>();
-        IncludedPath includedPath = new IncludedPath();
-        includedPath.setPath("/*");
-        includedPaths.add(includedPath);
+        includedPaths.add(new IncludedPath("/*"));
         indexingPolicy.setIncludedPaths(includedPaths);
 
         // Excluded paths
         List<ExcludedPath> excludedPaths = new ArrayList<>();
-        ExcludedPath excludedPath = new ExcludedPath();
-        excludedPath.setPath("/name/*");
-        excludedPaths.add(excludedPath);
+        excludedPaths.add(new ExcludedPath("/name/*"));
         indexingPolicy.setExcludedPaths(excludedPaths);
 
         // Spatial indices - if you need them, here is how to set them up:
@@ -236,7 +232,7 @@ public class SampleIndexManagement {
                 double requestCharge = item.getRequestCharge();
                 Duration requestLatency = item.getDuration();
                 logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
-                        item.getResource().getId(), requestCharge, requestLatency));
+                        item.getItem().getId(), requestCharge, requestLatency));
             } catch (CosmosException e) {
                 e.printStackTrace();
                 logger.error(String.format("Read Item failed with %s", e));

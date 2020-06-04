@@ -150,7 +150,7 @@ public class DocumentCRUDQuickstart {
         logger.info("Read document " + documentId + " by ID.");
 
         //  Read document by ID
-        Family family = container.readItem(documentId,new PartitionKey(documentLastName),Family.class).getResource();
+        Family family = container.readItem(documentId,new PartitionKey(documentLastName),Family.class).getItem();
 
         // Check result
         logger.info("Finished reading family " + family.getId() + " with partition key " + family.getLastName());
@@ -234,7 +234,7 @@ public class DocumentCRUDQuickstart {
         logger.info("Read document " + documentId + " to obtain current ETag: " + etag);
 
         // Modify document
-        Family family = famResp.getResource();
+        Family family = famResp.getItem();
         family.setRegistered(!family.isRegistered());
 
         // Persist the change back to the server, updating the ETag in the process
@@ -283,7 +283,7 @@ public class DocumentCRUDQuickstart {
         logger.info("Re-read doc with status code of {} (we anticipate failure due to ETag not having changed.)", failResp.getStatusCode());
 
         // Replace the doc with a modified version, which will update ETag
-        Family family = famResp.getResource();
+        Family family = famResp.getItem();
         family.setRegistered(!family.isRegistered());
         CosmosItemResponse<Family> failedFamResp =
                 container.replaceItem(family,family.getId(),new PartitionKey(family.getLastName()),new CosmosItemRequestOptions());

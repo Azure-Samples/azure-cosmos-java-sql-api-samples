@@ -193,7 +193,7 @@ public class SampleCRUDQuickstart {
                 double requestCharge = item.getRequestCharge();
                 Duration requestLatency = item.getDuration();
                 logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
-                        item.getResource().getId(), requestCharge, requestLatency));
+                        item.getItem().getId(), requestCharge, requestLatency));
             } catch (CosmosException e) {
                 e.printStackTrace();
                 logger.info(String.format("Read Item failed with %s", e));
