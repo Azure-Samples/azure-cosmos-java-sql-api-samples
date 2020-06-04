@@ -11,12 +11,15 @@ import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
+import com.azure.cosmos.implementation.guava25.collect.Lists;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
 import com.azure.cosmos.models.CosmosStoredProcedureResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,7 +113,10 @@ public class SampleStoredProcedure {
 
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/id");
-        container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
+
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        container = database.createContainerIfNotExists(containerProperties, throughputProperties).getContainer();
     }
 
     public void shutdown() throws Exception {
@@ -142,9 +148,8 @@ public class SampleStoredProcedure {
     private void readAllSprocs() throws Exception {
         logger.info("Listing all stored procedures associated with container " + containerName + "\n");
 
-        FeedOptions feedOptions = new FeedOptions();
         CosmosPagedIterable<CosmosStoredProcedureProperties> feedResponseIterable =
-                container.getScripts().readAllStoredProcedures(feedOptions);
+                container.getScripts().readAllStoredProcedures();
 
         Iterator<CosmosStoredProcedureProperties> feedResponseIterator = feedResponseIterable.iterator();
 

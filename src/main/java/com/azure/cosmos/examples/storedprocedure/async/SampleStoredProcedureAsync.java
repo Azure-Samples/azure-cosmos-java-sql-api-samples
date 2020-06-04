@@ -12,11 +12,14 @@ import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.implementation.ConnectionPolicy;
+import com.azure.cosmos.implementation.guava25.collect.Lists;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,7 +118,10 @@ public class SampleStoredProcedureAsync {
 
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/id");
-        database.createContainerIfNotExists(containerProperties, 400).flatMap(containerResponse -> {
+
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        database.createContainerIfNotExists(containerProperties, throughputProperties).flatMap(containerResponse -> {
             container = containerResponse.getContainer();
             return Mono.empty();
         }).block();
@@ -149,9 +155,8 @@ public class SampleStoredProcedureAsync {
 
     private void readAllSprocs() throws Exception {
 
-        FeedOptions feedOptions = new FeedOptions();
         CosmosPagedFlux<CosmosStoredProcedureProperties> fluxResponse =
-                container.getScripts().readAllStoredProcedures(feedOptions);
+                container.getScripts().readAllStoredProcedures();
 
         final CountDownLatch completionLatch = new CountDownLatch(1);
 

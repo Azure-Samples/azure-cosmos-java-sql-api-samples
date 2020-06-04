@@ -21,6 +21,7 @@ import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.QueryRequestOptions;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.models.ThroughputProperties;
@@ -102,7 +103,7 @@ public class QueriesQuickstart {
         createDocument();
 
         queryAllDocuments();
-        queryWithPagingAndContinuationTokenAndPrintQueryCharge(new FeedOptions());
+        queryWithPagingAndContinuationTokenAndPrintQueryCharge(new QueryRequestOptions());
         queryEquality();
         queryInequality();
         queryRange();
@@ -122,7 +123,7 @@ public class QueriesQuickstart {
     private void executeQueryPrintSingleResult(String sql) {
         logger.info("Execute query {}",sql);
 
-        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new FeedOptions(), Family.class);
+        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new QueryRequestOptions(), Family.class);
 
         // Print
         if (filteredFamilies.iterator().hasNext()) {
@@ -136,7 +137,7 @@ public class QueriesQuickstart {
     private void executeQueryWithQuerySpecPrintSingleResult(SqlQuerySpec querySpec) {
         logger.info("Execute query {}",querySpec.getQueryText());
 
-        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(querySpec, new FeedOptions(), Family.class);
+        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(querySpec, new QueryRequestOptions(), Family.class);
 
         // Print
         if (filteredFamilies.iterator().hasNext()) {
@@ -196,7 +197,7 @@ public class QueriesQuickstart {
         executeQueryPrintSingleResult("SELECT * FROM c");
     }
 
-    private void queryWithPagingAndContinuationTokenAndPrintQueryCharge(FeedOptions options) throws Exception {
+    private void queryWithPagingAndContinuationTokenAndPrintQueryCharge(QueryRequestOptions options) throws Exception {
         logger.info("Query with paging and continuation token; print the total RU charge of the query");
 
         String query = "SELECT * FROM Families";
@@ -214,14 +215,10 @@ public class QueriesQuickstart {
             logger.info("Receiving a set of query response pages.");
             logger.info("Continuation Token: " + continuationToken + "\n");
 
-            FeedOptions queryOptions = new FeedOptions();
-
-            // note that setMaxItemCount sets the number of items to return in a single page result
-            queryOptions.setMaxItemCount(pageSize);
-            queryOptions.setRequestContinuation(continuationToken);
+            QueryRequestOptions queryOptions = new QueryRequestOptions();
 
             Iterable<FeedResponse<Family>> feedResponseIterator =
-                    container.queryItems(query, queryOptions, Family.class).iterableByPage();
+                    container.queryItems(query, queryOptions, Family.class).iterableByPage(continuationToken,pageSize);
 
             for (FeedResponse<Family> page : feedResponseIterator) {
                 logger.info(String.format("Current page number: %d", currentPageNumber));
@@ -255,7 +252,7 @@ public class QueriesQuickstart {
     private void parallelQueryWithPagingAndContinuationTokenAndPrintQueryCharge() throws Exception {
         logger.info("Parallel implementation of:");
 
-        FeedOptions options = new FeedOptions();
+        QueryRequestOptions options = new QueryRequestOptions();
 
         // 0 maximum parallel tasks, effectively serial execution
         options.setMaxDegreeOfParallelism(0);
@@ -379,7 +376,7 @@ public class QueriesQuickstart {
     private void queryWithQuerySpec() throws Exception {
         logger.info("Query with SqlQuerySpec");
 
-        FeedOptions options = new FeedOptions();
+        QueryRequestOptions options = new QueryRequestOptions();
         options.setPartitionKey(new PartitionKey("Witherspoon"));
 
         // Simple query with a single property equality comparison

@@ -17,6 +17,8 @@ import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -196,17 +198,18 @@ public class SampleCRUDQuickstart {
 
     private void queryItems() {
         //  <QueryItems>
+
         // Set some common query options
-        FeedOptions queryOptions = new FeedOptions();
-        queryOptions.setMaxItemCount(10);
+        int preferredPageSize = 10;
+        QueryRequestOptions queryOptions = new QueryRequestOptions();
         //queryOptions.setEnableCrossPartitionQuery(true); //No longer necessary in SDK v4
         //  Set populate query metrics to get metrics around query executions
-        queryOptions.setPopulateQueryMetrics(true);
+        queryOptions.setQueryMetricsEnabled(true);
 
         CosmosPagedIterable<Family> familiesPagedIterable = container.queryItems(
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
-        familiesPagedIterable.iterableByPage().forEach(cosmosItemPropertiesFeedResponse -> {
+        familiesPagedIterable.iterableByPage(preferredPageSize).forEach(cosmosItemPropertiesFeedResponse -> {
             logger.info("Got a page of query result with " +
                     cosmosItemPropertiesFeedResponse.getResults().size() + " items(s)"
                     + " and request charge of " + cosmosItemPropertiesFeedResponse.getRequestCharge());

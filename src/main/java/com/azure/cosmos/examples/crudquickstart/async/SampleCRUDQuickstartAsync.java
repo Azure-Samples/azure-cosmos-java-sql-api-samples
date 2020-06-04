@@ -19,6 +19,7 @@ import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.QueryRequestOptions;
 import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -292,18 +293,19 @@ public class SampleCRUDQuickstartAsync {
         //  <QueryItems>
         // Set some common query options
 
-        FeedOptions queryOptions = new FeedOptions();
-        queryOptions.setMaxItemCount(10);
-        //queryOptions.setEnableCrossPartitionQuery(true); //No longer needed in SDK v4
+        int preferredPageSize = 10; // We'll use this later
+
+        QueryRequestOptions queryOptions = new QueryRequestOptions();
+
         //  Set populate query metrics to get metrics around query executions
-        queryOptions.setPopulateQueryMetrics(true);
+        queryOptions.setQueryMetricsEnabled(true);
 
         CosmosPagedFlux<Family> pagedFluxResponse = container.queryItems(
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
-        pagedFluxResponse.byPage().subscribe(
+        pagedFluxResponse.byPage(preferredPageSize).subscribe(
                 fluxResponse -> {
                     logger.info("Got a page of query result with " +
                             fluxResponse.getResults().size() + " items(s)"

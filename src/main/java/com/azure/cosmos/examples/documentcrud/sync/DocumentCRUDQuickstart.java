@@ -17,6 +17,7 @@ import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.QueryRequestOptions;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
@@ -158,7 +159,7 @@ public class DocumentCRUDQuickstart {
         logger.info("Read all documents in container " + containerName + ".");
 
         //  Read all documents in the container
-        CosmosPagedIterable<Family> families = container.readAllItems(new FeedOptions(),Family.class);
+        CosmosPagedIterable<Family> families = container.readAllItems(new QueryRequestOptions(),Family.class);
 
         // Print
         String msg="Listing documents in container:\n";
@@ -175,7 +176,7 @@ public class DocumentCRUDQuickstart {
 
         String sql = "SELECT * FROM c WHERE c.lastName = 'Witherspoon'";
 
-        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new FeedOptions(), Family.class);
+        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new QueryRequestOptions(), Family.class);
 
         // Print
         if (filteredFamilies.iterator().hasNext()) {

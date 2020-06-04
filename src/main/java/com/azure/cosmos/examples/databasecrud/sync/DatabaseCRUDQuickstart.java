@@ -97,7 +97,7 @@ public class DatabaseCRUDQuickstart {
         logger.info("Read all databases in the account.");
 
         //  Read all databases in the account
-        CosmosPagedIterable<CosmosDatabaseProperties> databases = client.readAllDatabases(new FeedOptions());
+        CosmosPagedIterable<CosmosDatabaseProperties> databases = client.readAllDatabases();
 
         // Print
         String msg="Listing databases in account:\n";
