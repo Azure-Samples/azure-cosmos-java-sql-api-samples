@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.DoubleAccumulator;
 
 
 /*
@@ -52,7 +53,7 @@ public class SampleRequestThroughputAsync {
     private static AtomicBoolean resources_created = new AtomicBoolean(false);
     private static AtomicInteger number_docs_inserted = new AtomicInteger(0);
     private static AtomicBoolean resources_deleted = new AtomicBoolean(false);
-    private static AtomicDouble total_charge = new AtomicDouble(0.0);
+    private static AtomicInteger total_charge = new AtomicInteger(0);
 
     public static void requestThroughputDemo() {
 
@@ -110,7 +111,7 @@ public class SampleRequestThroughputAsync {
 
                     if (itemResponse.getStatusCode() == 201) {
                         number_docs_inserted.getAndIncrement();
-                        total_charge.getAndAdd(itemResponse.getRequestCharge());
+                        total_charge.getAndAdd((int)(itemResponse.getRequestCharge()));
                     }
                     else
                         logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());

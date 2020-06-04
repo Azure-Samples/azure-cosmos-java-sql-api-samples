@@ -52,7 +52,7 @@ public class SampleRequestThroughput {
     private static CosmosDatabase database;
     private static CosmosContainer container;
     private static AtomicInteger number_docs_inserted = new AtomicInteger(0);
-    private static AtomicDouble total_charge = new AtomicDouble(0.0);
+    private static AtomicInteger total_charge = new AtomicInteger(0.0);
     private static int last_docs_inserted=0;
     private static double last_total_charge=0.0;
     private static double toc_time=0.0;
@@ -124,7 +124,7 @@ public class SampleRequestThroughput {
             CosmosItemResponse<JsonNode> itemResponse = container.createItem(doc);
             if (itemResponse.getStatusCode() == 201) {
                 number_docs_inserted.getAndIncrement();
-                total_charge.getAndAdd(itemResponse.getRequestCharge());
+                total_charge.getAndAdd((int)itemResponse.getRequestCharge());
             }
             else
                 logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());
