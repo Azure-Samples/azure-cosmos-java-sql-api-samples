@@ -101,10 +101,10 @@ public class SampleStoredProcedure {
         //  Create sync client
         //  <CreateSyncClient>
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(defaultPolicy)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .connectionPolicy(defaultPolicy)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
         logger.info("Create database " + databaseName + " with container " + containerName + " if either does not already exist.\n");

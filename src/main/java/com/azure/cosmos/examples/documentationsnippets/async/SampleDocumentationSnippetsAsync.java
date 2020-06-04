@@ -67,9 +67,9 @@ public class SampleDocumentationSnippetsAsync {
         policy.setPreferredLocations(Arrays.asList("East US", "West US", "Canada Central"));
         CosmosAsyncClient client =
                 new CosmosClientBuilder()
-                        .setEndpoint(HOST)
-                        .setKey(MASTER_KEY)
-                        .setConnectionPolicy(policy)
+                        .endpoint(HOST)
+                        .key(MASTER_KEY)
+                        .connectionPolicy(policy)
                         .buildAsyncClient();
 
         //  </TutorialGlobalDistributionPreferredLocationAsync>

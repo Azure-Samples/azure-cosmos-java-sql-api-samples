@@ -67,9 +67,9 @@ public class SampleDocumentationSnippets {
         policy.setPreferredLocations(Arrays.asList("East US", "West US", "Canada Central"));
         CosmosClient client =
                 new CosmosClientBuilder()
-                        .setEndpoint(HOST)
-                        .setKey(MASTER_KEY)
-                        .setConnectionPolicy(policy)
+                        .endpoint(HOST)
+                        .key(MASTER_KEY)
+                        .connectionPolicy(policy)
                         .buildClient();
 
         //  </TutorialGlobalDistributionPreferredLocationSync>

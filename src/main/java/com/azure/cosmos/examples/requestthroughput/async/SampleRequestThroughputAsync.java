@@ -62,10 +62,10 @@ public class SampleRequestThroughputAsync {
         // Create Async client.
         // Building an async client is still a sync operation.
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(ConnectionPolicy.getDefaultPolicy())
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .connectionPolicy(ConnectionPolicy.getDefaultPolicy())
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildAsyncClient();
 
         // Describe the logic of database and container creation using Reactor...

@@ -66,10 +66,10 @@ public class SampleRequestThroughput {
         my_connection_policy.setThrottlingRetryOptions(retry_options);
 
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(my_connection_policy)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .connectionPolicy(my_connection_policy)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
         // This code synchronously sends a request to create a database.

@@ -88,10 +88,10 @@ public class SampleIndexManagement {
         //  Create sync client
         //  <CreateSyncClient>
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(defaultPolicy)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .connectionPolicy(defaultPolicy)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
         //  </CreateSyncClient>
