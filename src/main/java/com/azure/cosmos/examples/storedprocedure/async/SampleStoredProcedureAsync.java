@@ -122,7 +122,7 @@ public class SampleStoredProcedureAsync {
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         database.createContainerIfNotExists(containerProperties, throughputProperties).flatMap(containerResponse -> {
-            container = containerResponse.getContainer();
+            container = database.getContainer(containerResponse.getProperties().getId());
             return Mono.empty();
         }).block();
     }

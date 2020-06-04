@@ -13,6 +13,7 @@ import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
@@ -122,7 +123,8 @@ public class DocumentCRUDQuickstart {
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
 
         //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties, throughputProperties).getContainer();
+        CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(containerResponse.getProperties().getId());
 
         logger.info("Done.");
     }

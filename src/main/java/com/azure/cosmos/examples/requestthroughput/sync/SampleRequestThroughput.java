@@ -10,6 +10,7 @@ import com.azure.cosmos.ThrottlingRetryOptions;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.IndexingMode;
@@ -79,7 +80,10 @@ public class SampleRequestThroughput {
         CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
         //containerProperties.setIndexingPolicy(indexingPolicy);
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
-        container = database.createContainerIfNotExists(containerProperties, throughputProperties).getContainer();
+
+        CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(containerResponse.getProperties().getId());
+
         logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
         // Resources are ready.
         //

@@ -72,7 +72,7 @@ public class SampleRequestThroughputAsync {
             ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
             return database.createContainerIfNotExists(containerProperties, throughputProperties);
         }).flatMap(containerResponse -> {
-            container = containerResponse.getContainer();
+            container = database.getContainer(containerResponse.getProperties().getId());
             logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
             return Mono.empty();
         });

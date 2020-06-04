@@ -207,7 +207,7 @@ public class SampleIndexManagementAsync {
 
         //  Create container with 400 RU/s
         containerIfNotExists.flatMap(containerResponse -> {
-            container = containerResponse.getContainer();
+            container = database.getContainer(containerResponse.getProperties().getId());
             logger.info("Checking container " + container.getId() + " completed!\n");
             return Mono.empty();
         }).block();

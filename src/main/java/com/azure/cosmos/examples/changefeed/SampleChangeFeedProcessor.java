@@ -206,7 +206,7 @@ public class SampleChangeFeedProcessor {
             throw new RuntimeException(String.format("Failed to create collection %s in database %s.", collectionName, databaseName));
         }
 
-        return containerResponse.getContainer();
+        return databaseLink.getContainer(containerResponse.getProperties().getId());
     }
 
     public static CosmosAsyncContainer createNewLeaseCollection(CosmosAsyncClient client, String databaseName, String leaseCollectionName) {
@@ -249,7 +249,7 @@ public class SampleChangeFeedProcessor {
             throw new RuntimeException(String.format("Failed to create collection %s in database %s.", leaseCollectionName, databaseName));
         }
 
-        return leaseContainerResponse.getContainer();
+        return databaseLink.getContainer(leaseContainerResponse.getProperties().getId());
     }
 
     public static void createNewDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count, Duration delay) {

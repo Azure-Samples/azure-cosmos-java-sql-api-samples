@@ -22,6 +22,7 @@ import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,11 +158,12 @@ public class SampleCRUDQuickstartAsync {
         //  <CreateContainerIfNotExists>
 
         CosmosContainerProperties containerProperties = new CosmosContainerProperties(containerName, "/lastName");
-        Mono<CosmosContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        Mono<CosmosContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, throughputProperties);
 
         //  Create container with 400 RU/s
         CosmosContainerResponse cosmosContainerResponse = containerIfNotExists.block();
-        container = cosmosContainerResponse.getContainer();
+        container = database.getContainer(cosmosContainerResponse.getProperties().getId());
         //  </CreateContainerIfNotExists>
 
         //Modify existing container

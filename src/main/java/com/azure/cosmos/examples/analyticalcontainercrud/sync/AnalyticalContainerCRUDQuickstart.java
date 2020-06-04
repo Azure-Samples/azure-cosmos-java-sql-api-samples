@@ -99,8 +99,9 @@ public class AnalyticalContainerCRUDQuickstart {
         // Set analytical store properties
         containerProperties.setAnalyticalStoreTimeToLiveInSeconds(-1);
 
-        //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties).getContainer();
+        //  Create container
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties);
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }

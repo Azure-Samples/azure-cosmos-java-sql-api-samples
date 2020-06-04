@@ -13,6 +13,7 @@ import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.implementation.guava25.collect.Lists;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
@@ -118,7 +119,8 @@ public class SampleStoredProcedure {
 
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
-        container = database.createContainerIfNotExists(containerProperties, throughputProperties).getContainer();
+        CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(containerResponse.getProperties().getId());
     }
 
     public void shutdown() throws Exception {

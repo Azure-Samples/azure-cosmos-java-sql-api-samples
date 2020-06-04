@@ -104,7 +104,8 @@ public class ContainerCRUDQuickstart {
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
 
         //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties, throughputProperties).getContainer();
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }

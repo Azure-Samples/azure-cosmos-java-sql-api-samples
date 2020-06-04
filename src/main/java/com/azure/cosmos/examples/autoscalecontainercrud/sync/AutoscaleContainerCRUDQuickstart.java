@@ -101,8 +101,9 @@ public class AutoscaleContainerCRUDQuickstart {
         ThroughputProperties autoscaleThroughputProperties = ThroughputProperties.createAutoscaledThroughput(200); //Set autoscale max RU/s
 
         // Create the container with autoscale enabled
-        container = database.createContainer(autoscaleContainerProperties, autoscaleThroughputProperties,
-                new CosmosContainerRequestOptions()).getContainer();
+        CosmosContainerResponse databaseResponse = database.createContainer(autoscaleContainerProperties, autoscaleThroughputProperties,
+                new CosmosContainerRequestOptions());
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
