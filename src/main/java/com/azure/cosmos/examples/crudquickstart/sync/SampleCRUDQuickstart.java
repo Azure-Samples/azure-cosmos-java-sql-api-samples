@@ -8,6 +8,7 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
@@ -186,7 +187,7 @@ public class SampleCRUDQuickstart {
                 Duration requestLatency = item.getRequestLatency();
                 logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                         item.getResource().getId(), requestCharge, requestLatency));
-            } catch (CosmosClientException e) {
+            } catch (CosmosException e) {
                 e.printStackTrace();
                 logger.info(String.format("Read Item failed with %s", e));
             }

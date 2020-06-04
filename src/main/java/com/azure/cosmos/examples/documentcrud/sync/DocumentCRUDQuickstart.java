@@ -8,6 +8,7 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
@@ -251,7 +252,7 @@ public class DocumentCRUDQuickstart {
             CosmosItemResponse<Family> failedFamResp =
                     container.replaceItem(family,family.getId(),new PartitionKey(family.getLastName()),requestOptions);
 
-        } catch (CosmosClientException cce) {
+        } catch (CosmosException cce) {
             logger.info("As expected, we have a pre-condition failure exception\n");
         }
 

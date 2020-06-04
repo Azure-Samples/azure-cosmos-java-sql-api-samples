@@ -229,7 +229,7 @@ public class SampleIndexManagement {
                 Duration requestLatency = item.getRequestLatency();
                 logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                         item.getResource().getId(), requestCharge, requestLatency));
-            } catch (CosmosClientException e) {
+            } catch (CosmosException e) {
                 e.printStackTrace();
                 logger.error(String.format("Read Item failed with %s", e));
             }

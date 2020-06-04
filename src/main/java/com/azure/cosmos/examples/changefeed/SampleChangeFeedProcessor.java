@@ -8,6 +8,7 @@ import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.DirectConnectionConfig;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.implementation.Utils;
@@ -15,6 +16,7 @@ import com.azure.cosmos.implementation.apachecommons.lang.RandomStringUtils;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -180,10 +182,10 @@ public class SampleChangeFeedProcessor {
                 throw new IllegalArgumentException(String.format("Collection %s already exists in database %s.", collectionName, databaseName));
             }
         } catch (RuntimeException ex) {
-            if (ex instanceof CosmosClientException) {
-                CosmosClientException cosmosClientException = (CosmosClientException) ex;
+            if (ex instanceof CosmosException) {
+                CosmosException CosmosException = (CosmosException) ex;
 
-                if (cosmosClientException.getStatusCode() != 404) {
+                if (CosmosException.getStatusCode() != 404) {
                     throw ex;
                 }
             } else {
@@ -193,7 +195,10 @@ public class SampleChangeFeedProcessor {
 
         CosmosContainerProperties containerSettings = new CosmosContainerProperties(collectionName, "/id");
         CosmosContainerRequestOptions requestOptions = new CosmosContainerRequestOptions();
-        containerResponse = databaseLink.createContainer(containerSettings, 10000, requestOptions).block();
+
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(10000);
+
+        containerResponse = databaseLink.createContainer(containerSettings, throughputProperties, requestOptions).block();
 
         if (containerResponse == null) {
             throw new RuntimeException(String.format("Failed to create collection %s in database %s.", collectionName, databaseName));
@@ -220,10 +225,10 @@ public class SampleChangeFeedProcessor {
                 }
             }
         } catch (RuntimeException ex) {
-            if (ex instanceof CosmosClientException) {
-                CosmosClientException cosmosClientException = (CosmosClientException) ex;
+            if (ex instanceof CosmosException) {
+                CosmosException CosmosException = (CosmosException) ex;
 
-                if (cosmosClientException.getStatusCode() != 404) {
+                if (CosmosException.getStatusCode() != 404) {
                     throw ex;
                 }
             } else {
@@ -234,7 +239,9 @@ public class SampleChangeFeedProcessor {
         CosmosContainerProperties containerSettings = new CosmosContainerProperties(leaseCollectionName, "/id");
         CosmosContainerRequestOptions requestOptions = new CosmosContainerRequestOptions();
 
-        leaseContainerResponse = databaseLink.createContainer(containerSettings, 400, requestOptions).block();
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        leaseContainerResponse = databaseLink.createContainer(containerSettings, throughputProperties, requestOptions).block();
 
         if (leaseContainerResponse == null) {
             throw new RuntimeException(String.format("Failed to create collection %s in database %s.", leaseCollectionName, databaseName));

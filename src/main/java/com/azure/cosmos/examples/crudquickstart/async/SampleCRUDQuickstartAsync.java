@@ -9,6 +9,7 @@ import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.DirectConnectionConfig;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
@@ -204,9 +205,9 @@ public class SampleCRUDQuickstartAsync {
                                     charge));
                         },
                         err -> {
-                            if (err instanceof CosmosClientException) {
+                            if (err instanceof CosmosException) {
                                 //Client-specific errors
-                                CosmosClientException cerr = (CosmosClientException) err;
+                                CosmosException cerr = (CosmosException) err;
                                 cerr.printStackTrace();
                                 logger.error(String.format("Read Item failed with %s\n", cerr));
                             } else {
@@ -266,9 +267,9 @@ public class SampleCRUDQuickstartAsync {
                                     itemResponse.getItem().getId(), requestCharge, requestLatency));
                         },
                         err -> {
-                            if (err instanceof CosmosClientException) {
+                            if (err instanceof CosmosException) {
                                 //Client-specific errors
-                                CosmosClientException cerr = (CosmosClientException) err;
+                                CosmosException cerr = (CosmosException) err;
                                 cerr.printStackTrace();
                                 logger.error(String.format("Read Item failed with %s\n", cerr));
                             } else {
@@ -321,9 +322,9 @@ public class SampleCRUDQuickstartAsync {
                             .collect(Collectors.toList()));
                 },
                 err -> {
-                    if (err instanceof CosmosClientException) {
+                    if (err instanceof CosmosException) {
                         //Client-specific errors
-                        CosmosClientException cerr = (CosmosClientException) err;
+                        CosmosException cerr = (CosmosException) err;
                         cerr.printStackTrace();
                         logger.error(String.format("Read Item failed with %s\n", cerr));
                     } else {
