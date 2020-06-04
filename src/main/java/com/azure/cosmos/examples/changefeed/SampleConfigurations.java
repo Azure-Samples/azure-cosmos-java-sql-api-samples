@@ -2,9 +2,6 @@
 // Licensed under the MIT License.
 package com.azure.cosmos.examples.changefeed;
 
-import com.google.common.base.Strings;
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * Contains the configurations for tests.
  * <p>

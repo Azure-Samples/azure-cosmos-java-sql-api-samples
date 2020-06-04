@@ -1,7 +1,6 @@
 package com.azure.cosmos.examples.requestthroughput.sync;
 
 
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
@@ -15,8 +14,6 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.IndexingMode;
 import com.azure.cosmos.models.IndexingPolicy;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.util.concurrent.AtomicDouble;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;

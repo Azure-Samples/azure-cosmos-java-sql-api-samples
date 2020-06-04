@@ -3,22 +3,19 @@
 package com.azure.cosmos.examples.changefeed;
 
 import com.azure.cosmos.ChangeFeedProcessor;
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.implementation.Utils;
-import com.azure.cosmos.models.CosmosAsyncContainerResponse;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
+import com.azure.cosmos.models.CosmosContainerResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.scheduler.Schedulers;
@@ -172,7 +169,7 @@ public class SampleChangeFeedProcessor {
     public static CosmosAsyncContainer createNewCollection(CosmosAsyncClient client, String databaseName, String collectionName) {
         CosmosAsyncDatabase databaseLink = client.getDatabase(databaseName);
         CosmosAsyncContainer collectionLink = databaseLink.getContainer(collectionName);
-        CosmosAsyncContainerResponse containerResponse = null;
+        CosmosContainerResponse containerResponse = null;
 
         try {
             containerResponse = collectionLink.read().block();
@@ -206,7 +203,7 @@ public class SampleChangeFeedProcessor {
     public static CosmosAsyncContainer createNewLeaseCollection(CosmosAsyncClient client, String databaseName, String leaseCollectionName) {
         CosmosAsyncDatabase databaseLink = client.getDatabase(databaseName);
         CosmosAsyncContainer leaseCollectionLink = databaseLink.getContainer(leaseCollectionName);
-        CosmosAsyncContainerResponse leaseContainerResponse = null;
+        CosmosContainerResponse leaseContainerResponse = null;
 
         try {
             leaseContainerResponse = leaseCollectionLink.read().block();
