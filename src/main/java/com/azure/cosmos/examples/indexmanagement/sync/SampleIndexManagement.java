@@ -8,6 +8,7 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
@@ -216,7 +217,7 @@ public class SampleIndexManagement {
             //  Get request charge and other properties like latency, and diagnostics strings, etc.
             logger.info(String.format("Created item with request charge of %.2f within" +
                             " duration %s",
-                    item.getRequestCharge(), item.getRequestLatency()));
+                    item.getRequestCharge(), item.getDuration()));
             totalRequestCharge += item.getRequestCharge();
         }
         logger.info(String.format("Created %d items with total request " +
@@ -233,7 +234,7 @@ public class SampleIndexManagement {
             try {
                 CosmosItemResponse<Family> item = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
                 double requestCharge = item.getRequestCharge();
-                Duration requestLatency = item.getRequestLatency();
+                Duration requestLatency = item.getDuration();
                 logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                         item.getResource().getId(), requestCharge, requestLatency));
             } catch (CosmosException e) {

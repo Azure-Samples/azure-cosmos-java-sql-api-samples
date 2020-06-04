@@ -195,7 +195,7 @@ public class SampleCRUDQuickstartAsync {
                 .flatMap(itemResponse -> {
                     logger.info(String.format("Created item with request charge of %.2f within" +
                                     " duration %s",
-                            itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
+                            itemResponse.getRequestCharge(), itemResponse.getDuration()));
                     logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
                     return Mono.just(itemResponse.getRequestCharge());
                 }) //Flux of request charges
@@ -244,7 +244,7 @@ public class SampleCRUDQuickstartAsync {
 
             //  Get upsert request charge and other properties like latency, and diagnostics strings, etc.
             logger.info(String.format("Upserted item with request charge of %.2f within duration %s",
-                    item_resp.getRequestCharge(), item_resp.getRequestLatency()));
+                    item_resp.getRequestCharge(), item_resp.getDuration()));
 
             return Mono.empty();
         }).subscribe();
@@ -264,7 +264,7 @@ public class SampleCRUDQuickstartAsync {
                 .subscribe(
                         itemResponse -> {
                             double requestCharge = itemResponse.getRequestCharge();
-                            Duration requestLatency = itemResponse.getRequestLatency();
+                            Duration requestLatency = itemResponse.getDuration();
                             logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                                     itemResponse.getItem().getId(), requestCharge, requestLatency));
                         },

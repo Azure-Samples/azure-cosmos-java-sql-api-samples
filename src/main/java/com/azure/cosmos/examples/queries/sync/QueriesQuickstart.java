@@ -397,7 +397,7 @@ public class QueriesQuickstart {
         // Query using two properties within each document. WHERE Id == "" AND Address.City == ""
         // notice here how we are doing an equality comparison on the string value of City
 
-        paramList = new new ArrayList<SqlParameter>();
+        paramList = new ArrayList<SqlParameter>();
         paramList.add(new SqlParameter("@id", "AndersenFamily"));
         paramList.add(new SqlParameter("@city", "Seattle"));
         querySpec = new SqlQuerySpec(

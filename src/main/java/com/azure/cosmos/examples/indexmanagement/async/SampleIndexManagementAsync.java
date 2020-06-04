@@ -23,6 +23,7 @@ import com.azure.cosmos.models.IndexingMode;
 import com.azure.cosmos.models.IndexingPolicy;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -203,7 +204,8 @@ public class SampleIndexManagementAsync {
 
         // </CustomIndexingPolicy>
 
-        Mono<CosmosContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        Mono<CosmosContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, throughputProperties);
 
         //  Create container with 400 RU/s
         containerIfNotExists.flatMap(containerResponse -> {
@@ -228,7 +230,7 @@ public class SampleIndexManagementAsync {
                 .flatMap(itemResponse -> {
                     logger.info(String.format("Created item with request charge of %.2f within" +
                                     " duration %s",
-                            itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
+                            itemResponse.getRequestCharge(), itemResponse.getDuration()));
                     logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
                     return Mono.just(itemResponse.getRequestCharge());
                 }) //Flux of request charges
@@ -280,7 +282,7 @@ public class SampleIndexManagementAsync {
                 .subscribe(
                         itemResponse -> {
                             double requestCharge = itemResponse.getRequestCharge();
-                            Duration requestLatency = itemResponse.getRequestLatency();
+                            Duration requestLatency = itemResponse.getDuration();
                             logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                                     itemResponse.getItem().getId(), requestCharge, requestLatency));
                         },

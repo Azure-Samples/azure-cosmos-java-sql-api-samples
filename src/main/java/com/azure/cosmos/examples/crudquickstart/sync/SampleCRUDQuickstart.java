@@ -165,7 +165,7 @@ public class SampleCRUDQuickstart {
 
             //  Get request charge and other properties like latency, and diagnostics strings, etc.
             logger.info(String.format("Created item with request charge of %.2f within duration %s",
-                    item.getRequestCharge(), item.getRequestLatency()));
+                    item.getRequestCharge(), item.getDuration()));
 
             totalRequestCharge += item.getRequestCharge();
         }
@@ -180,7 +180,7 @@ public class SampleCRUDQuickstart {
 
         //  Get upsert request charge and other properties like latency, and diagnostics strings, etc.
         logger.info(String.format("Upserted item with request charge of %.2f within duration %s",
-                item.getRequestCharge(), item.getRequestLatency()));
+                item.getRequestCharge(), item.getDuration()));
     }
 
     private void readItems(ArrayList<Family> familiesToCreate) {
@@ -191,7 +191,7 @@ public class SampleCRUDQuickstart {
             try {
                 CosmosItemResponse<Family> item = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
                 double requestCharge = item.getRequestCharge();
-                Duration requestLatency = item.getRequestLatency();
+                Duration requestLatency = item.getDuration();
                 logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                         item.getResource().getId(), requestCharge, requestLatency));
             } catch (CosmosException e) {
