@@ -78,17 +78,15 @@ public class SampleCRUDQuickstart {
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
-        ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
-        //  Setting the preferred location to Cosmos DB Account region
-        //  West US is just an example. User should set preferred location to the Cosmos DB region closest to the application
-        defaultPolicy.setPreferredLocations(Lists.newArrayList("West US"));
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add("West US");
 
         //  Create sync client
         //  <CreateSyncClient>
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
-                .connectionPolicy(defaultPolicy)
+                .preferredRegions(preferredRegions)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 

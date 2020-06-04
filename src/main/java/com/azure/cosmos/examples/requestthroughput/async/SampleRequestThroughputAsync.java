@@ -54,14 +54,12 @@ public class SampleRequestThroughputAsync {
     private static AtomicDouble total_charge = new AtomicDouble(0.0);
 
     public static void requestThroughputDemo() {
-        ConnectionPolicy my_connection_policy = ConnectionPolicy.getDefaultPolicy();
 
         // Create Async client.
         // Building an async client is still a sync operation.
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
-                .connectionPolicy(ConnectionPolicy.getDefaultPolicy())
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildAsyncClient();
 

@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
@@ -55,14 +56,17 @@ public class SampleDocumentationSnippetsAsync {
 
         //  <TutorialGlobalDistributionPreferredLocationAsync>
 
-        ConnectionPolicy policy = new ConnectionPolicy();
-        policy.setUsingMultipleWriteLocations(true);
-        policy.setPreferredLocations(Arrays.asList("East US", "West US", "Canada Central"));
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add("East US");
+        preferredRegions.add( "West US");
+        preferredRegions.add("Canada Central");
+
         CosmosAsyncClient client =
                 new CosmosClientBuilder()
                         .endpoint(HOST)
                         .key(MASTER_KEY)
-                        .connectionPolicy(policy)
+                        .multipleWriteRegionsEnabled(true)
+                        .preferredRegions(preferredRegions)
                         .buildAsyncClient();
 
         //  </TutorialGlobalDistributionPreferredLocationAsync>

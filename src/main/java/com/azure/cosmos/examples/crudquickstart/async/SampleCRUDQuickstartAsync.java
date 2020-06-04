@@ -9,6 +9,7 @@ import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.DirectConnectionConfig;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
@@ -27,6 +28,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
@@ -81,17 +83,18 @@ public class SampleCRUDQuickstartAsync {
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
-        ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add("West US");
+
         //  Setting the preferred location to Cosmos DB Account region
         //  West US is just an example. User should set preferred location to the Cosmos DB region closest to the application
-        defaultPolicy.setPreferredLocations(Lists.newArrayList("West US"));
 
         //  Create async client
         //  <CreateAsyncClient>
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
-                .connectionPolicy(defaultPolicy)
+                .preferredRegions(preferredRegions)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildAsyncClient();
 
@@ -366,5 +369,6 @@ public class SampleCRUDQuickstartAsync {
         client.close();
         logger.info("Done.");
     }
+
 }
 

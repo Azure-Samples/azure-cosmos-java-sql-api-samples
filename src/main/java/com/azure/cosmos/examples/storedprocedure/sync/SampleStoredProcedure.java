@@ -24,6 +24,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 public class SampleStoredProcedure {
@@ -93,17 +94,15 @@ public class SampleStoredProcedure {
     public void setUp() throws Exception {
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
-        ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
-        //  Setting the preferred location to Cosmos DB Account region
-        //  West US is just an example. User should set preferred location to the Cosmos DB region closest to the application
-        defaultPolicy.setPreferredLocations(Lists.newArrayList("West US"));
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add("West US");
 
         //  Create sync client
         //  <CreateSyncClient>
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
-                .connectionPolicy(defaultPolicy)
+                .preferredRegions(preferredRegions)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 

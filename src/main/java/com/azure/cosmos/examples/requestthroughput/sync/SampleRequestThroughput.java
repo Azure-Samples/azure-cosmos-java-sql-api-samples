@@ -57,15 +57,10 @@ public class SampleRequestThroughput {
     private static double current_total_charge=0.0, rps=0.0, rups=0.0;
 
     public static void requestThroughputDemo() {
-        ConnectionPolicy my_connection_policy = ConnectionPolicy.getDefaultPolicy();
-        ThrottlingRetryOptions retry_options = new ThrottlingRetryOptions();
-        //retry_options.setMaxRetryWaitTime(Duration.ZERO);
-        my_connection_policy.setThrottlingRetryOptions(retry_options);
 
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
-                .connectionPolicy(my_connection_policy)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 

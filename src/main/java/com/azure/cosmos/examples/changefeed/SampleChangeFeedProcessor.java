@@ -8,6 +8,7 @@ import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.DirectConnectionConfig;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.implementation.Utils;
 import com.azure.cosmos.implementation.apachecommons.lang.RandomStringUtils;
@@ -154,7 +155,7 @@ public class SampleChangeFeedProcessor {
         return new CosmosClientBuilder()
                 .endpoint(SampleConfigurations.HOST)
                 .key(SampleConfigurations.MASTER_KEY)
-                .connectionPolicy(ConnectionPolicy.getDefaultPolicy())
+                .directMode(DirectConnectionConfig.getDefaultConfig())
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildAsyncClient();
     }

@@ -31,6 +31,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -383,7 +384,7 @@ public class QueriesQuickstart {
         // in SQL with SQL parameterization instead of inlining the
         // parameter values in the query string
 
-        SqlParameterList paramList = new SqlParameterList();
+        ArrayList<SqlParameter> paramList = new ArrayList<SqlParameter>();
         paramList.add(new SqlParameter("@id", "AndersenFamily"));
         SqlQuerySpec querySpec = new SqlQuerySpec(
                 "SELECT * FROM Families f WHERE (f.id = @id)",
@@ -394,7 +395,7 @@ public class QueriesQuickstart {
         // Query using two properties within each document. WHERE Id == "" AND Address.City == ""
         // notice here how we are doing an equality comparison on the string value of City
 
-        paramList = new SqlParameterList();
+        paramList = new new ArrayList<SqlParameter>();
         paramList.add(new SqlParameter("@id", "AndersenFamily"));
         paramList.add(new SqlParameter("@city", "Seattle"));
         querySpec = new SqlQuerySpec(
