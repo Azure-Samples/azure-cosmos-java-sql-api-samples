@@ -10,9 +10,11 @@ import com.azure.cosmos.ThrottlingRetryOptions;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.IndexingMode;
 import com.azure.cosmos.models.IndexingPolicy;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,14 +69,17 @@ public class SampleRequestThroughput {
         // This code synchronously sends a request to create a database.
         // While the client waits for a response, this thread is blocked from
         // performing other tasks.
-        database = client.createDatabaseIfNotExists("ContosoInventoryDB").getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists("ContosoInventoryDB");
+        database = client.getDatabase(databaseResponse.getProperties().getId());
+
         logger.info("\n\n\n\nCreated database ContosoInventoryDB.\n\n\n\n");
         //IndexingPolicy indexingPolicy = new IndexingPolicy();
         //indexingPolicy.setIndexingMode(IndexingMode.NONE);
         //indexingPolicy.setAutomatic(false);
         CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
         //containerProperties.setIndexingPolicy(indexingPolicy);
-        container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        container = database.createContainerIfNotExists(containerProperties, throughputProperties).getContainer();
         logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
         // Resources are ready.
         //

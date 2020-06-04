@@ -13,6 +13,7 @@ import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.implementation.guava25.collect.Lists;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
@@ -108,7 +109,9 @@ public class SampleStoredProcedure {
 
         logger.info("Create database " + databaseName + " with container " + containerName + " if either does not already exist.\n");
 
-        database = client.createDatabaseIfNotExists(databaseName).getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/id");

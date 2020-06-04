@@ -14,6 +14,7 @@ import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.implementation.guava25.collect.Lists;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.ExcludedPath;
@@ -118,7 +119,9 @@ public class SampleIndexManagement {
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
-        database = client.createDatabaseIfNotExists(databaseName).getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+        database = client.getDatabase(databaseResponse.getProperties().getId());
+
         //  </CreateDatabaseIfNotExists>
 
         logger.info("Checking database " + database.getId() + " completed!\n");

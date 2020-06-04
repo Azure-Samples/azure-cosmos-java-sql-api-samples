@@ -86,7 +86,8 @@ public class ContainerCRUDQuickstart {
         logger.info("Create database " + databaseName + " if not exists...");
 
         //  Create database if not exists
-        database = client.createDatabaseIfNotExists(databaseName).getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }

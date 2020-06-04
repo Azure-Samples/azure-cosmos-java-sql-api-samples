@@ -8,6 +8,7 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,10 +66,11 @@ public class SampleRequestThroughputAsync {
 
         // Describe the logic of database and container creation using Reactor...
         Mono<Void> databaseContainerIfNotExist = client.createDatabaseIfNotExists("ContosoInventoryDB").flatMap(databaseResponse -> {
-            database = databaseResponse.getDatabase();
+            database = client.getDatabase(databaseResponse.getProperties().getId());
             logger.info("\n\n\n\nCreated database ContosoInventoryDB.\n\n\n\n");
             CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
-            return database.createContainerIfNotExists(containerProperties, 400);
+            ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+            return database.createContainerIfNotExists(containerProperties, throughputProperties);
         }).flatMap(containerResponse -> {
             container = containerResponse.getContainer();
             logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");

@@ -143,7 +143,7 @@ public class SampleCRUDQuickstartAsync {
         //  <CreateDatabaseIfNotExists>
         Mono<CosmosDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
         databaseIfNotExists.flatMap(databaseResponse -> {
-            database = databaseResponse.getDatabase();
+            database = client.getDatabase(databaseResponse.getProperties().getId());
             logger.info("Checking database " + database.getId() + " completed!\n");
             return Mono.empty();
         }).block();

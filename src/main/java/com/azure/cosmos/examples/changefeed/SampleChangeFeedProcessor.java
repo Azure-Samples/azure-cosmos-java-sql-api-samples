@@ -16,6 +16,7 @@ import com.azure.cosmos.implementation.apachecommons.lang.RandomStringUtils;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -163,7 +164,8 @@ public class SampleChangeFeedProcessor {
     }
 
     public static CosmosAsyncDatabase createNewDatabase(CosmosAsyncClient client, String databaseName) {
-        return client.createDatabaseIfNotExists(databaseName).block().getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
+        return client.getDatabase(databaseResponse.getProperties().getId());
     }
 
     public static void deleteDatabase(CosmosAsyncDatabase cosmosDatabase) {

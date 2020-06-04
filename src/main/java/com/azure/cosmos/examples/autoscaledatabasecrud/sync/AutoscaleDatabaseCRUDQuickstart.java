@@ -81,7 +81,8 @@ public class AutoscaleDatabaseCRUDQuickstart {
         ThroughputProperties autoscaleThroughputProperties = ThroughputProperties.createAutoscaledThroughput(400); //Set autoscale max RU/s
 
         //Create the database with autoscale enabled
-        CosmosDatabase database = client.createDatabase(databaseName, autoscaleThroughputProperties).getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName, autoscaleThroughputProperties);
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }

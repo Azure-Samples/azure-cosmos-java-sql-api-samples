@@ -112,7 +112,7 @@ public class SampleStoredProcedureAsync {
         logger.info("Create database " + databaseName + " with container " + containerName + " if either does not already exist.\n");
 
         client.createDatabaseIfNotExists(databaseName).flatMap(databaseResponse -> {
-            database = databaseResponse.getDatabase();
+            database = client.getDatabase(databaseResponse.getProperties().getId());
             return Mono.empty();
         }).block();
 
