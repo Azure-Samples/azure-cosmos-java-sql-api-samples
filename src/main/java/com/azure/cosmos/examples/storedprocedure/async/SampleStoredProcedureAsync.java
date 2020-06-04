@@ -11,7 +11,9 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
+import com.azure.cosmos.implementation.ConnectionPolicy;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
@@ -80,7 +82,7 @@ public class SampleStoredProcedureAsync {
 
         //Perform a point-read to confirm that the item with id test_doc exists
         logger.info("Checking that a document was created by the stored procedure...");
-        CosmosAsyncItemResponse<CustomPOJO> test_resp =
+        CosmosItemResponse<CustomPOJO> test_resp =
                 container.readItem("test_doc", new PartitionKey("test_doc"), CustomPOJO.class).block();
         logger.info(String.format(
                 "Status return value of point-read for document created by stored procedure (200 indicates success): %d", test_resp.getStatusCode()));

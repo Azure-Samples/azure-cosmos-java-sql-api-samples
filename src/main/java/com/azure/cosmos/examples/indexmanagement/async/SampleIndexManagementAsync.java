@@ -13,6 +13,9 @@ import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.ExcludedPath;
 import com.azure.cosmos.models.IncludedPath;
 import com.azure.cosmos.models.IndexingMode;
@@ -126,7 +129,7 @@ public class SampleIndexManagementAsync {
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
-        Mono<CosmosAsyncDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
+        Mono<CosmosDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
         databaseIfNotExists.flatMap(databaseResponse -> {
             database = databaseResponse.getDatabase();
             logger.info("Checking database " + database.getId() + " completed!\n");
@@ -199,7 +202,7 @@ public class SampleIndexManagementAsync {
 
         // </CustomIndexingPolicy>
 
-        Mono<CosmosAsyncContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400);
+        Mono<CosmosContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400);
 
         //  Create container with 400 RU/s
         containerIfNotExists.flatMap(containerResponse -> {
@@ -270,7 +273,7 @@ public class SampleIndexManagementAsync {
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
         familiesToCreate.flatMap(family -> {
-            Mono<CosmosAsyncItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
+            Mono<CosmosItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
             return asyncItemResponseMono;
         })
                 .subscribe(

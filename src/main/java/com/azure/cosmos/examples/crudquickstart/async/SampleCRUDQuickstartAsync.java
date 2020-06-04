@@ -15,6 +15,9 @@ import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
+import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,7 +135,7 @@ public class SampleCRUDQuickstartAsync {
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
-        Mono<CosmosAsyncDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
+        Mono<CosmosDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
         databaseIfNotExists.flatMap(databaseResponse -> {
             database = databaseResponse.getDatabase();
             logger.info("Checking database " + database.getId() + " completed!\n");
@@ -148,16 +151,16 @@ public class SampleCRUDQuickstartAsync {
         //  <CreateContainerIfNotExists>
 
         CosmosContainerProperties containerProperties = new CosmosContainerProperties(containerName, "/lastName");
-        Mono<CosmosAsyncContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400);
+        Mono<CosmosContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400);
 
         //  Create container with 400 RU/s
-        CosmosAsyncContainerResponse cosmosContainerResponse = containerIfNotExists.block();
+        CosmosContainerResponse cosmosContainerResponse = containerIfNotExists.block();
         container = cosmosContainerResponse.getContainer();
         //  </CreateContainerIfNotExists>
 
         //Modify existing container
         containerProperties = cosmosContainerResponse.getProperties();
-        Mono<CosmosAsyncContainerResponse> propertiesReplace = container.replace(containerProperties, new CosmosContainerRequestOptions());
+        Mono<CosmosContainerResponse> propertiesReplace = container.replace(containerProperties, new CosmosContainerRequestOptions());
         propertiesReplace.flatMap(containerResponse -> {
             logger.info("setupContainer(): Container " + container.getId() + " in " + database.getId() +
                     "has been updated with it's new properties.");
@@ -229,7 +232,7 @@ public class SampleCRUDQuickstartAsync {
 
         //Upsert the modified item
         Mono.just(family_to_upsert).flatMap(item -> {
-            CosmosAsyncItemResponse<Family> item_resp = container.upsertItem(family_to_upsert).block();
+            CosmosItemResponse<Family> item_resp = container.upsertItem(family_to_upsert).block();
 
             //  Get upsert request charge and other properties like latency, and diagnostics strings, etc.
             logger.info(String.format("Upserted item with request charge of %.2f within duration %s",
@@ -247,7 +250,7 @@ public class SampleCRUDQuickstartAsync {
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
         familiesToCreate.flatMap(family -> {
-            Mono<CosmosAsyncItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
+            Mono<CosmosItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
             return asyncItemResponseMono;
         })
                 .subscribe(
