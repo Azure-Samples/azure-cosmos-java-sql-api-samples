@@ -12,6 +12,8 @@ import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.models.CosmosDatabaseProperties;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +101,7 @@ public class AutoscaleDatabaseCRUDQuickstart {
         logger.info("Read all databases in the account.");
 
         //  Read all databases in the account
-        CosmosPagedIterable<CosmosDatabaseProperties> databases = client.readAllDatabases(new FeedOptions());
+        CosmosPagedIterable<CosmosDatabaseProperties> databases = client.readAllDatabases();
 
         // Print
         String msg="Listing databases in account:\n";

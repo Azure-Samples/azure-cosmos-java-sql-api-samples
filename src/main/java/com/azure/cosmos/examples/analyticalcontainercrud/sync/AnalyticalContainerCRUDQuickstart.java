@@ -73,8 +73,6 @@ public class AnalyticalContainerCRUDQuickstart {
         createDatabaseIfNotExists();
         createContainerIfNotExists();
 
-        readContainerById();
-        readAllContainers();
         // deleteAContainer() is called at shutdown()
 
     }
@@ -101,44 +99,7 @@ public class AnalyticalContainerCRUDQuickstart {
         containerProperties.setAnalyticalStoreTimeToLiveInSeconds(-1);
 
         //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties, 200).getContainer();
-
-        logger.info("Done.");
-    }
-
-    // Update container throughput
-    private void updateContainerThroughput() throws Exception {
-        logger.info("Update throughput for container " + containerName + ".");
-
-        // Specify new throughput value
-        container.replaceProvisionedThroughput(400);
-
-        logger.info("Done.");
-    }
-
-    // Container read
-    private void readContainerById() throws Exception {
-        logger.info("Read container " + containerName + " by ID.");
-
-        //  Read container by ID
-        container = database.getContainer(containerName);
-
-        logger.info("Done.");
-    }
-
-    // Container read all
-    private void readAllContainers() throws Exception {
-        logger.info("Read all containers in database " + databaseName + ".");
-
-        //  Read all containers in the account
-        CosmosPagedIterable<CosmosContainerProperties> containers = database.readAllContainers(new FeedOptions());
-
-        // Print
-        String msg="Listing containers in database:\n";
-        for(CosmosContainerProperties containerProps : containers) {
-            msg += String.format("-Container ID: %s\n",containerProps.getId());
-        }
-        logger.info(msg + "\n");
+        container = database.createContainerIfNotExists(containerProperties).getContainer();
 
         logger.info("Done.");
     }

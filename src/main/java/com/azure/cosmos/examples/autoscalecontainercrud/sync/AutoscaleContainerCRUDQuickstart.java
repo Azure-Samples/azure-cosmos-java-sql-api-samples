@@ -15,6 +15,8 @@ import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,7 +144,7 @@ public class AutoscaleContainerCRUDQuickstart {
         logger.info("Read all containers in database " + databaseName + ".");
 
         //  Read all containers in the account
-        CosmosPagedIterable<CosmosContainerProperties> containers = database.readAllContainers(new FeedOptions());
+        CosmosPagedIterable<CosmosContainerProperties> containers = database.readAllContainers();
 
         // Print
         String msg="Listing containers in database:\n";

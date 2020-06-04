@@ -17,6 +17,7 @@ import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
 import com.azure.cosmos.models.CosmosStoredProcedureResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -164,7 +165,7 @@ public class SampleStoredProcedure {
 
         logger.info(String.format("Stored procedure %s returned %s (HTTP %d), at cost %.3f RU.\n",
                 sprocId,
-                executeResponse.responseAsString(),
+                executeResponse.getResponseAsString(),
                 executeResponse.getStatusCode(),
                 executeResponse.getRequestCharge()));
     }

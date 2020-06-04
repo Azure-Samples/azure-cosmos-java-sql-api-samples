@@ -17,6 +17,8 @@ import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,8 +115,11 @@ public class DocumentCRUDQuickstart {
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/lastName");
 
+        // Provision throughput
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
+
         //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties, 200).getContainer();
+        container = database.createContainerIfNotExists(containerProperties, throughputProperties).getContainer();
 
         logger.info("Done.");
     }
@@ -236,12 +241,9 @@ public class DocumentCRUDQuickstart {
         // Now update the document and call replace with the AccessCondition requiring that ETag has not changed.
         // This should fail because the "concurrent" document change updated the ETag.
         try {
-            AccessCondition ac = new AccessCondition();
-            ac.setType(AccessConditionType.IF_MATCH);
-            ac.setCondition(etag);
 
             CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
-            requestOptions.setAccessCondition(ac);
+            requestOptions.setIfMatchETag(etag);
 
             family.setDistrict("Seafood");
 
@@ -267,11 +269,8 @@ public class DocumentCRUDQuickstart {
         // This should fail.
 
         String etag = famResp.getResponseHeaders().get("etag");
-        AccessCondition ac = new AccessCondition();
-        ac.setType(AccessConditionType.IF_NONE_MATCH);
-        ac.setCondition(etag);
         CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
-        requestOptions.setAccessCondition(ac);
+        requestOptions.setIfNoneMatchETag(etag);
 
         CosmosItemResponse<Family> failResp =
                 container.readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class);

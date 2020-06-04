@@ -23,6 +23,8 @@ import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
@@ -163,8 +165,11 @@ public class QueriesQuickstart {
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/lastName");
 
+        // Provision throughput
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
+
         //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties, 200).getContainer();
+        container = database.createContainerIfNotExists(containerProperties, throughputProperties).getContainer();
 
         logger.info("Done.");
     }

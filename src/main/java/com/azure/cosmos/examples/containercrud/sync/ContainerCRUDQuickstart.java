@@ -15,6 +15,8 @@ import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,8 +99,11 @@ public class ContainerCRUDQuickstart {
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/lastName");
 
+        // Provision throughput
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
+
         //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties, 200).getContainer();
+        container = database.createContainerIfNotExists(containerProperties, throughputProperties).getContainer();
 
         logger.info("Done.");
     }
@@ -108,7 +113,8 @@ public class ContainerCRUDQuickstart {
         logger.info("Update throughput for container " + containerName + ".");
 
         // Specify new throughput value
-        container.replaceProvisionedThroughput(400);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        container.replaceThroughput(throughputProperties);
 
         logger.info("Done.");
     }
@@ -128,7 +134,7 @@ public class ContainerCRUDQuickstart {
         logger.info("Read all containers in database " + databaseName + ".");
 
         //  Read all containers in the account
-        CosmosPagedIterable<CosmosContainerProperties> containers = database.readAllContainers(new FeedOptions());
+        CosmosPagedIterable<CosmosContainerProperties> containers = database.readAllContainers();
 
         // Print
         String msg="Listing containers in database:\n";
