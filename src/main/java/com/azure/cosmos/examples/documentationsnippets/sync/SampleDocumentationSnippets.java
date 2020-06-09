@@ -173,4 +173,28 @@ public class SampleDocumentationSnippets {
         //  </ManageConflictResolutionSprocSync>
     }
 
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-conflicts
+     * Resolve conflicts, stored procedure
+     */
+
+    /** Client-side conflict resolution with fully custom policy */
+    public static void ManageConflictResolutionPoliciesInAzureCosmosDBCustomSync() {
+        String container_id = "family_container";
+        String partition_key = "/pk";
+
+        CosmosDatabase database = null;
+
+        //  <ManageConflictResolutionCustomSync>
+
+        ConflictResolutionPolicy policy = ConflictResolutionPolicy.createCustomPolicy();
+
+        CosmosContainerProperties containerProperties = new CosmosContainerProperties(container_id, partition_key);
+        containerProperties.setConflictResolutionPolicy(policy);
+        /* ...other container config... */
+        database.createContainerIfNotExists(containerProperties);
+
+        //  </ManageConflictResolutionCustomSync>
+    }
+
 }
