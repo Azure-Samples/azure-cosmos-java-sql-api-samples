@@ -3,6 +3,7 @@
 
 package com.azure.cosmos.examples.documentationsnippets.async;
 
+import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
@@ -96,6 +97,28 @@ public class SampleDocumentationSnippetsAsync {
                         .buildAsyncClient();
 
         //  </ConfigureMultimasterAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-consistency
+     * Manage consistency
+     */
+
+    /** Managed consistency from client */
+    public static void ManageConsistencyLevelsInAzureCosmosDBAsync() {
+        String MASTER_KEY = "";
+        String HOST = "";
+
+        //  <ManageConsistencyAsync>
+
+        CosmosAsyncClient client =
+                new CosmosClientBuilder()
+                        .endpoint(HOST)
+                        .key(MASTER_KEY)
+                        .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                        .buildAsyncClient();
+
+        //  </ManageConsistencyAsync>
     }
 
 }

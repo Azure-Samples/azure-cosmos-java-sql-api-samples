@@ -101,4 +101,26 @@ public class SampleDocumentationSnippets {
         //  </ConfigureMultimasterSync>
     }
 
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-consistency
+     * Manage consistency
+     */
+
+    /** Managed consistency from client */
+    public static void ManageConsistencyLevelsInAzureCosmosDBSync() {
+        String MASTER_KEY = "";
+        String HOST = "";
+
+        //  <ManageConsistencySync>
+
+        CosmosClient client =
+                new CosmosClientBuilder()
+                        .endpoint(HOST)
+                        .key(MASTER_KEY)
+                        .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                        .buildClient();
+
+        //  </ManageConsistencySync>
+    }
+
 }
