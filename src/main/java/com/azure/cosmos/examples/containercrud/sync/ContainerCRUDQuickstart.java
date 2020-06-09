@@ -101,7 +101,7 @@ public class ContainerCRUDQuickstart {
                 new CosmosContainerProperties(containerName, "/lastName");
 
         // Provision throughput
-        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         //  Create container with 200 RU/s
         CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
@@ -115,7 +115,7 @@ public class ContainerCRUDQuickstart {
         logger.info("Update throughput for container " + containerName + ".");
 
         // Specify new throughput value
-        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(800);
         container.replaceThroughput(throughputProperties);
 
         logger.info("Done.");
