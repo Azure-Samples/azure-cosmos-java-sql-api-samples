@@ -136,6 +136,18 @@ public class QueriesQuickstart {
         logger.info("Done.");
     }
 
+    private void executeCountQueryPrintSingleResult(String sql) {
+        CosmosPagedIterable<JsonNode> filteredFamilies1 = container.queryItems(sql, new QueryRequestOptions(), JsonNode.class);
+
+        // Print
+        if (filteredFamilies1.iterator().hasNext()) {
+            JsonNode jsonnode = filteredFamilies1.iterator().next();
+            logger.info("Count: " + jsonnode.toString());
+        }
+
+        logger.info("Done.");
+    }
+
     private void executeQueryWithQuerySpecPrintSingleResult(SqlQuerySpec querySpec) {
         logger.info("Execute query {}",querySpec.getQueryText());
 
@@ -289,7 +301,7 @@ public class QueriesQuickstart {
         executeQueryPrintSingleResult("SELECT * FROM c WHERE c.id <> '" + documentId + "'");
 
         // Combine equality and inequality
-        executeQueryPrintSingleResult("SELECT * FROM c WHERE c.lastName = '" + documentLastName + "' && c.id != '" + documentId + "'");
+        executeQueryPrintSingleResult("SELECT * FROM c WHERE c.lastName = '" + documentLastName + "' AND c.id != '" + documentId + "'");
     }
 
     private void queryRange() throws Exception {
@@ -324,10 +336,10 @@ public class QueriesQuickstart {
         logger.info("Aggregate function queries");
 
         // Basic query with aggregate functions
-        executeQueryPrintSingleResult("SELECT VALUE COUNT(f) FROM Families f WHERE f.LastName = 'Andersen'");
+        executeCountQueryPrintSingleResult("SELECT VALUE COUNT(f) FROM Families f WHERE f.LastName = 'Andersen'");
 
         // Query with aggregate functions within documents
-        executeQueryPrintSingleResult("SELECT VALUE COUNT(child) FROM child IN f.Children");
+        executeCountQueryPrintSingleResult("SELECT VALUE COUNT(child) FROM child IN f.Children");
     }
 
     private void querySubdocuments() throws Exception {
