@@ -70,6 +70,7 @@ public class SampleDocumentationSnippetsAsync {
                         .endpoint(HOST)
                         .key(MASTER_KEY)
                         .preferredRegions(preferredRegions)
+                        .contentResponseOnWriteEnabled(true)
                         .buildAsyncClient();
 
         //  </TutorialGlobalDistributionPreferredLocationAsync>

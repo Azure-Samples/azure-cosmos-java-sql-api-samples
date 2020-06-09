@@ -106,6 +106,7 @@ public class SampleStoredProcedure {
                 .key(AccountSettings.MASTER_KEY)
                 .preferredRegions(preferredRegions)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .contentResponseOnWriteEnabled(true)
                 .buildClient();
 
         logger.info("Create database " + databaseName + " with container " + containerName + " if either does not already exist.\n");

@@ -92,6 +92,7 @@ public class SampleIndexManagement {
                 .key(AccountSettings.MASTER_KEY)
                 .preferredRegions(preferredRegions)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .contentResponseOnWriteEnabled(true)
                 .buildClient();
 
         //  </CreateSyncClient>

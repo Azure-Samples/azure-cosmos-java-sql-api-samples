@@ -97,6 +97,7 @@ public class SampleCRUDQuickstartAsync {
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
                 .preferredRegions(preferredRegions)
+                .contentResponseOnWriteEnabled(true)
                 .consistencyLevel(ConsistencyLevel.SESSION)
                 .buildAsyncClient();
 

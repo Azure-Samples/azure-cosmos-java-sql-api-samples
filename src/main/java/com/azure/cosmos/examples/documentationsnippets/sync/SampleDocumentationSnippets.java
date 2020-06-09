@@ -71,6 +71,7 @@ public class SampleDocumentationSnippets {
                         .endpoint(HOST)
                         .key(MASTER_KEY)
                         .preferredRegions(preferredRegions)
+                        .contentResponseOnWriteEnabled(true)
                         .buildClient();
 
         //  </TutorialGlobalDistributionPreferredLocationSync>

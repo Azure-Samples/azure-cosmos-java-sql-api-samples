@@ -64,6 +64,7 @@ public class SampleRequestThroughputAsync {
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .contentResponseOnWriteEnabled(true)
                 .buildAsyncClient();
 
         // Describe the logic of database and container creation using Reactor...

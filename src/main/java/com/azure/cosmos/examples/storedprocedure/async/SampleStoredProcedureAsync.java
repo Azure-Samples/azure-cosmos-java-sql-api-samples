@@ -107,6 +107,7 @@ public class SampleStoredProcedureAsync {
                 .key(AccountSettings.MASTER_KEY)
                 .preferredRegions(preferredRegions)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .contentResponseOnWriteEnabled(true)
                 .buildAsyncClient();
 
         logger.info("Create database " + databaseName + " with container " + containerName + " if either does not already exist.\n");

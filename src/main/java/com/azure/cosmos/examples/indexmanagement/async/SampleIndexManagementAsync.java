@@ -92,6 +92,7 @@ public class SampleIndexManagementAsync {
                 .key(AccountSettings.MASTER_KEY)
                 .preferredRegions(preferredRegions)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .contentResponseOnWriteEnabled(true)
                 .buildAsyncClient();
 
         //  </CreateAsyncClient>

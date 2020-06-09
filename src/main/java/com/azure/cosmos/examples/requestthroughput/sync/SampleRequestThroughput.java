@@ -66,6 +66,7 @@ public class SampleRequestThroughput {
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .contentResponseOnWriteEnabled(true)
                 .buildClient();
 
         // This code synchronously sends a request to create a database.
