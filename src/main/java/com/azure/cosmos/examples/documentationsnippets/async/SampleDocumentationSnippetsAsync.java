@@ -65,11 +65,37 @@ public class SampleDocumentationSnippetsAsync {
                 new CosmosClientBuilder()
                         .endpoint(HOST)
                         .key(MASTER_KEY)
-                        .multipleWriteRegionsEnabled(true)
                         .preferredRegions(preferredRegions)
                         .buildAsyncClient();
 
         //  </TutorialGlobalDistributionPreferredLocationAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-multi-master
+     * Multi-master tutorial
+     */
+
+    /** Enable multi-master from client */
+    public static void ConfigureMultimasterInYourApplicationsThatUseComosDBAsync() {
+        String MASTER_KEY = "";
+        String HOST = "";
+        String region = "West US 2";
+
+        //  <ConfigureMultimasterAsync>
+
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add(region);
+
+        CosmosAsyncClient client =
+                new CosmosClientBuilder()
+                        .endpoint(HOST)
+                        .key(MASTER_KEY)
+                        .multipleWriteRegionsEnabled(true)
+                        .preferredRegions(preferredRegions)
+                        .buildAsyncClient();
+
+        //  </ConfigureMultimasterAsync>
     }
 
 }
