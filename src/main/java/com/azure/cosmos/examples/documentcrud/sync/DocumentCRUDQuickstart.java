@@ -90,7 +90,7 @@ public class DocumentCRUDQuickstart {
 
         createDocument();
         readDocumentById();
-        readAllDocumentsInContainer();
+        //readAllDocumentsInContainer(); <Deprecated>
         queryDocuments();
         replaceDocument();
         upsertDocument();
@@ -158,8 +158,8 @@ public class DocumentCRUDQuickstart {
         logger.info("Done.");
     }
 
-    // Container read all
-    private void readAllDocumentsInContainer() throws Exception {
+    // <DEPRECATED - readAllItems API not available in GA SDK Container read all
+    /* private void readAllDocumentsInContainer() throws Exception {
         logger.info("Read all documents in container " + containerName + ".");
 
         //  Read all documents in the container
@@ -173,7 +173,7 @@ public class DocumentCRUDQuickstart {
         logger.info(msg + "\n");
 
         logger.info("Done.");
-    }
+    } */
 
     private void queryDocuments() throws Exception {
         logger.info("Query documents in the container " + containerName + ".");
