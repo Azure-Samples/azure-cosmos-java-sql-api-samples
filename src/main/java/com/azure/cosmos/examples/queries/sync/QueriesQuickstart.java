@@ -130,7 +130,7 @@ public class QueriesQuickstart {
         // Print
         if (filteredFamilies.iterator().hasNext()) {
             Family family = filteredFamilies.iterator().next();
-            logger.info("First query result: Family with (/id, partition key) = (%s,%s)",family.getId(),family.getLastName());
+            logger.info(String.format("First query result: Family with (/id, partition key) = (%s,%s)",family.getId(),family.getLastName()));
         }
 
         logger.info("Done.");
@@ -156,7 +156,7 @@ public class QueriesQuickstart {
         // Print
         if (filteredFamilies.iterator().hasNext()) {
             Family family = filteredFamilies.iterator().next();
-            logger.info("First query result: Family with (/id, partition key) = (%s,%s)",family.getId(),family.getLastName());
+            logger.info(String.format("First query result: Family with (/id, partition key) = (%s,%s)",family.getId(),family.getLastName()));
         }
 
         logger.info("Done.");
