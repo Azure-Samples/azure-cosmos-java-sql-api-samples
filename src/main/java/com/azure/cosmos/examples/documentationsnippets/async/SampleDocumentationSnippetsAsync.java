@@ -148,4 +148,28 @@ public class SampleDocumentationSnippetsAsync {
         //  </ManageConflictResolutionLWWAsync>
     }
 
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-conflicts
+     * Resolve conflicts, stored procedure
+     */
+
+    /** Client-side conflict resolution using stored procedure */
+    public static void ManageConflictResolutionPoliciesInAzureCosmosDBSprocAsync() {
+        String container_id = "family_container";
+        String partition_key = "/pk";
+
+        CosmosAsyncDatabase database = null;
+
+        //  <ManageConflictResolutionSprocAsync>
+
+        ConflictResolutionPolicy policy = ConflictResolutionPolicy.createCustomPolicy("resolver");
+
+        CosmosContainerProperties containerProperties = new CosmosContainerProperties(container_id, partition_key);
+        containerProperties.setConflictResolutionPolicy(policy);
+        /* ...other container config... */
+        database.createContainerIfNotExists(containerProperties);
+
+        //  </ManageConflictResolutionSprocAsync>
+    }
+
 }
