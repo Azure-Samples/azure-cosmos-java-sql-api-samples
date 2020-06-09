@@ -56,7 +56,7 @@ public class QueriesQuickstart {
     /**
      * Sample to demonstrate Azure Cosmos DB queries via Java SQL API, including queries for:
      * -All documents
-     * -Equality using ==
+     * -Equality using =
      * -Inequality using != and NOT
      * -Using range operators like >, <, >=, <=
      * -Using range operators against Strings
@@ -169,7 +169,7 @@ public class QueriesQuickstart {
                 new CosmosContainerProperties(containerName, "/lastName");
 
         // Provision throughput
-        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         //  Create container with 200 RU/s
         CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
@@ -212,7 +212,7 @@ public class QueriesQuickstart {
 
         double requestCharge = 0.0;
 
-        // First iteration (continuationToken == null): Receive a batch of query response pages
+        // First iteration (continuationToken = null): Receive a batch of query response pages
         // Subsequent iterations (continuationToken != null): Receive subsequent batch of query response pages, with continuationToken indicating where the previous iteration left off
         do {
             logger.info("Receiving a set of query response pages.");
@@ -276,9 +276,9 @@ public class QueriesQuickstart {
     }
 
     private void queryEquality() throws Exception {
-        logger.info("Query for equality using ==");
+        logger.info("Query for equality using =");
 
-        executeQueryPrintSingleResult("SELECT * FROM c WHERE c.id == '" + documentId + "'");
+        executeQueryPrintSingleResult("SELECT * FROM c WHERE c.id = '" + documentId + "'");
     }
 
     private void queryInequality() throws Exception {
@@ -288,7 +288,7 @@ public class QueriesQuickstart {
         executeQueryPrintSingleResult("SELECT * FROM c WHERE c.id <> '" + documentId + "'");
 
         // Combine equality and inequality
-        executeQueryPrintSingleResult("SELECT * FROM c WHERE c.lastName == '" + documentLastName + "' && c.id != '" + documentId + "'");
+        executeQueryPrintSingleResult("SELECT * FROM c WHERE c.lastName = '" + documentLastName + "' && c.id != '" + documentId + "'");
     }
 
     private void queryRange() throws Exception {
@@ -394,7 +394,7 @@ public class QueriesQuickstart {
 
         executeQueryWithQuerySpecPrintSingleResult(querySpec);
 
-        // Query using two properties within each document. WHERE Id == "" AND Address.City == ""
+        // Query using two properties within each document. WHERE Id = "" AND Address.City = ""
         // notice here how we are doing an equality comparison on the string value of City
 
         paramList = new ArrayList<SqlParameter>();

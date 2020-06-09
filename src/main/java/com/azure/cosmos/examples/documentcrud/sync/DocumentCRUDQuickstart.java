@@ -120,7 +120,7 @@ public class DocumentCRUDQuickstart {
                 new CosmosContainerProperties(containerName, "/lastName");
 
         // Provision throughput
-        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         //  Create container with 200 RU/s
         CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
