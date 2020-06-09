@@ -197,4 +197,23 @@ public class SampleDocumentationSnippets {
         //  </ManageConflictResolutionCustomSync>
     }
 
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-conflicts
+     * Read from conflict feed
+     */
+
+    /** Client-side conflict feed read */
+    public static void ManageConflictResolutionPoliciesInAzureCosmosDBConflictFeedSync() {
+        String container_id = "family_container";
+        String partition_key = "/pk";
+
+        CosmosDatabase database = null;
+
+        //  <ManageConflictResolutionConflictFeedSync>
+
+        database.read().
+
+        //  </ManageConflictResolutionConflictFeedSync>
+    }
+
 }
