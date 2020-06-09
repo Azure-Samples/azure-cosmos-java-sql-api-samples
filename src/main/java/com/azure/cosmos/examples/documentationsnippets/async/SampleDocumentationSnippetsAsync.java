@@ -143,7 +143,7 @@ public class SampleDocumentationSnippetsAsync {
         CosmosContainerProperties containerProperties = new CosmosContainerProperties(container_id, partition_key);
         containerProperties.setConflictResolutionPolicy(policy);
         /* ...other container config... */
-        database.createContainerIfNotExists(containerProperties);
+        database.createContainerIfNotExists(containerProperties).block();
 
         //  </ManageConflictResolutionLWWAsync>
     }
@@ -167,7 +167,7 @@ public class SampleDocumentationSnippetsAsync {
         CosmosContainerProperties containerProperties = new CosmosContainerProperties(container_id, partition_key);
         containerProperties.setConflictResolutionPolicy(policy);
         /* ...other container config... */
-        database.createContainerIfNotExists(containerProperties);
+        database.createContainerIfNotExists(containerProperties).block();
 
         //  </ManageConflictResolutionSprocAsync>
     }
