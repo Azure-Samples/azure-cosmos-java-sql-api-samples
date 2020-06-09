@@ -17,6 +17,7 @@ import com.azure.cosmos.models.IndexingMode;
 import com.azure.cosmos.models.IndexingPolicy;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -52,7 +53,7 @@ public class SampleRequestThroughput {
     private static CosmosDatabase database;
     private static CosmosContainer container;
     private static AtomicInteger number_docs_inserted = new AtomicInteger(0);
-    private static AtomicInteger total_charge = new AtomicInteger(0.0);
+    private static AtomicInteger total_charge = new AtomicInteger(0);
     private static int last_docs_inserted=0;
     private static double last_total_charge=0.0;
     private static double toc_time=0.0;
