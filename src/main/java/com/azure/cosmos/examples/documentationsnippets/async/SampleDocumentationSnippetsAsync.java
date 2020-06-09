@@ -9,10 +9,13 @@ import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.examples.storedprocedure.async.SampleStoredProcedureAsync;
+import com.azure.cosmos.models.ConflictResolutionPolicy;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
@@ -119,6 +122,30 @@ public class SampleDocumentationSnippetsAsync {
                         .buildAsyncClient();
 
         //  </ManageConsistencyAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-conflicts
+     * Resolve conflicts, LWW policy
+     */
+
+    /** Client-side conflict resolution settings for LWW policy */
+    public static void ManageConflictResolutionPoliciesInAzureCosmosDBLWWAsync() {
+        String container_id = "family_container";
+        String partition_key = "/pk";
+
+        CosmosAsyncDatabase database = null;
+
+        //  <ManageConflictResolutionLWWAsync>
+
+        ConflictResolutionPolicy policy = ConflictResolutionPolicy.createLastWriterWinsPolicy("/myCustomId");
+
+        CosmosContainerProperties containerProperties = new CosmosContainerProperties(container_id, partition_key);
+        containerProperties.setConflictResolutionPolicy(policy);
+        /* ...other container config... */
+        database.createContainerIfNotExists(containerProperties);
+
+        //  </ManageConflictResolutionLWWAsync>
     }
 
 }

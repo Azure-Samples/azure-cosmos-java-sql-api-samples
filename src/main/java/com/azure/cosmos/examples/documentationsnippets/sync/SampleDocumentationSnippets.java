@@ -14,12 +14,14 @@ import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
+import com.azure.cosmos.models.ConflictResolutionPolicy;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
 import com.azure.cosmos.models.CosmosStoredProcedureResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.PartitionKeyDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,6 +123,30 @@ public class SampleDocumentationSnippets {
                         .buildClient();
 
         //  </ManageConsistencySync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-conflicts
+     * Resolve conflicts, LWW policy
+     */
+
+    /** Client-side conflict resolution settings for LWW policy */
+    public static void ManageConflictResolutionPoliciesInAzureCosmosDBLWWSync() {
+        String container_id = "family_container";
+        String partition_key = "/pk";
+
+        CosmosDatabase database = null;
+
+        //  <ManageConflictResolutionLWWSync>
+
+        ConflictResolutionPolicy policy = ConflictResolutionPolicy.createLastWriterWinsPolicy("/myCustomId");
+
+        CosmosContainerProperties containerProperties = new CosmosContainerProperties(container_id, partition_key);
+        containerProperties.setConflictResolutionPolicy(policy);
+        /* ...other container config... */
+        database.createContainerIfNotExists(containerProperties);
+
+        //  </ManageConflictResolutionLWWSync>
     }
 
 }
