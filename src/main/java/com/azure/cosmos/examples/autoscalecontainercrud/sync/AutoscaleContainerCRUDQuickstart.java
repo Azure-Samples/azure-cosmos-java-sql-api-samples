@@ -98,7 +98,7 @@ public class AutoscaleContainerCRUDQuickstart {
 
         // Container and autoscale throughput settings
         CosmosContainerProperties autoscaleContainerProperties = new CosmosContainerProperties(containerName, "/lastName");
-        ThroughputProperties autoscaleThroughputProperties = ThroughputProperties.createAutoscaledThroughput(200); //Set autoscale max RU/s
+        ThroughputProperties autoscaleThroughputProperties = ThroughputProperties.createAutoscaledThroughput(4000); //Set autoscale max RU/s
 
         // Create the container with autoscale enabled
         CosmosContainerResponse databaseResponse = database.createContainer(autoscaleContainerProperties, autoscaleThroughputProperties,
@@ -113,7 +113,7 @@ public class AutoscaleContainerCRUDQuickstart {
         logger.info("Update autoscale max throughput for container " + containerName + ".");
 
         // Change the autoscale max throughput (RU/s)
-        container.replaceThroughput(ThroughputProperties.createAutoscaledThroughput(400));
+        container.replaceThroughput(ThroughputProperties.createAutoscaledThroughput(8000));
 
         logger.info("Done.");
     }

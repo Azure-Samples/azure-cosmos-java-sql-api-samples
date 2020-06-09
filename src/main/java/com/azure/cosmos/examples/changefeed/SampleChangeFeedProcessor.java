@@ -159,7 +159,7 @@ public class SampleChangeFeedProcessor {
                 .endpoint(SampleConfigurations.HOST)
                 .key(SampleConfigurations.MASTER_KEY)
                 .directMode(DirectConnectionConfig.getDefaultConfig())
-                .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .consistencyLevel(ConsistencyLevel.SESSION)
                 .buildAsyncClient();
     }
 
