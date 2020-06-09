@@ -8,7 +8,6 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.CosmosPagedIterable;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.models.CosmosContainerProperties;
@@ -16,7 +15,6 @@ import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
-import com.azure.cosmos.models.FeedOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,17 +64,15 @@ public class AnalyticalContainerCRUDQuickstart {
 
         //  Create sync client
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
 
         createDatabaseIfNotExists();
         createContainerIfNotExists();
 
-        readContainerById();
-        readAllContainers();
         // deleteAContainer() is called at shutdown()
 
     }
@@ -86,7 +82,8 @@ public class AnalyticalContainerCRUDQuickstart {
         logger.info("Create database " + databaseName + " if not exists...");
 
         //  Create database if not exists
-        database = client.createDatabaseIfNotExists(databaseName).getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -102,45 +99,9 @@ public class AnalyticalContainerCRUDQuickstart {
         // Set analytical store properties
         containerProperties.setAnalyticalStoreTimeToLiveInSeconds(-1);
 
-        //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties, 200).getContainer();
-
-        logger.info("Done.");
-    }
-
-    // Update container throughput
-    private void updateContainerThroughput() throws Exception {
-        logger.info("Update throughput for container " + containerName + ".");
-
-        // Specify new throughput value
-        container.replaceProvisionedThroughput(400);
-
-        logger.info("Done.");
-    }
-
-    // Container read
-    private void readContainerById() throws Exception {
-        logger.info("Read container " + containerName + " by ID.");
-
-        //  Read container by ID
-        container = database.getContainer(containerName);
-
-        logger.info("Done.");
-    }
-
-    // Container read all
-    private void readAllContainers() throws Exception {
-        logger.info("Read all containers in database " + databaseName + ".");
-
-        //  Read all containers in the account
-        CosmosPagedIterable<CosmosContainerProperties> containers = database.readAllContainers(new FeedOptions());
-
-        // Print
-        String msg="Listing containers in database:\n";
-        for(CosmosContainerProperties containerProps : containers) {
-            msg += String.format("-Container ID: %s\n",containerProps.getId());
-        }
-        logger.info(msg + "\n");
+        //  Create container
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties);
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }

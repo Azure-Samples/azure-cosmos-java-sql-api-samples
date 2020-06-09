@@ -3,7 +3,6 @@
 
 package com.azure.cosmos.examples.documentationsnippets.sync;
 
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
@@ -12,7 +11,6 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.CosmosPagedIterable;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
@@ -21,12 +19,11 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
 import com.azure.cosmos.models.CosmosStoredProcedureResponse;
-import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.PartitionKey;
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -62,14 +59,17 @@ public class SampleDocumentationSnippets {
 
         //  <TutorialGlobalDistributionPreferredLocationSync>
 
-        ConnectionPolicy policy = new ConnectionPolicy();
-        policy.setUsingMultipleWriteLocations(true);
-        policy.setPreferredLocations(Arrays.asList("East US", "West US", "Canada Central"));
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add("East US");
+        preferredRegions.add( "West US");
+        preferredRegions.add("Canada Central");
+
         CosmosClient client =
                 new CosmosClientBuilder()
-                        .setEndpoint(HOST)
-                        .setKey(MASTER_KEY)
-                        .setConnectionPolicy(policy)
+                        .endpoint(HOST)
+                        .key(MASTER_KEY)
+                        .multipleWriteRegionsEnabled(true)
+                        .preferredRegions(preferredRegions)
                         .buildClient();
 
         //  </TutorialGlobalDistributionPreferredLocationSync>

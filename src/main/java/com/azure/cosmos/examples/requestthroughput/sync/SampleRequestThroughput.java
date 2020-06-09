@@ -1,7 +1,6 @@
 package com.azure.cosmos.examples.requestthroughput.sync;
 
 
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
@@ -11,11 +10,13 @@ import com.azure.cosmos.ThrottlingRetryOptions;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.IndexingMode;
 import com.azure.cosmos.models.IndexingPolicy;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.util.concurrent.AtomicDouble;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,7 @@ public class SampleRequestThroughput {
     private static CosmosDatabase database;
     private static CosmosContainer container;
     private static AtomicInteger number_docs_inserted = new AtomicInteger(0);
-    private static AtomicDouble total_charge = new AtomicDouble(0.0);
+    private static AtomicInteger total_charge = new AtomicInteger(0);
     private static int last_docs_inserted=0;
     private static double last_total_charge=0.0;
     private static double toc_time=0.0;
@@ -60,29 +61,30 @@ public class SampleRequestThroughput {
     private static double current_total_charge=0.0, rps=0.0, rups=0.0;
 
     public static void requestThroughputDemo() {
-        ConnectionPolicy my_connection_policy = ConnectionPolicy.getDefaultPolicy();
-        ThrottlingRetryOptions retry_options = new ThrottlingRetryOptions();
-        //retry_options.setMaxRetryWaitTime(Duration.ZERO);
-        my_connection_policy.setThrottlingRetryOptions(retry_options);
 
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(my_connection_policy)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
         // This code synchronously sends a request to create a database.
         // While the client waits for a response, this thread is blocked from
         // performing other tasks.
-        database = client.createDatabaseIfNotExists("ContosoInventoryDB").getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists("ContosoInventoryDB");
+        database = client.getDatabase(databaseResponse.getProperties().getId());
+
         logger.info("\n\n\n\nCreated database ContosoInventoryDB.\n\n\n\n");
         //IndexingPolicy indexingPolicy = new IndexingPolicy();
         //indexingPolicy.setIndexingMode(IndexingMode.NONE);
         //indexingPolicy.setAutomatic(false);
         CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
         //containerProperties.setIndexingPolicy(indexingPolicy);
-        container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(containerResponse.getProperties().getId());
+
         logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
         // Resources are ready.
         //
@@ -123,7 +125,7 @@ public class SampleRequestThroughput {
             CosmosItemResponse<JsonNode> itemResponse = container.createItem(doc);
             if (itemResponse.getStatusCode() == 201) {
                 number_docs_inserted.getAndIncrement();
-                total_charge.getAndAdd(itemResponse.getRequestCharge());
+                total_charge.getAndAdd((int)itemResponse.getRequestCharge());
             }
             else
                 logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());

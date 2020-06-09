@@ -1,6 +1,5 @@
 package com.azure.cosmos.examples.requestthroughput.async;
 
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
@@ -9,8 +8,8 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.util.concurrent.AtomicDouble;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +19,7 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.DoubleAccumulator;
 
 
 /*
@@ -54,28 +54,27 @@ public class SampleRequestThroughputAsync {
     private static AtomicBoolean resources_created = new AtomicBoolean(false);
     private static AtomicInteger number_docs_inserted = new AtomicInteger(0);
     private static AtomicBoolean resources_deleted = new AtomicBoolean(false);
-    private static AtomicDouble total_charge = new AtomicDouble(0.0);
+    private static AtomicInteger total_charge = new AtomicInteger(0);
 
     public static void requestThroughputDemo() {
-        ConnectionPolicy my_connection_policy = ConnectionPolicy.getDefaultPolicy();
 
         // Create Async client.
         // Building an async client is still a sync operation.
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(ConnectionPolicy.getDefaultPolicy())
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildAsyncClient();
 
         // Describe the logic of database and container creation using Reactor...
         Mono<Void> databaseContainerIfNotExist = client.createDatabaseIfNotExists("ContosoInventoryDB").flatMap(databaseResponse -> {
-            database = databaseResponse.getDatabase();
+            database = client.getDatabase(databaseResponse.getProperties().getId());
             logger.info("\n\n\n\nCreated database ContosoInventoryDB.\n\n\n\n");
             CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
-            return database.createContainerIfNotExists(containerProperties, 400);
+            ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+            return database.createContainerIfNotExists(containerProperties, throughputProperties);
         }).flatMap(containerResponse -> {
-            container = containerResponse.getContainer();
+            container = database.getContainer(containerResponse.getProperties().getId());
             logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
             return Mono.empty();
         });
@@ -113,7 +112,7 @@ public class SampleRequestThroughputAsync {
 
                     if (itemResponse.getStatusCode() == 201) {
                         number_docs_inserted.getAndIncrement();
-                        total_charge.getAndAdd(itemResponse.getRequestCharge());
+                        total_charge.getAndAdd((int)(itemResponse.getRequestCharge()));
                     }
                     else
                         logger.warn("WARNING insert status code {} != 201", itemResponse.getStatusCode());

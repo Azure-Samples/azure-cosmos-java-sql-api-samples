@@ -3,28 +3,30 @@
 
 package com.azure.cosmos.examples.indexmanagement.sync;
 
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.CosmosPagedIterable;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
+import com.azure.cosmos.implementation.guava25.collect.Lists;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.ExcludedPath;
-import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.IncludedPath;
 import com.azure.cosmos.models.IndexingMode;
 import com.azure.cosmos.models.IndexingPolicy;
 import com.azure.cosmos.models.PartitionKey;
-import com.google.common.collect.Lists;
+import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,18 +82,16 @@ public class SampleIndexManagement {
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
-        ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
-        //  Setting the preferred location to Cosmos DB Account region
-        //  West US is just an example. User should set preferred location to the Cosmos DB region closest to the application
-        defaultPolicy.setPreferredLocations(Lists.newArrayList("West US"));
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add("West US");
 
         //  Create sync client
         //  <CreateSyncClient>
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(defaultPolicy)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .preferredRegions(preferredRegions)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
         //  </CreateSyncClient>
@@ -122,7 +122,9 @@ public class SampleIndexManagement {
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
-        database = client.createDatabaseIfNotExists(databaseName).getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+        database = client.getDatabase(databaseResponse.getProperties().getId());
+
         //  </CreateDatabaseIfNotExists>
 
         logger.info("Checking database " + database.getId() + " completed!\n");
@@ -141,16 +143,12 @@ public class SampleIndexManagement {
 
         // Included paths
         List<IncludedPath> includedPaths = new ArrayList<>();
-        IncludedPath includedPath = new IncludedPath();
-        includedPath.setPath("/*");
-        includedPaths.add(includedPath);
+        includedPaths.add(new IncludedPath("/*"));
         indexingPolicy.setIncludedPaths(includedPaths);
 
         // Excluded paths
         List<ExcludedPath> excludedPaths = new ArrayList<>();
-        ExcludedPath excludedPath = new ExcludedPath();
-        excludedPath.setPath("/name/*");
-        excludedPaths.add(excludedPath);
+        excludedPaths.add(new ExcludedPath("/name/*"));
         indexingPolicy.setExcludedPaths(excludedPaths);
 
         // Spatial indices - if you need them, here is how to set them up:
@@ -192,7 +190,9 @@ public class SampleIndexManagement {
         // </CustomIndexingPolicy>
 
         //  Create container with 400 RU/s
-        container = database.createContainerIfNotExists(containerProperties, 400).getContainer();
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(containerResponse.getProperties().getId());
 
         logger.info("Checking container " + container.getId() + " completed!\n");
     }
@@ -213,7 +213,7 @@ public class SampleIndexManagement {
             //  Get request charge and other properties like latency, and diagnostics strings, etc.
             logger.info(String.format("Created item with request charge of %.2f within" +
                             " duration %s",
-                    item.getRequestCharge(), item.getRequestLatency()));
+                    item.getRequestCharge(), item.getDuration()));
             totalRequestCharge += item.getRequestCharge();
         }
         logger.info(String.format("Created %d items with total request " +
@@ -230,10 +230,10 @@ public class SampleIndexManagement {
             try {
                 CosmosItemResponse<Family> item = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
                 double requestCharge = item.getRequestCharge();
-                Duration requestLatency = item.getRequestLatency();
+                Duration requestLatency = item.getDuration();
                 logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
-                        item.getResource().getId(), requestCharge, requestLatency));
-            } catch (CosmosClientException e) {
+                        item.getItem().getId(), requestCharge, requestLatency));
+            } catch (CosmosException e) {
                 e.printStackTrace();
                 logger.error(String.format("Read Item failed with %s", e));
             }
@@ -243,16 +243,17 @@ public class SampleIndexManagement {
 
     private void queryItems() {
         //  <QueryItems>
+
         // Set some common query options
-        FeedOptions queryOptions = new FeedOptions();
-        queryOptions.setMaxItemCount(10);
+        int preferredPageSize = 10;
+        QueryRequestOptions queryOptions = new QueryRequestOptions();
         //  Set populate query metrics to get metrics around query executions
-        queryOptions.setPopulateQueryMetrics(true);
+        queryOptions.setQueryMetricsEnabled(true);
 
         CosmosPagedIterable<Family> familiesPagedIterable = container.queryItems(
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
-        familiesPagedIterable.iterableByPage().forEach(cosmosItemPropertiesFeedResponse -> {
+        familiesPagedIterable.iterableByPage(preferredPageSize).forEach(cosmosItemPropertiesFeedResponse -> {
             logger.info("Got a page of query result with " +
                     cosmosItemPropertiesFeedResponse.getResults().size() + " items(s)"
                     + " and request charge of " + cosmosItemPropertiesFeedResponse.getRequestCharge());

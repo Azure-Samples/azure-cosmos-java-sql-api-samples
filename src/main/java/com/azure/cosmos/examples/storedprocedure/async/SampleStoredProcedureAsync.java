@@ -3,28 +3,30 @@
 
 package com.azure.cosmos.examples.storedprocedure.async;
 
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
-import com.azure.cosmos.CosmosPagedFlux;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
-import com.azure.cosmos.models.CosmosAsyncItemResponse;
+import com.azure.cosmos.implementation.ConnectionPolicy;
+import com.azure.cosmos.implementation.guava25.collect.Lists;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
-import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.PartitionKey;
-import com.google.common.collect.Lists;
+import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
 public class SampleStoredProcedureAsync {
@@ -86,7 +88,7 @@ public class SampleStoredProcedureAsync {
 
         //Perform a point-read to confirm that the item with id test_doc exists
         logger.info("Checking that a document was created by the stored procedure...");
-        CosmosAsyncItemResponse<CustomPOJO> test_resp =
+        CosmosItemResponse<CustomPOJO> test_resp =
                 container.readItem("test_doc", new PartitionKey("test_doc"), CustomPOJO.class).block();
         logger.info(String.format(
                 "Status return value of point-read for document created by stored procedure (200 indicates success): %d", test_resp.getStatusCode()));
@@ -95,31 +97,32 @@ public class SampleStoredProcedureAsync {
     public void setUp() throws Exception {
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
-        ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
-        //  Setting the preferred location to Cosmos DB Account region
-        //  West US is just an example. User should set preferred location to the Cosmos DB region closest to the application
-        defaultPolicy.setPreferredLocations(Lists.newArrayList("West US"));
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add("West US");
 
         //  Create sync client
         //  <CreateSyncClient>
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(defaultPolicy)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .preferredRegions(preferredRegions)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildAsyncClient();
 
         logger.info("Create database " + databaseName + " with container " + containerName + " if either does not already exist.\n");
 
         client.createDatabaseIfNotExists(databaseName).flatMap(databaseResponse -> {
-            database = databaseResponse.getDatabase();
+            database = client.getDatabase(databaseResponse.getProperties().getId());
             return Mono.empty();
         }).block();
 
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/id");
-        database.createContainerIfNotExists(containerProperties, 400).flatMap(containerResponse -> {
-            container = containerResponse.getContainer();
+
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        database.createContainerIfNotExists(containerProperties, throughputProperties).flatMap(containerResponse -> {
+            container = database.getContainer(containerResponse.getProperties().getId());
             return Mono.empty();
         }).block();
     }
@@ -152,9 +155,8 @@ public class SampleStoredProcedureAsync {
 
     private void readAllSprocs() throws Exception {
 
-        FeedOptions feedOptions = new FeedOptions();
         CosmosPagedFlux<CosmosStoredProcedureProperties> fluxResponse =
-                container.getScripts().readAllStoredProcedures(feedOptions);
+                container.getScripts().readAllStoredProcedures();
 
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
@@ -166,9 +168,9 @@ public class SampleStoredProcedureAsync {
                 s -> {
                 },
                 err -> {
-                    if (err instanceof CosmosClientException) {
+                    if (err instanceof CosmosException) {
                         //Client-specific errors
-                        CosmosClientException cerr = (CosmosClientException) err;
+                        CosmosException cerr = (CosmosException) err;
                         cerr.printStackTrace();
                         logger.info(String.format("Read Item failed with %s\n", cerr));
                     } else {

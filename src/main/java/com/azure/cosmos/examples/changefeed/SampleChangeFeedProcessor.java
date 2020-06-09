@@ -3,22 +3,24 @@
 package com.azure.cosmos.examples.changefeed;
 
 import com.azure.cosmos.ChangeFeedProcessor;
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
+import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.DirectConnectionConfig;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.implementation.Utils;
-import com.azure.cosmos.models.CosmosAsyncContainerResponse;
+import com.azure.cosmos.implementation.apachecommons.lang.RandomStringUtils;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
+import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.scheduler.Schedulers;
@@ -121,10 +123,10 @@ public class SampleChangeFeedProcessor {
 
     public static ChangeFeedProcessor getChangeFeedProcessor(String hostName, CosmosAsyncContainer feedContainer, CosmosAsyncContainer leaseContainer) {
         return ChangeFeedProcessor.changeFeedProcessorBuilder()
-                .setHostName(hostName)
-                .setFeedContainer(feedContainer)
-                .setLeaseContainer(leaseContainer)
-                .setHandleChanges((List<JsonNode> docs) -> {
+                .hostName(hostName)
+                .feedContainer(feedContainer)
+                .leaseContainer(leaseContainer)
+                .handleChanges((List<JsonNode> docs) -> {
                     logger.info("--->setHandleChanges() START");
 
                     for (JsonNode document : docs) {
@@ -154,15 +156,16 @@ public class SampleChangeFeedProcessor {
     public static CosmosAsyncClient getCosmosClient() {
 
         return new CosmosClientBuilder()
-                .setEndpoint(SampleConfigurations.HOST)
-                .setKey(SampleConfigurations.MASTER_KEY)
-                .setConnectionPolicy(ConnectionPolicy.getDefaultPolicy())
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(SampleConfigurations.HOST)
+                .key(SampleConfigurations.MASTER_KEY)
+                .directMode(DirectConnectionConfig.getDefaultConfig())
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildAsyncClient();
     }
 
     public static CosmosAsyncDatabase createNewDatabase(CosmosAsyncClient client, String databaseName) {
-        return client.createDatabaseIfNotExists(databaseName).block().getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
+        return client.getDatabase(databaseResponse.getProperties().getId());
     }
 
     public static void deleteDatabase(CosmosAsyncDatabase cosmosDatabase) {
@@ -172,7 +175,7 @@ public class SampleChangeFeedProcessor {
     public static CosmosAsyncContainer createNewCollection(CosmosAsyncClient client, String databaseName, String collectionName) {
         CosmosAsyncDatabase databaseLink = client.getDatabase(databaseName);
         CosmosAsyncContainer collectionLink = databaseLink.getContainer(collectionName);
-        CosmosAsyncContainerResponse containerResponse = null;
+        CosmosContainerResponse containerResponse = null;
 
         try {
             containerResponse = collectionLink.read().block();
@@ -181,10 +184,10 @@ public class SampleChangeFeedProcessor {
                 throw new IllegalArgumentException(String.format("Collection %s already exists in database %s.", collectionName, databaseName));
             }
         } catch (RuntimeException ex) {
-            if (ex instanceof CosmosClientException) {
-                CosmosClientException cosmosClientException = (CosmosClientException) ex;
+            if (ex instanceof CosmosException) {
+                CosmosException CosmosException = (CosmosException) ex;
 
-                if (cosmosClientException.getStatusCode() != 404) {
+                if (CosmosException.getStatusCode() != 404) {
                     throw ex;
                 }
             } else {
@@ -194,19 +197,22 @@ public class SampleChangeFeedProcessor {
 
         CosmosContainerProperties containerSettings = new CosmosContainerProperties(collectionName, "/id");
         CosmosContainerRequestOptions requestOptions = new CosmosContainerRequestOptions();
-        containerResponse = databaseLink.createContainer(containerSettings, 10000, requestOptions).block();
+
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(10000);
+
+        containerResponse = databaseLink.createContainer(containerSettings, throughputProperties, requestOptions).block();
 
         if (containerResponse == null) {
             throw new RuntimeException(String.format("Failed to create collection %s in database %s.", collectionName, databaseName));
         }
 
-        return containerResponse.getContainer();
+        return databaseLink.getContainer(containerResponse.getProperties().getId());
     }
 
     public static CosmosAsyncContainer createNewLeaseCollection(CosmosAsyncClient client, String databaseName, String leaseCollectionName) {
         CosmosAsyncDatabase databaseLink = client.getDatabase(databaseName);
         CosmosAsyncContainer leaseCollectionLink = databaseLink.getContainer(leaseCollectionName);
-        CosmosAsyncContainerResponse leaseContainerResponse = null;
+        CosmosContainerResponse leaseContainerResponse = null;
 
         try {
             leaseContainerResponse = leaseCollectionLink.read().block();
@@ -221,10 +227,10 @@ public class SampleChangeFeedProcessor {
                 }
             }
         } catch (RuntimeException ex) {
-            if (ex instanceof CosmosClientException) {
-                CosmosClientException cosmosClientException = (CosmosClientException) ex;
+            if (ex instanceof CosmosException) {
+                CosmosException CosmosException = (CosmosException) ex;
 
-                if (cosmosClientException.getStatusCode() != 404) {
+                if (CosmosException.getStatusCode() != 404) {
                     throw ex;
                 }
             } else {
@@ -235,13 +241,15 @@ public class SampleChangeFeedProcessor {
         CosmosContainerProperties containerSettings = new CosmosContainerProperties(leaseCollectionName, "/id");
         CosmosContainerRequestOptions requestOptions = new CosmosContainerRequestOptions();
 
-        leaseContainerResponse = databaseLink.createContainer(containerSettings, 400, requestOptions).block();
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        leaseContainerResponse = databaseLink.createContainer(containerSettings, throughputProperties, requestOptions).block();
 
         if (leaseContainerResponse == null) {
             throw new RuntimeException(String.format("Failed to create collection %s in database %s.", leaseCollectionName, databaseName));
         }
 
-        return leaseContainerResponse.getContainer();
+        return databaseLink.getContainer(leaseContainerResponse.getProperties().getId());
     }
 
     public static void createNewDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count, Duration delay) {

@@ -4,32 +4,33 @@
 package com.azure.cosmos.examples.crudquickstart.async;
 
 
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
-import com.azure.cosmos.CosmosPagedFlux;
+import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.DirectConnectionConfig;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.models.CosmosAsyncContainerResponse;
-import com.azure.cosmos.models.CosmosAsyncDatabaseResponse;
-import com.azure.cosmos.models.CosmosAsyncItemResponse;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
-import com.azure.cosmos.models.FeedOptions;
+import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
-import com.google.common.collect.Lists;
+import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
@@ -84,18 +85,19 @@ public class SampleCRUDQuickstartAsync {
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
-        ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add("West US");
+
         //  Setting the preferred location to Cosmos DB Account region
         //  West US is just an example. User should set preferred location to the Cosmos DB region closest to the application
-        defaultPolicy.setPreferredLocations(Lists.newArrayList("West US"));
 
         //  Create async client
         //  <CreateAsyncClient>
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(defaultPolicy)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .preferredRegions(preferredRegions)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildAsyncClient();
 
         //  </CreateAsyncClient>
@@ -140,9 +142,9 @@ public class SampleCRUDQuickstartAsync {
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
-        Mono<CosmosAsyncDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
+        Mono<CosmosDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
         databaseIfNotExists.flatMap(databaseResponse -> {
-            database = databaseResponse.getDatabase();
+            database = client.getDatabase(databaseResponse.getProperties().getId());
             logger.info("Checking database " + database.getId() + " completed!\n");
             return Mono.empty();
         }).block();
@@ -156,16 +158,17 @@ public class SampleCRUDQuickstartAsync {
         //  <CreateContainerIfNotExists>
 
         CosmosContainerProperties containerProperties = new CosmosContainerProperties(containerName, "/lastName");
-        Mono<CosmosAsyncContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        Mono<CosmosContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, throughputProperties);
 
         //  Create container with 400 RU/s
-        CosmosAsyncContainerResponse cosmosContainerResponse = containerIfNotExists.block();
-        container = cosmosContainerResponse.getContainer();
+        CosmosContainerResponse cosmosContainerResponse = containerIfNotExists.block();
+        container = database.getContainer(cosmosContainerResponse.getProperties().getId());
         //  </CreateContainerIfNotExists>
 
         //Modify existing container
         containerProperties = cosmosContainerResponse.getProperties();
-        Mono<CosmosAsyncContainerResponse> propertiesReplace = container.replace(containerProperties, new CosmosContainerRequestOptions());
+        Mono<CosmosContainerResponse> propertiesReplace = container.replace(containerProperties, new CosmosContainerRequestOptions());
         propertiesReplace.flatMap(containerResponse -> {
             logger.info("setupContainer(): Container " + container.getId() + " in " + database.getId() +
                     "has been updated with it's new properties.");
@@ -192,7 +195,7 @@ public class SampleCRUDQuickstartAsync {
                 .flatMap(itemResponse -> {
                     logger.info(String.format("Created item with request charge of %.2f within" +
                                     " duration %s",
-                            itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
+                            itemResponse.getRequestCharge(), itemResponse.getDuration()));
                     logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
                     return Mono.just(itemResponse.getRequestCharge());
                 }) //Flux of request charges
@@ -204,9 +207,9 @@ public class SampleCRUDQuickstartAsync {
                                     charge));
                         },
                         err -> {
-                            if (err instanceof CosmosClientException) {
+                            if (err instanceof CosmosException) {
                                 //Client-specific errors
-                                CosmosClientException cerr = (CosmosClientException) err;
+                                CosmosException cerr = (CosmosException) err;
                                 cerr.printStackTrace();
                                 logger.error(String.format("Read Item failed with %s\n", cerr));
                             } else {
@@ -237,11 +240,11 @@ public class SampleCRUDQuickstartAsync {
 
         //Upsert the modified item
         Mono.just(family_to_upsert).flatMap(item -> {
-            CosmosAsyncItemResponse<Family> item_resp = container.upsertItem(family_to_upsert).block();
+            CosmosItemResponse<Family> item_resp = container.upsertItem(family_to_upsert).block();
 
             //  Get upsert request charge and other properties like latency, and diagnostics strings, etc.
             logger.info(String.format("Upserted item with request charge of %.2f within duration %s",
-                    item_resp.getRequestCharge(), item_resp.getRequestLatency()));
+                    item_resp.getRequestCharge(), item_resp.getDuration()));
 
             return Mono.empty();
         }).subscribe();
@@ -255,20 +258,20 @@ public class SampleCRUDQuickstartAsync {
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
         familiesToCreate.flatMap(family -> {
-            Mono<CosmosAsyncItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
+            Mono<CosmosItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
             return asyncItemResponseMono;
         })
                 .subscribe(
                         itemResponse -> {
                             double requestCharge = itemResponse.getRequestCharge();
-                            Duration requestLatency = itemResponse.getRequestLatency();
+                            Duration requestLatency = itemResponse.getDuration();
                             logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                                     itemResponse.getItem().getId(), requestCharge, requestLatency));
                         },
                         err -> {
-                            if (err instanceof CosmosClientException) {
+                            if (err instanceof CosmosException) {
                                 //Client-specific errors
-                                CosmosClientException cerr = (CosmosClientException) err;
+                                CosmosException cerr = (CosmosException) err;
                                 cerr.printStackTrace();
                                 logger.error(String.format("Read Item failed with %s\n", cerr));
                             } else {
@@ -296,18 +299,19 @@ public class SampleCRUDQuickstartAsync {
         //  <QueryItems>
         // Set some common query options
 
-        FeedOptions queryOptions = new FeedOptions();
-        queryOptions.setMaxItemCount(10);
-        //queryOptions.setEnableCrossPartitionQuery(true); //No longer needed in SDK v4
+        int preferredPageSize = 10; // We'll use this later
+
+        QueryRequestOptions queryOptions = new QueryRequestOptions();
+
         //  Set populate query metrics to get metrics around query executions
-        queryOptions.setPopulateQueryMetrics(true);
+        queryOptions.setQueryMetricsEnabled(true);
 
         CosmosPagedFlux<Family> pagedFluxResponse = container.queryItems(
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
-        pagedFluxResponse.byPage().subscribe(
+        pagedFluxResponse.byPage(preferredPageSize).subscribe(
                 fluxResponse -> {
                     logger.info("Got a page of query result with " +
                             fluxResponse.getResults().size() + " items(s)"
@@ -320,9 +324,9 @@ public class SampleCRUDQuickstartAsync {
                             .collect(Collectors.toList()));
                 },
                 err -> {
-                    if (err instanceof CosmosClientException) {
+                    if (err instanceof CosmosException) {
                         //Client-specific errors
-                        CosmosClientException cerr = (CosmosClientException) err;
+                        CosmosException cerr = (CosmosException) err;
                         cerr.printStackTrace();
                         logger.error(String.format("Read Item failed with %s\n", cerr));
                     } else {
@@ -368,5 +372,6 @@ public class SampleCRUDQuickstartAsync {
         client.close();
         logger.info("Done.");
     }
+
 }
 

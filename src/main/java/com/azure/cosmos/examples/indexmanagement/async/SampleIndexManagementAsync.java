@@ -3,29 +3,28 @@
 
 package com.azure.cosmos.examples.indexmanagement.async;
 
-import com.azure.cosmos.ConnectionPolicy;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
-import com.azure.cosmos.CosmosPagedFlux;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.models.CosmosAsyncContainerResponse;
-import com.azure.cosmos.models.CosmosAsyncDatabaseResponse;
-import com.azure.cosmos.models.CosmosAsyncItemResponse;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.ExcludedPath;
-import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.IncludedPath;
 import com.azure.cosmos.models.IndexingMode;
 import com.azure.cosmos.models.IndexingPolicy;
 import com.azure.cosmos.models.PartitionKey;
-import com.google.common.collect.Lists;
+import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -83,18 +82,16 @@ public class SampleIndexManagementAsync {
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
-        ConnectionPolicy defaultPolicy = ConnectionPolicy.getDefaultPolicy();
-        //  Setting the preferred location to Cosmos DB Account region
-        //  West US is just an example. User should set preferred location to the Cosmos DB region closest to the application
-        defaultPolicy.setPreferredLocations(Lists.newArrayList("West US"));
+        ArrayList<String> preferredRegions = new ArrayList<String>();
+        preferredRegions.add("West US");
 
         //  Create async client
         //  <CreateAsyncClient>
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConnectionPolicy(defaultPolicy)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .preferredRegions(preferredRegions)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildAsyncClient();
 
         //  </CreateAsyncClient>
@@ -134,9 +131,9 @@ public class SampleIndexManagementAsync {
 
         //  Create database if not exists
         //  <CreateDatabaseIfNotExists>
-        Mono<CosmosAsyncDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
+        Mono<CosmosDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
         databaseIfNotExists.flatMap(databaseResponse -> {
-            database = databaseResponse.getDatabase();
+            database = client.getDatabase(databaseResponse.getProperties().getId());
             logger.info("Checking database " + database.getId() + " completed!\n");
             return Mono.empty();
         }).block();
@@ -157,16 +154,12 @@ public class SampleIndexManagementAsync {
 
         // Included paths
         List<IncludedPath> includedPaths = new ArrayList<>();
-        IncludedPath includedPath = new IncludedPath();
-        includedPath.setPath("/*");
-        includedPaths.add(includedPath);
+        includedPaths.add(new IncludedPath("/*"));
         indexingPolicy.setIncludedPaths(includedPaths);
 
         // Excluded paths
         List<ExcludedPath> excludedPaths = new ArrayList<>();
-        ExcludedPath excludedPath = new ExcludedPath();
-        excludedPath.setPath("/name/*");
-        excludedPaths.add(excludedPath);
+        excludedPaths.add(new ExcludedPath("/name/*"));
         indexingPolicy.setExcludedPaths(excludedPaths);
 
         // Spatial indices - if you need them, here is how to set them up:
@@ -207,11 +200,12 @@ public class SampleIndexManagementAsync {
 
         // </CustomIndexingPolicy>
 
-        Mono<CosmosAsyncContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, 400);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        Mono<CosmosContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, throughputProperties);
 
         //  Create container with 400 RU/s
         containerIfNotExists.flatMap(containerResponse -> {
-            container = containerResponse.getContainer();
+            container = database.getContainer(containerResponse.getProperties().getId());
             logger.info("Checking container " + container.getId() + " completed!\n");
             return Mono.empty();
         }).block();
@@ -232,7 +226,7 @@ public class SampleIndexManagementAsync {
                 .flatMap(itemResponse -> {
                     logger.info(String.format("Created item with request charge of %.2f within" +
                                     " duration %s",
-                            itemResponse.getRequestCharge(), itemResponse.getRequestLatency()));
+                            itemResponse.getRequestCharge(), itemResponse.getDuration()));
                     logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
                     return Mono.just(itemResponse.getRequestCharge());
                 }) //Flux of request charges
@@ -244,9 +238,9 @@ public class SampleIndexManagementAsync {
                                     charge));
                         },
                         err -> {
-                            if (err instanceof CosmosClientException) {
+                            if (err instanceof CosmosException) {
                                 //Client-specific errors
-                                CosmosClientException cerr = (CosmosClientException) err;
+                                CosmosException cerr = (CosmosException) err;
                                 cerr.printStackTrace();
                                 logger.info(String.format("Read Item failed with %s\n", cerr));
                             } else {
@@ -278,20 +272,20 @@ public class SampleIndexManagementAsync {
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
         familiesToCreate.flatMap(family -> {
-            Mono<CosmosAsyncItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
+            Mono<CosmosItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
             return asyncItemResponseMono;
         })
                 .subscribe(
                         itemResponse -> {
                             double requestCharge = itemResponse.getRequestCharge();
-                            Duration requestLatency = itemResponse.getRequestLatency();
+                            Duration requestLatency = itemResponse.getDuration();
                             logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
                                     itemResponse.getItem().getId(), requestCharge, requestLatency));
                         },
                         err -> {
-                            if (err instanceof CosmosClientException) {
+                            if (err instanceof CosmosException) {
                                 //Client-specific errors
-                                CosmosClientException cerr = (CosmosClientException) err;
+                                CosmosException cerr = (CosmosException) err;
                                 cerr.printStackTrace();
                                 logger.info(String.format("Read Item failed with %s\n", cerr));
                             } else {
@@ -317,19 +311,19 @@ public class SampleIndexManagementAsync {
 
     private void queryItems() {
         //  <QueryItems>
-        // Set some common query options
 
-        FeedOptions queryOptions = new FeedOptions();
-        queryOptions.setMaxItemCount(10);
+        // Set some common query options
+        int preferredPageSize = 10;
+        QueryRequestOptions queryOptions = new QueryRequestOptions();
         //  Set populate query metrics to get metrics around query executions
-        queryOptions.setPopulateQueryMetrics(true);
+        queryOptions.setQueryMetricsEnabled(true);
 
         CosmosPagedFlux<Family> pagedFluxResponse = container.queryItems(
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
         final CountDownLatch completionLatch = new CountDownLatch(1);
 
-        pagedFluxResponse.byPage().subscribe(
+        pagedFluxResponse.byPage(preferredPageSize).subscribe(
                 fluxResponse -> {
                     logger.info("Got a page of query result with " +
                             fluxResponse.getResults().size() + " items(s)"
@@ -342,9 +336,9 @@ public class SampleIndexManagementAsync {
                             .collect(Collectors.toList()));
                 },
                 err -> {
-                    if (err instanceof CosmosClientException) {
+                    if (err instanceof CosmosException) {
                         //Client-specific errors
-                        CosmosClientException cerr = (CosmosClientException) err;
+                        CosmosException cerr = (CosmosException) err;
                         cerr.printStackTrace();
                         logger.error(String.format("Read Item failed with %s\n", cerr));
                     } else {

@@ -6,16 +6,12 @@ package com.azure.cosmos.examples.queries.sync;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.CosmosPagedIterable;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.implementation.http.HttpResponse;
-import com.azure.cosmos.models.AccessCondition;
-import com.azure.cosmos.models.AccessConditionType;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
@@ -23,17 +19,19 @@ import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
-import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.QueryRequestOptions;
 import com.azure.cosmos.models.SqlParameter;
-import com.azure.cosmos.models.SqlParameterList;
 import com.azure.cosmos.models.SqlQuerySpec;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -94,9 +92,9 @@ public class QueriesQuickstart {
 
         //  Create sync client
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
 
@@ -106,7 +104,7 @@ public class QueriesQuickstart {
         createDocument();
 
         queryAllDocuments();
-        queryWithPagingAndContinuationTokenAndPrintQueryCharge(new FeedOptions());
+        queryWithPagingAndContinuationTokenAndPrintQueryCharge(new QueryRequestOptions());
         queryEquality();
         queryInequality();
         queryRange();
@@ -126,7 +124,7 @@ public class QueriesQuickstart {
     private void executeQueryPrintSingleResult(String sql) {
         logger.info("Execute query {}",sql);
 
-        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new FeedOptions(), Family.class);
+        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new QueryRequestOptions(), Family.class);
 
         // Print
         if (filteredFamilies.iterator().hasNext()) {
@@ -140,7 +138,7 @@ public class QueriesQuickstart {
     private void executeQueryWithQuerySpecPrintSingleResult(SqlQuerySpec querySpec) {
         logger.info("Execute query {}",querySpec.getQueryText());
 
-        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(querySpec, new FeedOptions(), Family.class);
+        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(querySpec, new QueryRequestOptions(), Family.class);
 
         // Print
         if (filteredFamilies.iterator().hasNext()) {
@@ -156,7 +154,8 @@ public class QueriesQuickstart {
         logger.info("Create database " + databaseName + " if not exists...");
 
         //  Create database if not exists
-        database = client.createDatabaseIfNotExists(databaseName).getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -169,8 +168,12 @@ public class QueriesQuickstart {
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/lastName");
 
+        // Provision throughput
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
+
         //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties, 200).getContainer();
+        CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(containerResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -197,7 +200,7 @@ public class QueriesQuickstart {
         executeQueryPrintSingleResult("SELECT * FROM c");
     }
 
-    private void queryWithPagingAndContinuationTokenAndPrintQueryCharge(FeedOptions options) throws Exception {
+    private void queryWithPagingAndContinuationTokenAndPrintQueryCharge(QueryRequestOptions options) throws Exception {
         logger.info("Query with paging and continuation token; print the total RU charge of the query");
 
         String query = "SELECT * FROM Families";
@@ -215,14 +218,10 @@ public class QueriesQuickstart {
             logger.info("Receiving a set of query response pages.");
             logger.info("Continuation Token: " + continuationToken + "\n");
 
-            FeedOptions queryOptions = new FeedOptions();
-
-            // note that setMaxItemCount sets the number of items to return in a single page result
-            queryOptions.setMaxItemCount(pageSize);
-            queryOptions.setRequestContinuation(continuationToken);
+            QueryRequestOptions queryOptions = new QueryRequestOptions();
 
             Iterable<FeedResponse<Family>> feedResponseIterator =
-                    container.queryItems(query, queryOptions, Family.class).iterableByPage();
+                    container.queryItems(query, queryOptions, Family.class).iterableByPage(continuationToken,pageSize);
 
             for (FeedResponse<Family> page : feedResponseIterator) {
                 logger.info(String.format("Current page number: %d", currentPageNumber));
@@ -256,7 +255,7 @@ public class QueriesQuickstart {
     private void parallelQueryWithPagingAndContinuationTokenAndPrintQueryCharge() throws Exception {
         logger.info("Parallel implementation of:");
 
-        FeedOptions options = new FeedOptions();
+        QueryRequestOptions options = new QueryRequestOptions();
 
         // 0 maximum parallel tasks, effectively serial execution
         options.setMaxDegreeOfParallelism(0);
@@ -380,14 +379,14 @@ public class QueriesQuickstart {
     private void queryWithQuerySpec() throws Exception {
         logger.info("Query with SqlQuerySpec");
 
-        FeedOptions options = new FeedOptions();
+        QueryRequestOptions options = new QueryRequestOptions();
         options.setPartitionKey(new PartitionKey("Witherspoon"));
 
         // Simple query with a single property equality comparison
         // in SQL with SQL parameterization instead of inlining the
         // parameter values in the query string
 
-        SqlParameterList paramList = new SqlParameterList();
+        ArrayList<SqlParameter> paramList = new ArrayList<SqlParameter>();
         paramList.add(new SqlParameter("@id", "AndersenFamily"));
         SqlQuerySpec querySpec = new SqlQuerySpec(
                 "SELECT * FROM Families f WHERE (f.id = @id)",
@@ -398,7 +397,7 @@ public class QueriesQuickstart {
         // Query using two properties within each document. WHERE Id == "" AND Address.City == ""
         // notice here how we are doing an equality comparison on the string value of City
 
-        paramList = new SqlParameterList();
+        paramList = new ArrayList<SqlParameter>();
         paramList.add(new SqlParameter("@id", "AndersenFamily"));
         paramList.add(new SqlParameter("@city", "Seattle"));
         querySpec = new SqlQuerySpec(

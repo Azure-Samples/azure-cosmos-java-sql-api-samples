@@ -6,22 +6,22 @@ package com.azure.cosmos.examples.documentcrud.sync;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosClientException;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.CosmosPagedIterable;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.models.AccessCondition;
-import com.azure.cosmos.models.AccessConditionType;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
-import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.QueryRequestOptions;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,9 +79,9 @@ public class DocumentCRUDQuickstart {
 
         //  Create sync client
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
 
@@ -105,7 +105,8 @@ public class DocumentCRUDQuickstart {
         logger.info("Create database " + databaseName + " if not exists...");
 
         //  Create database if not exists
-        database = client.createDatabaseIfNotExists(databaseName).getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -118,8 +119,12 @@ public class DocumentCRUDQuickstart {
         CosmosContainerProperties containerProperties =
                 new CosmosContainerProperties(containerName, "/lastName");
 
+        // Provision throughput
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(200);
+
         //  Create container with 200 RU/s
-        container = database.createContainerIfNotExists(containerProperties, 200).getContainer();
+        CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(containerResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -145,7 +150,7 @@ public class DocumentCRUDQuickstart {
         logger.info("Read document " + documentId + " by ID.");
 
         //  Read document by ID
-        Family family = container.readItem(documentId,new PartitionKey(documentLastName),Family.class).getResource();
+        Family family = container.readItem(documentId,new PartitionKey(documentLastName),Family.class).getItem();
 
         // Check result
         logger.info("Finished reading family " + family.getId() + " with partition key " + family.getLastName());
@@ -158,7 +163,7 @@ public class DocumentCRUDQuickstart {
         logger.info("Read all documents in container " + containerName + ".");
 
         //  Read all documents in the container
-        CosmosPagedIterable<Family> families = container.readAllItems(new FeedOptions(),Family.class);
+        CosmosPagedIterable<Family> families = container.readAllItems(new QueryRequestOptions(),Family.class);
 
         // Print
         String msg="Listing documents in container:\n";
@@ -175,7 +180,7 @@ public class DocumentCRUDQuickstart {
 
         String sql = "SELECT * FROM c WHERE c.lastName = 'Witherspoon'";
 
-        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new FeedOptions(), Family.class);
+        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new QueryRequestOptions(), Family.class);
 
         // Print
         if (filteredFamilies.iterator().hasNext()) {
@@ -229,7 +234,7 @@ public class DocumentCRUDQuickstart {
         logger.info("Read document " + documentId + " to obtain current ETag: " + etag);
 
         // Modify document
-        Family family = famResp.getResource();
+        Family family = famResp.getItem();
         family.setRegistered(!family.isRegistered());
 
         // Persist the change back to the server, updating the ETag in the process
@@ -241,19 +246,16 @@ public class DocumentCRUDQuickstart {
         // Now update the document and call replace with the AccessCondition requiring that ETag has not changed.
         // This should fail because the "concurrent" document change updated the ETag.
         try {
-            AccessCondition ac = new AccessCondition();
-            ac.setType(AccessConditionType.IF_MATCH);
-            ac.setCondition(etag);
 
             CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
-            requestOptions.setAccessCondition(ac);
+            requestOptions.setIfMatchETag(etag);
 
             family.setDistrict("Seafood");
 
             CosmosItemResponse<Family> failedFamResp =
                     container.replaceItem(family,family.getId(),new PartitionKey(family.getLastName()),requestOptions);
 
-        } catch (CosmosClientException cce) {
+        } catch (CosmosException cce) {
             logger.info("As expected, we have a pre-condition failure exception\n");
         }
 
@@ -272,11 +274,8 @@ public class DocumentCRUDQuickstart {
         // This should fail.
 
         String etag = famResp.getResponseHeaders().get("etag");
-        AccessCondition ac = new AccessCondition();
-        ac.setType(AccessConditionType.IF_NONE_MATCH);
-        ac.setCondition(etag);
         CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
-        requestOptions.setAccessCondition(ac);
+        requestOptions.setIfNoneMatchETag(etag);
 
         CosmosItemResponse<Family> failResp =
                 container.readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class);
@@ -284,7 +283,7 @@ public class DocumentCRUDQuickstart {
         logger.info("Re-read doc with status code of {} (we anticipate failure due to ETag not having changed.)", failResp.getStatusCode());
 
         // Replace the doc with a modified version, which will update ETag
-        Family family = famResp.getResource();
+        Family family = famResp.getItem();
         family.setRegistered(!family.isRegistered());
         CosmosItemResponse<Family> failedFamResp =
                 container.replaceItem(family,family.getId(),new PartitionKey(family.getLastName()),new CosmosItemRequestOptions());

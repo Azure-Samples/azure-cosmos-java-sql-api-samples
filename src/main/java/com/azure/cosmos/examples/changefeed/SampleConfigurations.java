@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 package com.azure.cosmos.examples.changefeed;
 
-import com.google.common.base.Strings;
-import org.apache.commons.lang3.StringUtils;
+import com.azure.cosmos.implementation.apachecommons.lang.StringUtils;
+import com.azure.cosmos.implementation.guava25.base.Strings;
 
 /**
  * Contains the configurations for tests.

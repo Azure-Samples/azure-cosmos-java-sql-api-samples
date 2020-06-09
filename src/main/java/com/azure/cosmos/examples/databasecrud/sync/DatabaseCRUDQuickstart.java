@@ -7,13 +7,12 @@ import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.CosmosPagedIterable;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.models.CosmosDatabaseProperties;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
-import com.azure.cosmos.models.FeedOptions;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,9 +59,9 @@ public class DatabaseCRUDQuickstart {
 
         //  Create sync client
         client = new CosmosClientBuilder()
-                .setEndpoint(AccountSettings.HOST)
-                .setKey(AccountSettings.MASTER_KEY)
-                .setConsistencyLevel(ConsistencyLevel.EVENTUAL)
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
 
@@ -78,7 +77,8 @@ public class DatabaseCRUDQuickstart {
         logger.info("Create database " + databaseName + " if not exists...");
 
         //  Create database if not exists
-        database = client.createDatabaseIfNotExists(databaseName).getDatabase();
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -98,7 +98,7 @@ public class DatabaseCRUDQuickstart {
         logger.info("Read all databases in the account.");
 
         //  Read all databases in the account
-        CosmosPagedIterable<CosmosDatabaseProperties> databases = client.readAllDatabases(new FeedOptions());
+        CosmosPagedIterable<CosmosDatabaseProperties> databases = client.readAllDatabases();
 
         // Print
         String msg="Listing databases in account:\n";
