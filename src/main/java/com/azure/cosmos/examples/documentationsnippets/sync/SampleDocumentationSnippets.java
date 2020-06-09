@@ -211,8 +211,6 @@ public class SampleDocumentationSnippets {
 
         //  <ManageConflictResolutionConflictFeedSync>
 
-        database.read().
-
         //  </ManageConflictResolutionConflictFeedSync>
     }
 

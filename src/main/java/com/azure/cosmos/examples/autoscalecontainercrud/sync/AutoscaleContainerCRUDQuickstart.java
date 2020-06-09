@@ -126,9 +126,9 @@ public class AutoscaleContainerCRUDQuickstart {
         int autoscaleMaxThroughput = autoscaleContainerThroughput.getAutoscaleMaxThroughput();
 
         // The throughput (RU/s) the resource is currently scaled to
-        int currentThroughput = autoscaleContainerThroughput.Throughput;
+        //int currentThroughput = autoscaleContainerThroughput.Throughput;
 
-        logger.info("Autoscale max throughput: {} current throughput: {}",autoscaleMaxThroughput,currentThroughput);
+        //logger.info("Autoscale max throughput: {} current throughput: {}",autoscaleMaxThroughput,currentThroughput);
     }
 
     // Container read
