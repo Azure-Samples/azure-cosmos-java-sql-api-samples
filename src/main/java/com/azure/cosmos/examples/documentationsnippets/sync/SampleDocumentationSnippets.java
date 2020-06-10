@@ -140,7 +140,7 @@ public class SampleDocumentationSnippets {
 
         CosmosContainer container = null;
 
-        //  <ManageConsistencySessionTokenSync>
+        //  <ManageConsistencySessionSync>
 
         // Get session token from response
         CosmosItemResponse<JsonNode> response = container.readItem(itemId, new PartitionKey(partitionKey), JsonNode.class);
@@ -236,9 +236,17 @@ public class SampleDocumentationSnippets {
         String container_id = "family_container";
         String partition_key = "/pk";
 
-        CosmosDatabase database = null;
+        CosmosContainer container = null;
 
         //  <ManageConflictResolutionConflictFeedSync>
+
+        container.rea
+
+        Iterator<Conflict> conflictsIterator = client.readConflicts(this.collectionLink, null).getQueryIterator();
+        while (conflictsIterator.hasNext()) {
+            Conflict conflict = conflictsIterator.next();
+            /* Do something with conflict */
+        }
 
         //  </ManageConflictResolutionConflictFeedSync>
     }
