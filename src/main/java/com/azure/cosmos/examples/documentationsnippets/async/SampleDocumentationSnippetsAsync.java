@@ -17,9 +17,12 @@ import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.examples.storedprocedure.async.SampleStoredProcedureAsync;
 import com.azure.cosmos.models.ConflictResolutionPolicy;
 import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosItemRequestOptions;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -123,6 +126,32 @@ public class SampleDocumentationSnippetsAsync {
                         .buildAsyncClient();
 
         //  </ManageConsistencyAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-consistency
+     * Utilize session tokens
+     */
+
+    /** Session token */
+    public static void ManageConsistencyLevelsInAzureCosmosDBSessionTokenAsync() {
+        String itemId = "Henderson";
+        String partitionKey = "4A3B-6Y78";
+
+        CosmosAsyncContainer container = null;
+
+        //  <ManageConsistencySessionTokenAsync>
+
+        // Get session token from response
+        CosmosItemResponse<JsonNode> response = container.readItem(itemId, new PartitionKey(partitionKey), JsonNode.class).block();
+        String sessionToken = response.getSessionToken();
+
+        // Resume the session by setting the session token on the RequestOptions
+        CosmosItemRequestOptions options = new CosmosItemRequestOptions();
+        options.setSessionToken(sessionToken);
+        CosmosItemResponse<JsonNode> response2 = container.readItem(itemId, new PartitionKey(partitionKey), JsonNode.class).block();
+
+        //  </ManageConsistencySessionAsync>
     }
 
     /**
