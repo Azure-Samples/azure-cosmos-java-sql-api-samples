@@ -75,6 +75,7 @@ public class ContainerCRUDQuickstart {
 
         createDatabaseIfNotExists();
         createContainerIfNotExists();
+        updateContainerThroughput();
 
         readContainerById();
         readAllContainers();

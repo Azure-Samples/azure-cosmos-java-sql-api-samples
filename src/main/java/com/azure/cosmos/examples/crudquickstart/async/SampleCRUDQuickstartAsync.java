@@ -20,8 +20,8 @@ import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.models.QueryRequestOptions;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
@@ -302,7 +302,7 @@ public class SampleCRUDQuickstartAsync {
 
         int preferredPageSize = 10; // We'll use this later
 
-        QueryRequestOptions queryOptions = new QueryRequestOptions();
+        CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
 
         //  Set populate query metrics to get metrics around query executions
         queryOptions.setQueryMetricsEnabled(true);

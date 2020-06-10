@@ -19,8 +19,8 @@ import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.models.QueryRequestOptions;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
@@ -208,7 +208,7 @@ public class SampleCRUDQuickstart {
 
         // Set some common query options
         int preferredPageSize = 10;
-        QueryRequestOptions queryOptions = new QueryRequestOptions();
+        CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
         //queryOptions.setEnableCrossPartitionQuery(true); //No longer necessary in SDK v4
         //  Set populate query metrics to get metrics around query executions
         queryOptions.setQueryMetricsEnabled(true);

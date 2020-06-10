@@ -18,8 +18,8 @@ import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.models.QueryRequestOptions;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
@@ -159,29 +159,12 @@ public class DocumentCRUDQuickstart {
         logger.info("Done.");
     }
 
-    // <DEPRECATED - readAllItems API not available in GA SDK Container read all
-    /* private void readAllDocumentsInContainer() throws Exception {
-        logger.info("Read all documents in container " + containerName + ".");
-
-        //  Read all documents in the container
-        CosmosPagedIterable<Family> families = container.readAllItems(new QueryRequestOptions(),Family.class);
-
-        // Print
-        String msg="Listing documents in container:\n";
-        for(Family family : families) {
-            msg += String.format("-Family (/id,partition key)): (%s,%s)\n",family.getId(),family.getLastName());
-        }
-        logger.info(msg + "\n");
-
-        logger.info("Done.");
-    } */
-
     private void queryDocuments() throws Exception {
         logger.info("Query documents in the container " + containerName + ".");
 
         String sql = "SELECT * FROM c WHERE c.lastName = 'Witherspoon'";
 
-        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new QueryRequestOptions(), Family.class);
+        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new CosmosQueryRequestOptions(), Family.class);
 
         // Print
         if (filteredFamilies.iterator().hasNext()) {

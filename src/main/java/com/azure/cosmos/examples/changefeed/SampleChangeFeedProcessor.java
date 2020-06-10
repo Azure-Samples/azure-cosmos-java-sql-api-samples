@@ -3,6 +3,7 @@
 package com.azure.cosmos.examples.changefeed;
 
 import com.azure.cosmos.ChangeFeedProcessor;
+import com.azure.cosmos.ChangeFeedProcessorBuilder;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
@@ -122,7 +123,7 @@ public class SampleChangeFeedProcessor {
     }
 
     public static ChangeFeedProcessor getChangeFeedProcessor(String hostName, CosmosAsyncContainer feedContainer, CosmosAsyncContainer leaseContainer) {
-        return ChangeFeedProcessor.changeFeedProcessorBuilder()
+        return new ChangeFeedProcessorBuilder()
                 .hostName(hostName)
                 .feedContainer(feedContainer)
                 .leaseContainer(leaseContainer)
@@ -150,7 +151,7 @@ public class SampleChangeFeedProcessor {
                     logger.info("--->handleChanges() END");
 
                 })
-                .build();
+                .buildChangeFeedProcessor();
     }
 
     public static CosmosAsyncClient getCosmosClient() {

@@ -19,9 +19,9 @@ import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.models.QueryRequestOptions;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.models.ThroughputProperties;
@@ -105,7 +105,7 @@ public class QueriesQuickstart {
         createDocument();
 
         queryAllDocuments();
-        queryWithPagingAndContinuationTokenAndPrintQueryCharge(new QueryRequestOptions());
+        queryWithPagingAndContinuationTokenAndPrintQueryCharge(new CosmosQueryRequestOptions());
         queryEquality();
         queryInequality();
         queryRange();
@@ -125,7 +125,7 @@ public class QueriesQuickstart {
     private void executeQueryPrintSingleResult(String sql) {
         logger.info("Execute query {}",sql);
 
-        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new QueryRequestOptions(), Family.class);
+        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(sql, new CosmosQueryRequestOptions(), Family.class);
 
         // Print
         if (filteredFamilies.iterator().hasNext()) {
@@ -137,7 +137,7 @@ public class QueriesQuickstart {
     }
 
     private void executeCountQueryPrintSingleResult(String sql) {
-        CosmosPagedIterable<JsonNode> filteredFamilies1 = container.queryItems(sql, new QueryRequestOptions(), JsonNode.class);
+        CosmosPagedIterable<JsonNode> filteredFamilies1 = container.queryItems(sql, new CosmosQueryRequestOptions(), JsonNode.class);
 
         // Print
         if (filteredFamilies1.iterator().hasNext()) {
@@ -151,7 +151,7 @@ public class QueriesQuickstart {
     private void executeQueryWithQuerySpecPrintSingleResult(SqlQuerySpec querySpec) {
         logger.info("Execute query {}",querySpec.getQueryText());
 
-        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(querySpec, new QueryRequestOptions(), Family.class);
+        CosmosPagedIterable<Family> filteredFamilies = container.queryItems(querySpec, new CosmosQueryRequestOptions(), Family.class);
 
         // Print
         if (filteredFamilies.iterator().hasNext()) {
@@ -213,7 +213,7 @@ public class QueriesQuickstart {
         executeQueryPrintSingleResult("SELECT * FROM c");
     }
 
-    private void queryWithPagingAndContinuationTokenAndPrintQueryCharge(QueryRequestOptions options) throws Exception {
+    private void queryWithPagingAndContinuationTokenAndPrintQueryCharge(CosmosQueryRequestOptions options) throws Exception {
         logger.info("Query with paging and continuation token; print the total RU charge of the query");
 
         String query = "SELECT * FROM Families";
@@ -231,7 +231,7 @@ public class QueriesQuickstart {
             logger.info("Receiving a set of query response pages.");
             logger.info("Continuation Token: " + continuationToken + "\n");
 
-            QueryRequestOptions queryOptions = new QueryRequestOptions();
+            CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
 
             Iterable<FeedResponse<Family>> feedResponseIterator =
                     container.queryItems(query, queryOptions, Family.class).iterableByPage(continuationToken,pageSize);
@@ -268,7 +268,7 @@ public class QueriesQuickstart {
     private void parallelQueryWithPagingAndContinuationTokenAndPrintQueryCharge() throws Exception {
         logger.info("Parallel implementation of:");
 
-        QueryRequestOptions options = new QueryRequestOptions();
+        CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
 
         // 0 maximum parallel tasks, effectively serial execution
         options.setMaxDegreeOfParallelism(0);
@@ -392,7 +392,7 @@ public class QueriesQuickstart {
     private void queryWithQuerySpec() throws Exception {
         logger.info("Query with SqlQuerySpec");
 
-        QueryRequestOptions options = new QueryRequestOptions();
+        CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
         options.setPartitionKey(new PartitionKey("Witherspoon"));
 
         // Simple query with a single property equality comparison

@@ -75,6 +75,7 @@ public class AutoscaleContainerCRUDQuickstart {
 
         createDatabaseIfNotExists();
         createContainerIfNotExists();
+        updateContainerThroughput();
 
         readContainerById();
         readAllContainers();

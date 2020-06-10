@@ -17,12 +17,12 @@ import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.ExcludedPath;
 import com.azure.cosmos.models.IncludedPath;
 import com.azure.cosmos.models.IndexingMode;
 import com.azure.cosmos.models.IndexingPolicy;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.models.QueryRequestOptions;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
@@ -315,7 +315,7 @@ public class SampleIndexManagementAsync {
 
         // Set some common query options
         int preferredPageSize = 10;
-        QueryRequestOptions queryOptions = new QueryRequestOptions();
+        CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
         //  Set populate query metrics to get metrics around query executions
         queryOptions.setQueryMetricsEnabled(true);
 
