@@ -140,7 +140,7 @@ public class SampleDocumentationSnippetsAsync {
 
         CosmosAsyncContainer container = null;
 
-        //  <ManageConsistencySessionTokenAsync>
+        //  <ManageConsistencySessionAsync>
 
         // Get session token from response
         CosmosItemResponse<JsonNode> response = container.readItem(itemId, new PartitionKey(partitionKey), JsonNode.class).block();
