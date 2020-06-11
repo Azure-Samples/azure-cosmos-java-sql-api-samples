@@ -29,11 +29,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -237,6 +240,47 @@ public class SampleDocumentationSnippetsAsync {
         }).blockLast();
         assert(failureCount.get() > 0);
         //  </TroubleshootNeedsSchedulerAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/troubleshoot-java-sdk-v4-sql
+     * Troubleshooting guide - custom scheduler
+     * Async only
+     */
+
+    /** Troubleshooting guide - custom scheduler */
+    public static void TroubleshootingGuideJavaSDKv4CustomSchedulerAsync() {
+
+        CosmosAsyncContainer container = null;
+        CustomPOJO item = null;
+
+        //  <TroubleshootCustomSchedulerAsync>
+        // Have a singleton instance of an executor and a scheduler.
+        ExecutorService ex  = Executors.newFixedThreadPool(30);
+        Scheduler customScheduler = Schedulers.fromExecutor(ex);
+        //  </TroubleshootCustomSchedulerAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/troubleshoot-java-sdk-v4-sql
+     * Troubleshooting guide - publish on scheduler
+     * Async only
+     */
+
+    /** Troubleshooting guide - publish on scheduler */
+    public static void TroubleshootingGuideJavaSDKv4PublishOnSchedulerAsync() {
+
+        CosmosAsyncContainer container = null;
+        Scheduler customScheduler = null;
+        Family family = null;
+
+        //  <TroubleshootPublishOnSchedulerAsync>
+        container.createItem(family)
+                .publishOn(customScheduler) // Switches the thread.
+                .subscribe(
+                        // ...
+                );
+        //  </TroubleshootPublishOnSchedulerAsync>
     }
 
     /**
