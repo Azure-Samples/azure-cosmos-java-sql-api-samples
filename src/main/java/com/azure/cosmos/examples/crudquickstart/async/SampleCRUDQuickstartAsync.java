@@ -31,7 +31,6 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 public class SampleCRUDQuickstartAsync {
@@ -244,41 +243,29 @@ public class SampleCRUDQuickstartAsync {
         //  This will help fast look up of items because of partition key
         //  <ReadItem>
 
-        final CountDownLatch completionLatch = new CountDownLatch(1);
-
-        familiesToCreate.flatMap(family -> {
-            Mono<CosmosItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
-            return asyncItemResponseMono;
-        })
-                .subscribe(
-                        itemResponse -> {
-                            double requestCharge = itemResponse.getRequestCharge();
-                            Duration requestLatency = itemResponse.getDuration();
-                            logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
-                                    itemResponse.getItem().getId(), requestCharge, requestLatency));
-                        },
-                        err -> {
-                            if (err instanceof CosmosException) {
-                                //Client-specific errors
-                                CosmosException cerr = (CosmosException) err;
-                                cerr.printStackTrace();
-                                logger.error(String.format("Read Item failed with %s\n", cerr));
-                            } else {
-                                //General errors
-                                err.printStackTrace();
-                            }
-
-                            completionLatch.countDown();
-                        },
-                        () -> {
-                            completionLatch.countDown();
-                        }
-                );
-
         try {
-            completionLatch.await();
-        } catch (InterruptedException err) {
-            throw new AssertionError("Unexpected Interruption", err);
+
+            familiesToCreate.flatMap(family -> {
+                Mono<CosmosItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKey(family.getLastName()), Family.class);
+                return asyncItemResponseMono;
+            }).flatMap(itemResponse -> {
+                double requestCharge = itemResponse.getRequestCharge();
+                Duration requestLatency = itemResponse.getDuration();
+                logger.info(String.format("Item successfully read with id %s with a charge of %.2f and within duration %s",
+                        itemResponse.getItem().getId(), requestCharge, requestLatency));
+                return Flux.empty();
+            }).blockLast();
+
+        } catch (Exception err) {
+            if (err instanceof CosmosException) {
+                //Client-specific errors
+                CosmosException cerr = (CosmosException) err;
+                cerr.printStackTrace();
+                logger.error(String.format("Read Item failed with %s\n", cerr));
+            } else {
+                //General errors
+                err.printStackTrace();
+            }
         }
 
         //  </ReadItem>
@@ -298,42 +285,32 @@ public class SampleCRUDQuickstartAsync {
         CosmosPagedFlux<Family> pagedFluxResponse = container.queryItems(
                 "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
 
-        final CountDownLatch completionLatch = new CountDownLatch(1);
-
-        pagedFluxResponse.byPage(preferredPageSize).subscribe(
-                fluxResponse -> {
-                    logger.info("Got a page of query result with " +
-                            fluxResponse.getResults().size() + " items(s)"
-                            + " and request charge of " + fluxResponse.getRequestCharge());
-
-                    logger.info("Item Ids " + fluxResponse
-                            .getResults()
-                            .stream()
-                            .map(Family::getId)
-                            .collect(Collectors.toList()));
-                },
-                err -> {
-                    if (err instanceof CosmosException) {
-                        //Client-specific errors
-                        CosmosException cerr = (CosmosException) err;
-                        cerr.printStackTrace();
-                        logger.error(String.format("Read Item failed with %s\n", cerr));
-                    } else {
-                        //General errors
-                        err.printStackTrace();
-                    }
-
-                    completionLatch.countDown();
-                },
-                () -> {
-                    completionLatch.countDown();
-                }
-        );
-
         try {
-            completionLatch.await();
-        } catch (InterruptedException err) {
-            throw new AssertionError("Unexpected Interruption", err);
+
+            pagedFluxResponse.byPage(preferredPageSize).flatMap(fluxResponse -> {
+                logger.info("Got a page of query result with " +
+                        fluxResponse.getResults().size() + " items(s)"
+                        + " and request charge of " + fluxResponse.getRequestCharge());
+
+                logger.info("Item Ids " + fluxResponse
+                        .getResults()
+                        .stream()
+                        .map(Family::getId)
+                        .collect(Collectors.toList()));
+
+                return Flux.empty();
+            }).blockLast();
+
+        } catch(Exception err) {
+            if (err instanceof CosmosException) {
+                //Client-specific errors
+                CosmosException cerr = (CosmosException) err;
+                cerr.printStackTrace();
+                logger.error(String.format("Read Item failed with %s\n", cerr));
+            } else {
+                //General errors
+                err.printStackTrace();
+            }
         }
 
         // </QueryItems>
