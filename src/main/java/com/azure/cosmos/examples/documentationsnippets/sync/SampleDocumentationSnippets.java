@@ -119,11 +119,11 @@ public class SampleDocumentationSnippets {
         CosmosContainer syncContainer = null;
         CustomPOJO item = null;
 
-        //  <PerformanceRequestChargeAsync>
+        //  <PerformanceRequestChargeSync>
         CosmosItemResponse<CustomPOJO> response = syncContainer.createItem(item);
 
         response.getRequestCharge();
-        //  </PerformanceRequestChargeAsync>
+        //  </PerformanceRequestChargeSync>
     }
 
     /**
