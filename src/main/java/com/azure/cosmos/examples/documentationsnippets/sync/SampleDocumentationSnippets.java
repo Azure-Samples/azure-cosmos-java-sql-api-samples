@@ -226,29 +226,4 @@ public class SampleDocumentationSnippets {
         //  </ManageConflictResolutionCustomSync>
     }
 
-    /**
-     * https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-conflicts
-     * Read from conflict feed
-     */
-
-    /** Client-side conflict feed read */
-    public static void ManageConflictResolutionPoliciesInAzureCosmosDBConflictFeedSync() {
-        String container_id = "family_container";
-        String partition_key = "/pk";
-
-        CosmosContainer container = null;
-
-        //  <ManageConflictResolutionConflictFeedSync>
-
-        container.rea
-
-        Iterator<Conflict> conflictsIterator = client.readConflicts(this.collectionLink, null).getQueryIterator();
-        while (conflictsIterator.hasNext()) {
-            Conflict conflict = conflictsIterator.next();
-            /* Do something with conflict */
-        }
-
-        //  </ManageConflictResolutionConflictFeedSync>
-    }
-
 }
