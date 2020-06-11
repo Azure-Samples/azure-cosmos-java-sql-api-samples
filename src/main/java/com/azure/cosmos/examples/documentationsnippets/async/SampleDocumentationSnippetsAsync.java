@@ -60,6 +60,29 @@ public class SampleDocumentationSnippetsAsync {
     /**
      * https://docs.microsoft.com/en-us/azure/cosmos-db/performance-tips-java-sdk-v4-sql
      * Performance tips - needs scheduler
+     */
+
+    /** Performance tips - needs scheduler */
+    public static void PerformanceTipsJavaSDKv4ClientAsync() {
+
+        String HOSTNAME = "";
+        String MASTERKEY = "";
+        ConsistencyLevel CONSISTENCY = ConsistencyLevel.EVENTUAL; //Arbitrary
+
+        //  <PerformanceClientAsync>
+
+        CosmosAsyncClient client = new CosmosClientBuilder()
+                .endpoint(HOSTNAME)
+                .key(MASTERKEY)
+                .consistencyLevel(CONSISTENCY)
+                .buildAsyncClient();
+
+        //  </PerformanceClientAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/performance-tips-java-sdk-v4-sql
+     * Performance tips - needs scheduler
      * Async only
      */
 
@@ -125,17 +148,50 @@ public class SampleDocumentationSnippetsAsync {
      */
 
     /** Performance tips - not specifying partition key in point-writes */
-    public static void PerformanceTipsJavaSDKv4NoPKSpecSync() {
+    public static void PerformanceTipsJavaSDKv4NoPKSpecAsync() {
 
         CosmosAsyncContainer asyncContainer = null;
         CustomPOJO item = null;
         String pk = "pk_value";
 
         //  <PerformanceNoPKAsync>
-
         asyncContainer.createItem(item,new PartitionKey(pk),new CosmosItemRequestOptions()).block();
-
         //  </PerformanceNoPKAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/performance-tips-java-sdk-v4-sql
+     * Performance tips - add partition key in point-writes
+     */
+
+    /** Performance tips - add partition key in point-writes */
+    public static void PerformanceTipsJavaSDKv4AddPKSpecAsync() {
+
+        CosmosAsyncContainer asyncContainer = null;
+        CustomPOJO item = null;
+
+        //  <PerformanceAddPKAsync>
+        asyncContainer.createItem(item).block();
+        //  </PerformanceAddPKAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/performance-tips-java-sdk-v4-sql
+     * Performance tips - get request charge
+     */
+
+    /** Performance tips - get request charge */
+    public static void PerformanceTipsJavaSDKv4RequestChargeSpecAsync() {
+
+        CosmosAsyncContainer asyncContainer = null;
+        CustomPOJO item = null;
+        String pk = "pk_value";
+
+        //  <PerformanceRequestChargeAsync>
+        CosmosItemResponse<CustomPOJO> response = asyncContainer.createItem(item).block();
+
+        response.getRequestCharge();
+        //  </PerformanceRequestChargeAsync>
     }
 
     /**
