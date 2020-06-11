@@ -3,6 +3,8 @@
 
 package com.azure.cosmos.examples.documentationsnippets.async;
 
+import com.azure.cosmos.ChangeFeedProcessor;
+import com.azure.cosmos.ChangeFeedProcessorBuilder;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
@@ -23,9 +25,15 @@ import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
+import com.azure.cosmos.models.ExcludedPath;
+import com.azure.cosmos.models.IncludedPath;
+import com.azure.cosmos.models.IndexingMode;
+import com.azure.cosmos.models.IndexingPolicy;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -35,6 +43,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -487,17 +496,17 @@ public class SampleDocumentationSnippetsAsync {
         // Create database with specified name
         client.createDatabaseIfNotExists("YourDatabaseName")
                 .flatMap(databaseResponse -> {
-            testDatabaseAsync = client.getDatabase("YourDatabaseName");
-            // Container properties - name and partition key
-            CosmosContainerProperties containerProperties =
-                    new CosmosContainerProperties("YourContainerName", "/id");
+                    testDatabaseAsync = client.getDatabase("YourDatabaseName");
+                    // Container properties - name and partition key
+                    CosmosContainerProperties containerProperties =
+                            new CosmosContainerProperties("YourContainerName", "/id");
 
-            // Provision manual throughput
-            ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+                    // Provision manual throughput
+                    ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
-            // Create container
-            return database.createContainerIfNotExists(containerProperties, throughputProperties);
-        }).flatMap(containerResponse -> {
+                    // Create container
+                    return database.createContainerIfNotExists(containerProperties, throughputProperties);
+                }).flatMap(containerResponse -> {
             testContainerAsync = database.getContainer("YourContainerName");
             return Mono.empty();
         }).subscribe();
@@ -505,4 +514,267 @@ public class SampleDocumentationSnippetsAsync {
         //  </MigrateJavaSDKv4ResourceAsync>
     }
 
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/migrate-java-v4-sdk
+     * Item operations
+     */
+
+    /** Item operations */
+    public static void MigrateJavaSDKv4ItemOperationsAsync() {
+        String container_id = "family_container";
+        String partition_key = "/pk";
+
+        CosmosAsyncDatabase database = null;
+
+        //  <MigrateItemOpsAsync>
+
+        // Container is created. Generate many docs to insert.
+        int number_of_docs = 50000;
+        ArrayList<JsonNode> docs = generateManyDocs(number_of_docs);
+
+        // Insert many docs into container...
+        Flux.fromIterable(docs)
+                .flatMap(doc -> testContainerAsync.createItem(doc))
+                .subscribe(); // ...Subscribing triggers stream execution.
+
+        //  </MigrateItemOpsAsync>
+    }
+
+    /** ^Helper function for the above code snippet */
+    private static ArrayList<JsonNode> generateManyDocs(int number_of_docs) {
+        //Dummy
+        return null;
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/migrate-java-v4-sdk
+     * Indexing
+     */
+
+    /** Indexing */
+    public static void MigrateJavaSDKv4IndexingAsync() {
+        String containerName = "family_container";
+        String partition_key = "/pk";
+
+        CosmosAsyncDatabase database = null;
+
+        //  <MigrateIndexingAsync>
+
+        CosmosContainerProperties containerProperties = new CosmosContainerProperties(containerName, "/lastName");
+
+        // Custom indexing policy
+        IndexingPolicy indexingPolicy = new IndexingPolicy();
+        indexingPolicy.setIndexingMode(IndexingMode.CONSISTENT);
+
+        // Included paths
+        List<IncludedPath> includedPaths = new ArrayList<>();
+        includedPaths.add(new IncludedPath("/*"));
+        indexingPolicy.setIncludedPaths(includedPaths);
+
+        // Excluded paths
+        List<ExcludedPath> excludedPaths = new ArrayList<>();
+        excludedPaths.add(new ExcludedPath("/name/*"));
+        indexingPolicy.setExcludedPaths(excludedPaths);
+
+        containerProperties.setIndexingPolicy(indexingPolicy);
+
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        database.createContainerIfNotExists(containerProperties, throughputProperties);
+        CosmosAsyncContainer containerIfNotExists = database.getContainer(containerName);
+
+        //  </MigrateIndexingAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/migrate-java-v4-sdk
+     * Stored procedure
+     */
+
+    /** Stored procedure */
+    public static void MigrateJavaSDKv4SprocAsync() {
+        String containerName = "family_container";
+        String partition_key = "/pk";
+
+        CosmosAsyncContainer container = null;
+
+        //  <MigrateSprocAsync>
+
+        logger.info("Creating stored procedure...\n");
+
+        String sprocId = "createMyDocument";
+
+        String sprocBody = "function createMyDocument() {\n" +
+                "var documentToCreate = {\"id\":\"test_doc\"}\n" +
+                "var context = getContext();\n" +
+                "var collection = context.getCollection();\n" +
+                "var accepted = collection.createDocument(collection.getSelfLink(), documentToCreate,\n" +
+                "    function (err, documentCreated) {\n" +
+                "if (err) throw new Error('Error' + err.message);\n" +
+                "context.getResponse().setBody(documentCreated.id)\n" +
+                "});\n" +
+                "if (!accepted) return;\n" +
+                "}";
+
+        CosmosStoredProcedureProperties storedProcedureDef = new CosmosStoredProcedureProperties(sprocId, sprocBody);
+        container.getScripts()
+                .createStoredProcedure(storedProcedureDef,
+                        new CosmosStoredProcedureRequestOptions()).block();
+
+        // ...
+
+        logger.info(String.format("Executing stored procedure %s...\n\n", sprocId));
+
+        CosmosStoredProcedureRequestOptions options = new CosmosStoredProcedureRequestOptions();
+        options.setPartitionKey(new PartitionKey("test_doc"));
+
+        container.getScripts()
+                .getStoredProcedure(sprocId)
+                .execute(null, options)
+                .flatMap(executeResponse -> {
+                    logger.info(String.format("Stored procedure %s returned %s (HTTP %d), at cost %.3f RU.\n",
+                            sprocId,
+                            executeResponse.getResponseAsString(),
+                            executeResponse.getStatusCode(),
+                            executeResponse.getRequestCharge()));
+                    return Mono.empty();
+                }).block();
+
+        //  </MigrateSprocAsync>
+    }
+
+    private static ObjectMapper OBJECT_MAPPER = null;
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/migrate-java-v4-sdk
+     * Change Feed
+     */
+
+    /** Change Feed */
+    public static void MigrateJavaSDKv4CFAsync() {
+        String hostName = "hostname";
+        String partition_key = "/pk";
+
+        CosmosAsyncContainer feedContainer = null;
+        CosmosAsyncContainer leaseContainer = null;
+
+        //  <MigrateCFAsync>
+
+        ChangeFeedProcessor changeFeedProcessorInstance =
+                new ChangeFeedProcessorBuilder()
+                        .hostName(hostName)
+                        .feedContainer(feedContainer)
+                        .leaseContainer(leaseContainer)
+                        .handleChanges((List<JsonNode> docs) -> {
+                            logger.info("--->setHandleChanges() START");
+
+                            for (JsonNode document : docs) {
+                                try {
+                                    //Change Feed hands the document to you in the form of a JsonNode
+                                    //As a developer you have two options for handling the JsonNode document provided to you by Change Feed
+                                    //One option is to operate on the document in the form of a JsonNode, as shown below. This is great
+                                    //especially if you do not have a single uniform data model for all documents.
+                                    logger.info("---->DOCUMENT RECEIVED: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
+                                            .writeValueAsString(document));
+
+                                    //You can also transform the JsonNode to a POJO having the same structure as the JsonNode,
+                                    //as shown below. Then you can operate on the POJO.
+                                    CustomPOJO pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO.class);
+                                    logger.info("----=>id: " + pojo_doc.getId());
+
+                                } catch (JsonProcessingException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            logger.info("--->handleChanges() END");
+
+                        })
+                        .buildChangeFeedProcessor();
+
+        // ...
+
+        changeFeedProcessorInstance.start()
+                .subscribeOn(Schedulers.elastic())
+                .subscribe();
+
+        //  </MigrateCFAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/migrate-java-v4-sdk
+     * Container TTL
+     */
+
+    /** Container TTL */
+    public static void MigrateJavaSDKv4ContainerTTLAsync() {
+        String hostName = "hostname";
+        String partition_key = "/pk";
+
+        CosmosAsyncDatabase database = null;
+
+        //  <MigrateContainerTTLAsync>
+
+        CosmosAsyncContainer container;
+
+        // Create a new container with TTL enabled with default expiration value
+        CosmosContainerProperties containerProperties = new CosmosContainerProperties("myContainer", "/myPartitionKey");
+        containerProperties.setDefaultTimeToLiveInSeconds(90 * 60 * 60 * 24);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        database.createContainerIfNotExists(containerProperties, throughputProperties).block();
+        container = database.getContainer("myContainer");
+
+        //  </MigrateContainerTTLAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/migrate-java-v4-sdk
+     * Item TTL
+     */
+
+    /** Item TTL */
+    public static void MigrateJavaSDKv4ItemTTLAsync() {
+        String hostName = "hostname";
+        String partition_key = "/pk";
+
+        CosmosAsyncDatabase database = null;
+
+        //  <MigrateItemTTLAsync>
+
+        // Set the value to the expiration in seconds
+        SalesOrder salesOrder = new SalesOrder(
+                "SO05",
+                "CO18009186470",
+                60 * 60 * 24 * 30  // Expire sales orders in 30 days
+        );
+
+        //  </MigrateItemTTLAsync>
+    }
+
 }
+
+//  <MigrateItemTTLClassAsync>
+
+// Include a property that serializes to "ttl" in JSON
+class SalesOrder
+{
+    private String id;
+    private String customerId;
+    private Integer ttl;
+
+    public SalesOrder(String id, String customerId, Integer ttl) {
+        this.id = id;
+        this.customerId = customerId;
+        this.ttl = ttl;
+    }
+
+    public String getId() {return this.id;}
+    public void setId(String new_id) {this.id = new_id;}
+    public String getCustomerId() {return this.customerId;}
+    public void setCustomerId(String new_cid) {this.customerId = new_cid;}
+    public Integer getTtl() {return this.ttl;}
+    public void setTtl(Integer new_ttl) {this.ttl = new_ttl;}
+
+    //...
+}
+
+//  </MigrateItemTTLClassAsync>
