@@ -187,48 +187,36 @@ public class SampleCRUDQuickstartAsync {
 
         //  <CreateItem>
 
-        final CountDownLatch completionLatch = new CountDownLatch(1);
-
-        //  Combine multiple item inserts, associated success println's, and a final aggregate stats println into one Reactive stream.
-        families.flatMap(family -> {
-            return container.createItem(family);
-        }) //Flux of item request responses
-                .flatMap(itemResponse -> {
-                    logger.info(String.format("Created item with request charge of %.2f within" +
-                                    " duration %s",
-                            itemResponse.getRequestCharge(), itemResponse.getDuration()));
-                    logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
-                    return Mono.just(itemResponse.getRequestCharge());
-                }) //Flux of request charges
-                .reduce(0.0,
-                        (charge_n, charge_nplus1) -> charge_n + charge_nplus1
-                ) //Mono of total charge - there will be only one item in this stream
-                .subscribe(charge -> {
-                            logger.info(String.format("Created items with total request charge of %.2f\n",
-                                    charge));
-                        },
-                        err -> {
-                            if (err instanceof CosmosException) {
-                                //Client-specific errors
-                                CosmosException cerr = (CosmosException) err;
-                                cerr.printStackTrace();
-                                logger.error(String.format("Read Item failed with %s\n", cerr));
-                            } else {
-                                //General errors
-                                err.printStackTrace();
-                            }
-
-                            completionLatch.countDown();
-                        },
-                        () -> {
-                            completionLatch.countDown();
-                        }
-                ); //Preserve the total charge and print aggregate charge/item count stats.
-
         try {
-            completionLatch.await();
-        } catch (InterruptedException err) {
-            throw new AssertionError("Unexpected Interruption", err);
+
+            //  Combine multiple item inserts, associated success println's, and a final aggregate stats println into one Reactive stream.
+            double charge = families.flatMap(family -> {
+                return container.createItem(family);
+            }) //Flux of item request responses
+                    .flatMap(itemResponse -> {
+                        logger.info(String.format("Created item with request charge of %.2f within" +
+                                        " duration %s",
+                                itemResponse.getRequestCharge(), itemResponse.getDuration()));
+                        logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
+                        return Mono.just(itemResponse.getRequestCharge());
+                    }) //Flux of request charges
+                    .reduce(0.0,
+                            (charge_n, charge_nplus1) -> charge_n + charge_nplus1
+                    ) //Mono of total charge - there will be only one item in this stream
+                    .block(); //Preserve the total charge and print aggregate charge/item count stats.
+
+            logger.info(String.format("Created items with total request charge of %.2f\n", charge));
+
+        } catch (Exception err) {
+            if (err instanceof CosmosException) {
+                //Client-specific errors
+                CosmosException cerr = (CosmosException) err;
+                cerr.printStackTrace();
+                logger.error(String.format("Read Item failed with %s\n", cerr));
+            } else {
+                //General errors
+                err.printStackTrace();
+            }
         }
 
         //  </CreateItem>
