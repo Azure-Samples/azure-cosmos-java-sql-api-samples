@@ -24,6 +24,7 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -456,6 +457,52 @@ public class SampleDocumentationSnippetsAsync {
         database.createContainerIfNotExists(containerProperties).block();
 
         //  </ManageConflictResolutionCustomAsync>
+    }
+
+    private static CosmosAsyncDatabase testDatabaseAsync = null;
+    private static CosmosAsyncContainer testContainerAsync = null;
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/migrate-java-v4-sdk
+     * Migrate previous versions to Java SDK v4
+     */
+
+    /** Migrate previous versions to Java SDK v4 */
+    public static void MigrateJavaSDKv4ResourceAsync() {
+        String container_id = "family_container";
+        String partition_key = "/pk";
+
+        CosmosAsyncDatabase database = null;
+
+        //  <MigrateJavaSDKv4ResourceAsync>
+
+        // Create Async client.
+        // Building an async client is still a sync operation.
+        CosmosAsyncClient client = new CosmosClientBuilder()
+                .endpoint("your.hostname")
+                .key("yourmasterkey")
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .buildAsyncClient();
+
+        // Create database with specified name
+        client.createDatabaseIfNotExists("YourDatabaseName")
+                .flatMap(databaseResponse -> {
+            testDatabaseAsync = client.getDatabase("YourDatabaseName");
+            // Container properties - name and partition key
+            CosmosContainerProperties containerProperties =
+                    new CosmosContainerProperties("YourContainerName", "/id");
+
+            // Provision manual throughput
+            ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+            // Create container
+            return database.createContainerIfNotExists(containerProperties, throughputProperties);
+        }).flatMap(containerResponse -> {
+            testContainerAsync = database.getContainer("YourContainerName");
+            return Mono.empty();
+        }).subscribe();
+
+        //  </MigrateJavaSDKv4ResourceAsync>
     }
 
 }
