@@ -14,6 +14,8 @@ import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
+import com.azure.cosmos.examples.common.Families;
+import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.examples.storedprocedure.async.SampleStoredProcedureAsync;
 import com.azure.cosmos.models.ConflictResolutionPolicy;
 import com.azure.cosmos.models.CosmosContainerProperties;
@@ -25,11 +27,15 @@ import com.azure.cosmos.models.PartitionKey;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SampleDocumentationSnippetsAsync {
 
@@ -49,6 +55,113 @@ public class SampleDocumentationSnippetsAsync {
     //  <Main>
     public static void main(String[] args) {
         // Do nothing. This file is meant to be built but not executed.
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/performance-tips-java-sdk-v4-sql
+     * Performance tips - needs scheduler
+     * Async only
+     */
+
+    /** Performance tips - needs scheduler */
+    public static void PerformanceTipsJavaSDKv4NeedsSchedulerAsync() {
+
+        CosmosAsyncContainer asyncContainer = null;
+        CustomPOJO item = null;
+
+        //  <PerformanceNeedsSchedulerAsync>
+
+        Mono<CosmosItemResponse<CustomPOJO>> createItemPub = asyncContainer.createItem(item);
+        createItemPub.subscribe(
+                itemResponse -> {
+                    //this is executed on eventloop IO netty thread.
+                    //the eventloop thread is shared and is meant to return back quickly.
+                    //
+                    // DON'T do this on eventloop IO netty thread.
+                    veryCpuIntensiveWork();
+                });
+
+
+        //  </PerformanceNeedsSchedulerAsync>
+    }
+
+    /** ^Dummy helper function for the above snippet  */
+    public static void veryCpuIntensiveWork() {
+        //Dummy
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/performance-tips-java-sdk-v4-sql
+     * Performance tips - add scheduler
+     * Async only
+     */
+
+    /** Performance tips - add scheduler */
+    public static void PerformanceTipsJavaSDKv4AddSchedulerSync() {
+
+        CosmosAsyncContainer asyncContainer = null;
+        CustomPOJO item = null;
+
+        //  <PerformanceAddSchedulerAsync>
+
+        Mono<CosmosItemResponse<CustomPOJO>> createItemPub = asyncContainer.createItem(item);
+        createItemPub
+                .subscribeOn(Schedulers.elastic())
+                .subscribe(
+                        itemResponse -> {
+                            //this is executed on eventloop IO netty thread.
+                            //the eventloop thread is shared and is meant to return back quickly.
+                            //
+                            // DON'T do this on eventloop IO netty thread.
+                            veryCpuIntensiveWork();
+                        });
+
+        //  </PerformanceAddSchedulerAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/troubleshoot-java-sdk-v4-sql
+     * Troubleshooting guide - needs scheduler
+     * Async only
+     */
+
+    /** Troubleshooting guidie - needs scheduler */
+    public static void TroubleshootingGuideJavaSDKv4NeedsSchedulerAsync() {
+
+        CosmosAsyncContainer container = null;
+        CustomPOJO item = null;
+
+        //  <TroubleshootNeedsSchedulerAsync>
+
+        //Bad code with read timeout exception
+
+        int requestTimeoutInSeconds = 10;
+
+        /* ... */
+
+        AtomicInteger failureCount = new AtomicInteger();
+        // Max number of concurrent item inserts is # CPU cores + 1
+        Flux<Family> familyPub =
+                Flux.just(Families.getAndersenFamilyItem(), Families.getAndersenFamilyItem(), Families.getJohnsonFamilyItem());
+        familyPub.flatMap(family -> {
+            return container.createItem(family);
+        }).flatMap(r -> {
+            try {
+                // Time-consuming work is, for example,
+                // writing to a file, computationally heavy work, or just sleep.
+                // Basically, it's anything that takes more than a few milliseconds.
+                // Doing such operations on the IO Netty thread
+                // without a proper scheduler will cause problems.
+                // The subscriber will get a ReadTimeoutException failure.
+                TimeUnit.SECONDS.sleep(2 * requestTimeoutInSeconds);
+            } catch (Exception e) {
+            }
+            return Mono.empty();
+        }).doOnError(Exception.class, exception -> {
+            failureCount.incrementAndGet();
+        }).blockLast();
+        assert(failureCount.get() > 0);
+        //  </TroubleshootNeedsSchedulerAsync>
     }
 
     /**
