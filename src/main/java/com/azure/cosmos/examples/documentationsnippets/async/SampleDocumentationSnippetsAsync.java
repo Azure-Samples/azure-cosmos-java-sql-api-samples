@@ -120,12 +120,31 @@ public class SampleDocumentationSnippetsAsync {
     }
 
     /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/performance-tips-java-sdk-v4-sql
+     * Performance tips - not specifying partition key in point-writes
+     */
+
+    /** Performance tips - not specifying partition key in point-writes */
+    public static void PerformanceTipsJavaSDKv4NoPKSpecSync() {
+
+        CosmosAsyncContainer asyncContainer = null;
+        CustomPOJO item = null;
+        String pk = "pk_value";
+
+        //  <PerformanceNoPKAsync>
+
+        asyncContainer.createItem(item,new PartitionKey(pk),new CosmosItemRequestOptions()).block();
+
+        //  </PerformanceNoPKAsync>
+    }
+
+    /**
      * https://docs.microsoft.com/en-us/azure/cosmos-db/troubleshoot-java-sdk-v4-sql
      * Troubleshooting guide - needs scheduler
      * Async only
      */
 
-    /** Troubleshooting guidie - needs scheduler */
+    /** Troubleshooting guide - needs scheduler */
     public static void TroubleshootingGuideJavaSDKv4NeedsSchedulerAsync() {
 
         CosmosAsyncContainer container = null;
