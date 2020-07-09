@@ -171,6 +171,13 @@ public class SampleDocumentationSnippets {
                 .gatewayMode(gatewayConnectionConfig)
                 .buildClient();
 
+        /* No connection mode, defaults to Direct mode with default settings */
+        CosmosClient clientDefault = new CosmosClientBuilder()
+                .endpoint(HOSTNAME)
+                .key(MASTERKEY)
+                .consistencyLevel(CONSISTENCY)
+                .buildClient();
+
         //  </PerformanceClientConnectionModeSync>
     }
 
