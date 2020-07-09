@@ -133,6 +133,13 @@ public class SampleDocumentationSnippetsAsync {
                 .gatewayMode(gatewayConnectionConfig)
                 .buildAsyncClient();
 
+        /* No connection mode, defaults to Direct mode with default settings */
+        CosmosAsyncClient clientDefault = new CosmosClientBuilder()
+                .endpoint(HOSTNAME)
+                .key(MASTERKEY)
+                .consistencyLevel(CONSISTENCY)
+                .buildAsyncClient();
+
         //  </PerformanceClientConnectionModeAsync>
     }
 
