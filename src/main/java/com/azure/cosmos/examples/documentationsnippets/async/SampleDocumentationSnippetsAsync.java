@@ -3,6 +3,7 @@
 
 package com.azure.cosmos.examples.documentationsnippets.async;
 
+import com.azure.core.http.ProxyOptions;
 import com.azure.cosmos.ChangeFeedProcessor;
 import com.azure.cosmos.ChangeFeedProcessorBuilder;
 import com.azure.cosmos.ConsistencyLevel;
@@ -13,6 +14,8 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.DirectConnectionConfig;
+import com.azure.cosmos.GatewayConnectionConfig;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
@@ -41,6 +44,8 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
+import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -68,6 +73,104 @@ public class SampleDocumentationSnippetsAsync {
     //  <Main>
     public static void main(String[] args) {
         // Do nothing. This file is meant to be built but not executed.
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/performance-tips-java-sdk-v4-sql
+     * Performance tips - async Connection Mode
+     */
+
+    /** Performance tips - async Connection Mode */
+    public static void PerformanceTipsJavaSDKv4ConnectionModeAsync() {
+
+        String HOSTNAME = "";
+        String MASTERKEY = "";
+        ConsistencyLevel CONSISTENCY = ConsistencyLevel.EVENTUAL; //Arbitrary
+
+        //  <PerformanceClientConnectionModeAsync>
+
+        /* Direct mode, default settings */
+        CosmosAsyncClient clientDirectDefault = new CosmosClientBuilder()
+                .endpoint(HOSTNAME)
+                .key(MASTERKEY)
+                .consistencyLevel(CONSISTENCY)
+                .directMode()
+                .buildAsyncClient();
+
+        /* Direct mode, custom settings */
+        DirectConnectionConfig directConnectionConfig = DirectConnectionConfig.getDefaultConfig();
+
+        // Example config, do not use these settings as defaults
+        directConnectionConfig.setMaxConnectionsPerEndpoint(120);
+        directConnectionConfig.setIdleConnectionTimeout(Duration.ofMillis(100));
+
+        CosmosAsyncClient clientDirectCustom = new CosmosClientBuilder()
+                .endpoint(HOSTNAME)
+                .key(MASTERKEY)
+                .consistencyLevel(CONSISTENCY)
+                .directMode(directConnectionConfig)
+                .buildAsyncClient();
+
+        /* Gateway mode, default settings */
+        CosmosAsyncClient clientGatewayDefault = new CosmosClientBuilder()
+                .endpoint(HOSTNAME)
+                .key(MASTERKEY)
+                .consistencyLevel(CONSISTENCY)
+                .gatewayMode()
+                .buildAsyncClient();
+
+        /* Gateway mode, custom settings */
+        GatewayConnectionConfig gatewayConnectionConfig = GatewayConnectionConfig.getDefaultConfig();
+
+        // Example config, do not use these settings as defaults
+        gatewayConnectionConfig.setProxy(new ProxyOptions(ProxyOptions.Type.HTTP, InetSocketAddress.createUnresolved("your.proxy.addr",80)));
+        gatewayConnectionConfig.setMaxConnectionPoolSize(150);
+
+        CosmosAsyncClient clientGatewayCustom = new CosmosClientBuilder()
+                .endpoint(HOSTNAME)
+                .key(MASTERKEY)
+                .consistencyLevel(CONSISTENCY)
+                .gatewayMode(gatewayConnectionConfig)
+                .buildAsyncClient();
+
+        //  </PerformanceClientConnectionModeAsync>
+    }
+
+    /**
+     * https://docs.microsoft.com/en-us/azure/cosmos-db/performance-tips-java-sdk-v4-sql
+     * Performance tips - Direct data plane, Gateway control plane
+     */
+
+    /** Performance tips - Direct data plane, Gateway control plane */
+    public static void PerformanceTipsJavaSDKv4CDirectOverrideAsync() {
+
+        String HOSTNAME = "";
+        String MASTERKEY = "";
+        ConsistencyLevel CONSISTENCY = ConsistencyLevel.EVENTUAL; //Arbitrary
+
+        //  <PerformanceClientDirectOverrideAsync>
+
+        /* Independent customization of Direct mode data plane and Gateway mode control plane */
+        DirectConnectionConfig directConnectionConfig = DirectConnectionConfig.getDefaultConfig();
+
+        // Example config, do not use these settings as defaults
+        directConnectionConfig.setMaxConnectionsPerEndpoint(120);
+        directConnectionConfig.setIdleConnectionTimeout(Duration.ofMillis(100));
+
+        GatewayConnectionConfig gatewayConnectionConfig = GatewayConnectionConfig.getDefaultConfig();
+
+        // Example config, do not use these settings as defaults
+        gatewayConnectionConfig.setProxy(new ProxyOptions(ProxyOptions.Type.HTTP, InetSocketAddress.createUnresolved("your.proxy.addr",80)));
+        gatewayConnectionConfig.setMaxConnectionPoolSize(150);
+
+        CosmosAsyncClient clientDirectCustom = new CosmosClientBuilder()
+                .endpoint(HOSTNAME)
+                .key(MASTERKEY)
+                .consistencyLevel(CONSISTENCY)
+                .directMode(directConnectionConfig,gatewayConnectionConfig)
+                .buildAsyncClient();
+
+        //  </PerformanceClientDirectOverrideAsync>
     }
 
     /**
