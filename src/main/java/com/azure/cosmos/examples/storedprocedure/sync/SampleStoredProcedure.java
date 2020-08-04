@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class SampleStoredProcedure {
 
@@ -85,9 +86,16 @@ public class SampleStoredProcedure {
         //Execute the stored procedure, which we expect will create an item with id test_doc
         executeStoredProcedure();
 
+        //Create a stored procedure which takes an array argument and list all stored procedures that have been created
+        createStoredProcedureArrayArg();
+        readAllSprocs();
+
+        //Execute the stored procedure which takes an array argument
+        executeStoredProcedureArrayArg();
+
         //Perform a point-read to confirm that the item with id test_doc exists
         logger.info("Checking that a document was created by the stored procedure...");
-        CosmosItemResponse<CustomPOJO> test_resp = container.readItem("test_doc", new PartitionKey("test_doc"), CustomPOJO.class);
+        CosmosItemResponse<CustomPOJO> test_resp = container.readItem("test_doc_array_arg", new PartitionKey("test_doc_array_arg"), CustomPOJO.class);
         logger.info(String.format(
                 "Result of point-read for document created by stored procedure (200 indicates success): %d", test_resp.getStatusCode()));
     }
@@ -149,6 +157,27 @@ public class SampleStoredProcedure {
                         new CosmosStoredProcedureRequestOptions());
     }
 
+    public void createStoredProcedureArrayArg() throws Exception {
+        logger.info("Creating stored procedure...");
+
+        sprocId = "createMyDocument";
+        String sprocBody = "function " + sprocId + "ArrayArg() {\n" +
+                "var documentToCreate = {\"id\":\"test_doc_array_arg\"}\n" +
+                "var context = getContext();\n" +
+                "var collection = context.getCollection();\n" +
+                "var accepted = collection.createDocument(collection.getSelfLink(), documentToCreate,\n" +
+                "    function (err, documentCreated) {\n" +
+                "if (err) throw new Error('Error' + err.message);\n" +
+                "context.getResponse().setBody(documentCreated.id)\n" +
+                "});\n" +
+                "if (!accepted) return;\n" +
+                "}";
+        CosmosStoredProcedureProperties storedProcedureDef = new CosmosStoredProcedureProperties(sprocId + "ArrayArg", sprocBody);
+        container.getScripts()
+                .createStoredProcedure(storedProcedureDef,
+                        new CosmosStoredProcedureRequestOptions());
+    }
+
     private void readAllSprocs() throws Exception {
         logger.info("Listing all stored procedures associated with container " + containerName + "\n");
 
@@ -174,6 +203,29 @@ public class SampleStoredProcedure {
 
         logger.info(String.format("Stored procedure %s returned %s (HTTP %d), at cost %.3f RU.\n",
                 sprocId,
+                executeResponse.getResponseAsString(),
+                executeResponse.getStatusCode(),
+                executeResponse.getRequestCharge()));
+    }
+
+    public void executeStoredProcedureArrayArg() throws Exception {
+        logger.info(String.format("Executing stored procedure %s...\n\n", sprocId+"ArrayArg"));
+
+        CosmosStoredProcedureRequestOptions options = new CosmosStoredProcedureRequestOptions();
+        options.setPartitionKey(new PartitionKey("test_doc_array_arg"));
+
+        List<Object> sproc_args = new ArrayList<Object>();
+
+        sproc_args.add(new CustomPOJO("idA"));
+        sproc_args.add(new CustomPOJO("idB"));
+        sproc_args.add(new CustomPOJO("idC"));
+
+        CosmosStoredProcedureResponse executeResponse = container.getScripts()
+                .getStoredProcedure(sprocId+"ArrayArg")
+                .execute(sproc_args, options);
+
+        logger.info(String.format("Stored procedure %s returned %s (HTTP %d), at cost %.3f RU.\n",
+                sprocId+"ArrayArg",
                 executeResponse.getResponseAsString(),
                 executeResponse.getStatusCode(),
                 executeResponse.getRequestCharge()));
