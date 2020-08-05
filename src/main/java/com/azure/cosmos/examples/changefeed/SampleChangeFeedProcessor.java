@@ -10,8 +10,7 @@ import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.DirectConnectionConfig;
-import com.azure.cosmos.examples.common.CustomPOJO;
+import com.azure.cosmos.examples.common.CustomPOJO2;
 import com.azure.cosmos.implementation.Utils;
 import com.azure.cosmos.implementation.apachecommons.lang.RandomStringUtils;
 import com.azure.cosmos.models.CosmosContainerProperties;
@@ -141,7 +140,7 @@ public class SampleChangeFeedProcessor {
 
                             //You can also transform the JsonNode to a POJO having the same structure as the JsonNode,
                             //as shown below. Then you can operate on the POJO.
-                            CustomPOJO pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO.class);
+                            CustomPOJO2 pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO2.class);
                             logger.info("----=>id: " + pojo_doc.getId());
 
                         } catch (JsonProcessingException e) {
@@ -196,7 +195,7 @@ public class SampleChangeFeedProcessor {
             }
         }
 
-        CosmosContainerProperties containerSettings = new CosmosContainerProperties(collectionName, "/id");
+        CosmosContainerProperties containerSettings = new CosmosContainerProperties(collectionName, "/pk");
         CosmosContainerRequestOptions requestOptions = new CosmosContainerRequestOptions();
 
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(10000);
@@ -256,8 +255,9 @@ public class SampleChangeFeedProcessor {
     public static void createNewDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count, Duration delay) {
         String suffix = RandomStringUtils.randomAlphabetic(10);
         for (int i = 0; i <= count; i++) {
-            CustomPOJO document = new CustomPOJO();
+            CustomPOJO2 document = new CustomPOJO2();
             document.setId(String.format("0%d-%s", i, suffix));
+            document.setPk(document.getId()); // This is a very simple example, so we'll just have a partition key (/pk) field that we set equal to id
 
             containerClient.createItem(document).subscribe(doc -> {
                 logger.info("---->DOCUMENT WRITE: " + doc);
