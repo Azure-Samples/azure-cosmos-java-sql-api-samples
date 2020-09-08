@@ -60,7 +60,7 @@ public class SampleQueryProfilerAsync {
     private static String containerName = "airlineDemoDB";
     private static String partitionKey = "/partitionKey";
     private static int manualThroughput = 1000000;
-    private static String customQuery = "";
+    private static String customQuery = "SELECT * FROM c WHERE c.reportId = 669992495";
 
     public static void queryProfilerDemo() {
 
@@ -87,11 +87,16 @@ public class SampleQueryProfilerAsync {
         }).block();
 
         // With the client set up we are ready to execute and profile our query.
+        Profile.tic();
+
         CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
-        queryOptions.setMaxDegreeOfParallelism(100000);
-        queryOptions.setMaxBufferedItemCount(10);
-        int preferredPageSize = 10;
+        queryOptions.setMaxDegreeOfParallelism(0);
+        queryOptions.setMaxBufferedItemCount(1);
+        int preferredPageSize = 1;
         executeQuery(customQuery, queryOptions, preferredPageSize);
+
+        double toc_time=Profile.toc_ms()/1000.0;
+        logger.info("\n\n\n\nTotal query runtime (sec): {}.\n\n\n\n", toc_time);
 
         // Close client. This is always sync.
         logger.info("Closing client...");
