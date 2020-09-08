@@ -213,6 +213,7 @@ public class QueriesQuickstart {
         executeQueryPrintSingleResult("SELECT * FROM c");
     }
 
+
     private void queryWithPagingAndContinuationTokenAndPrintQueryCharge(CosmosQueryRequestOptions options) throws Exception {
         logger.info("Query with paging and continuation token; print the total RU charge of the query");
 
