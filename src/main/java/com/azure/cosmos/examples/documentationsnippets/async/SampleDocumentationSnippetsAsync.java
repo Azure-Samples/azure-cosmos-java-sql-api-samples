@@ -593,7 +593,7 @@ public class SampleDocumentationSnippetsAsync {
 
         CosmosAsyncDatabase database = null;
 
-        //  <MigrateJavaSDKv4ResourceAsync>
+        // <MigrateJavaSDKv4ResourceAsync>
 
         // Create Async client.
         // Building an async client is still a sync operation.
@@ -621,7 +621,7 @@ public class SampleDocumentationSnippetsAsync {
             return Mono.empty();
         }).subscribe();
 
-        //  </MigrateJavaSDKv4ResourceAsync>
+        // </MigrateJavaSDKv4ResourceAsync>
     }
 
     /**
