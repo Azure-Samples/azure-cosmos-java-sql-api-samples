@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 package com.azure.cosmos.examples.common;
 
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;

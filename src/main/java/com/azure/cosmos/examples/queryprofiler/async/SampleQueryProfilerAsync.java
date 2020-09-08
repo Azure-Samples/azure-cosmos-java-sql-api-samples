@@ -60,7 +60,9 @@ public class SampleQueryProfilerAsync {
     private static String containerName = "airlineDemoDB";
     private static String partitionKey = "/partitionKey";
     private static int manualThroughput = 1000000;
-    private static String customQuery = "SELECT * FROM c WHERE c.reportId = 669992495";
+//    private static String customQuery = "SELECT * FROM c WHERE c.reportId = 669992495";
+    private static String customQuery =
+        "SELECT * FROM c WHERE c.partitionKey ='Z50V4-745167' AND c.parameterDateTime >= '2020-04-10T27:16:00.000Z' AND c.parameterDateTime <= '2020-04-29T21:16:00.000Z' ORDER BY c.parameterDateTime DESC";
 
     public static void queryProfilerDemo() {
 
@@ -91,8 +93,8 @@ public class SampleQueryProfilerAsync {
 
         CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
         queryOptions.setMaxDegreeOfParallelism(0);
-        queryOptions.setMaxBufferedItemCount(1);
-        int preferredPageSize = 1;
+        queryOptions.setMaxBufferedItemCount(1000);
+        int preferredPageSize = 1000;
         executeQuery(customQuery, queryOptions, preferredPageSize);
 
         double toc_time=Profile.toc_ms()/1000.0;
