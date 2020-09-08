@@ -56,7 +56,11 @@ public class SampleQueryProfilerAsync {
     private static CosmosAsyncClient client;
     private static CosmosAsyncDatabase database;
     private static CosmosAsyncContainer container;
-    private static String customQuery = "SELECT * FROM c WHERE c.reportId = 466703043";
+    private static String databaseName = "airlineTelemetry";
+    private static String containerName = "airlineDemoDB";
+    private static String partitionKey = "/partitionKey";
+    private static int manualThroughput = 1000000;
+    private static String customQuery = "";
 
     public static void queryProfilerDemo() {
 
@@ -70,23 +74,23 @@ public class SampleQueryProfilerAsync {
                 .buildAsyncClient();
 
         // Describe the logic of database and container creation using Reactor...
-        client.createDatabaseIfNotExists("ContosoInventoryDB").flatMap(databaseResponse -> {
+        client.createDatabaseIfNotExists(databaseName).flatMap(databaseResponse -> {
             database = client.getDatabase(databaseResponse.getProperties().getId());
-            logger.info("\n\n\n\nCreated database ContosoInventoryDB.\n\n\n\n");
-            CosmosContainerProperties containerProperties = new CosmosContainerProperties("ContosoInventoryContainer", "/id");
-            ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+            logger.info("\n\n\n\nCreated or connected to database {}.\n\n\n\n",databaseName);
+            CosmosContainerProperties containerProperties = new CosmosContainerProperties(containerName, partitionKey);
+            ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(manualThroughput);
             return database.createContainerIfNotExists(containerProperties, throughputProperties);
         }).flatMap(containerResponse -> {
             container = database.getContainer(containerResponse.getProperties().getId());
-            logger.info("\n\n\n\nCreated container ContosoInventoryContainer.\n\n\n\n");
+            logger.info("\n\n\n\nCreated or connected to container {}.\n\n\n\n", containerName);
             return Mono.empty();
         }).block();
 
         // With the client set up we are ready to execute and profile our query.
         CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
-        queryOptions.setMaxDegreeOfParallelism(10);
-        queryOptions.setMaxBufferedItemCount(100);
-        int preferredPageSize = 100;
+        queryOptions.setMaxDegreeOfParallelism(100000);
+        queryOptions.setMaxBufferedItemCount(10);
+        int preferredPageSize = 10;
         executeQuery(customQuery, queryOptions, preferredPageSize);
 
         // Close client. This is always sync.
