@@ -22,6 +22,8 @@ import com.azure.cosmos.models.CosmosStoredProcedureResponse;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import com.google.gson.Gson;
+import org.ietf.jgss.GSSContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,11 +95,6 @@ public class SampleStoredProcedure {
         //Execute the stored procedure which takes an array argument
         executeStoredProcedureArrayArg();
 
-        //Perform a point-read to confirm that the item with id test_doc exists
-        logger.info("Checking that a document was created by the stored procedure...");
-        CosmosItemResponse<CustomPOJO> test_resp = container.readItem("test_doc_array_arg", new PartitionKey("test_doc_array_arg"), CustomPOJO.class);
-        logger.info(String.format(
-                "Result of point-read for document created by stored procedure (200 indicates success): %d", test_resp.getStatusCode()));
     }
 
     public void setUp() throws Exception {
@@ -123,7 +120,7 @@ public class SampleStoredProcedure {
         database = client.getDatabase(databaseResponse.getProperties().getId());
 
         CosmosContainerProperties containerProperties =
-                new CosmosContainerProperties(containerName, "/id");
+                new CosmosContainerProperties(containerName, "/city");
 
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
@@ -141,7 +138,7 @@ public class SampleStoredProcedure {
 
         sprocId = "createMyDocument";
         String sprocBody = "function createMyDocument() {\n" +
-                "var documentToCreate = {\"id\":\"test_doc\"}\n" +
+                "var documentToCreate = {\"id\":\"test_doc\", \"city\":\"Seattle\"}\n" +
                 "var context = getContext();\n" +
                 "var collection = context.getCollection();\n" +
                 "var accepted = collection.createDocument(collection.getSelfLink(), documentToCreate,\n" +
@@ -161,17 +158,40 @@ public class SampleStoredProcedure {
         logger.info("Creating stored procedure...");
 
         sprocId = "createMyDocument";
-        String sprocBody = "function " + sprocId + "ArrayArg() {\n" +
-                "var documentToCreate = {\"id\":\"test_doc_array_arg\"}\n" +
-                "var context = getContext();\n" +
-                "var collection = context.getCollection();\n" +
-                "var accepted = collection.createDocument(collection.getSelfLink(), documentToCreate,\n" +
-                "    function (err, documentCreated) {\n" +
-                "if (err) throw new Error('Error' + err.message);\n" +
-                "context.getResponse().setBody(documentCreated.id)\n" +
-                "});\n" +
-                "if (!accepted) return;\n" +
-                "}";
+        String sprocBody = "function " + sprocId + "ArrayArg(jsonArray) {\n" +
+        "    var context = getContext();\n" +
+        "    var container = context.getCollection();\n" +
+        "    //validate if input is valid json\n" +
+        "    if (typeof jsonArray === \"string\") {\n" +
+        "       try {\n" +
+        "            jsonArray = JSON.parse(jsonArray);\n" +
+        "        } catch (e) {\n" +
+        "            throw \"Bad input to store procedure should be array of json string.\";\n" +
+        "        }\n" +
+        "    } else {\n" +
+        "        throw \"Bad input to store procedure should be array of json string.\";\n" +
+        "    }\n" +
+        "    var resultDocuments = [];\n" +
+        "    jsonArray.forEach(function(jsonDoc) {\n" +
+        "        if (jsonDoc.isUpdate != undefined && jsonDoc.isUpdate === true) {\n" +
+        "            var accepted = container.replaceDocument(jsonDoc._self, jsonDoc, { etag: jsonDoc._etag },\n" +
+        "            function (err, docReplaced) {\n" +
+        "                if (err) throw new Error('Error' + err.message);\n" +
+        "                resultDocuments.push(docReplaced);\n" +
+        "            });\n" +
+        "            if (!accepted) throw \"Unable to update document, abort \";\n" +
+        "        } else {\n" +
+        "            var accepted = container.createDocument(container.getSelfLink(), jsonDoc,\n" +
+        "                    function (err, itemCreated) {\n" +
+        "                if (err) throw new Error('Error' + err.message);\n" +
+        "                resultDocuments.push(itemCreated);\n" +
+        "            });\n" +
+        "            if (!accepted) throw \"Unable to create document, abort \";\n" +
+        "        }\n" +
+        "    });\n" +
+        "    context.getResponse().setBody(resultDocuments);\n" +
+        "}\n";
+
         CosmosStoredProcedureProperties storedProcedureDef = new CosmosStoredProcedureProperties(sprocId + "ArrayArg", sprocBody);
         container.getScripts()
                 .createStoredProcedure(storedProcedureDef,
@@ -196,7 +216,7 @@ public class SampleStoredProcedure {
         logger.info(String.format("Executing stored procedure %s...\n\n", sprocId));
 
         CosmosStoredProcedureRequestOptions options = new CosmosStoredProcedureRequestOptions();
-        options.setPartitionKey(new PartitionKey("test_doc"));
+        options.setPartitionKey(new PartitionKey("Seattle"));
         CosmosStoredProcedureResponse executeResponse = container.getScripts()
                 .getStoredProcedure(sprocId)
                 .execute(null, options);
@@ -211,15 +231,17 @@ public class SampleStoredProcedure {
     public void executeStoredProcedureArrayArg() throws Exception {
         logger.info(String.format("Executing stored procedure %s...\n\n", sprocId+"ArrayArg"));
 
+        String partitionValue = "Seattle";
         CosmosStoredProcedureRequestOptions options = new CosmosStoredProcedureRequestOptions();
-        options.setPartitionKey(new PartitionKey("test_doc_array_arg"));
+        options.setPartitionKey(new PartitionKey(partitionValue));
 
-        List<Object> sproc_args = new ArrayList<Object>();
-
-        sproc_args.add(new CustomPOJO("idA"));
-        sproc_args.add(new CustomPOJO("idB"));
-        sproc_args.add(new CustomPOJO("idC"));
-
+        List<Object> pojos = new ArrayList<>();
+        pojos.add(new CustomPOJO("idA", partitionValue));
+        pojos.add(new CustomPOJO("idB", partitionValue));
+        pojos.add(new CustomPOJO("idC", partitionValue));
+        Gson gson = new Gson();
+        List<Object> sproc_args = new ArrayList<>();
+        sproc_args.add(gson.toJson(pojos));
         CosmosStoredProcedureResponse executeResponse = container.getScripts()
                 .getStoredProcedure(sprocId+"ArrayArg")
                 .execute(sproc_args, options);
