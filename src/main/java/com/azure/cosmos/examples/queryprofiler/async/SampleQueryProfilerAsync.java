@@ -59,8 +59,8 @@ public class SampleQueryProfilerAsync {
     private static String databaseName = "airlineTelemetry"; // Your Database name here
     private static String containerName = "airlineDemoDB"; // Your Container name here
     private static String partitionKey = "/partitionKey"; // Your partition key here
-    private static int manualThroughput = 400; // Your manual throughput here
-    private static String customQuery = "SELECT * FROM c WHERE c.reportId = 669992495";
+    private static int manualThroughput = 1000000; // Your manual throughput here
+    private static String customQuery = "SELECT * FROM c WHERE c.reportId = 916779600";
 //    private static String customQuery =
 //        "SELECT * FROM c WHERE c.partitionKey ='Z50V4-745167' AND c.parameterDateTime >= '2020-04-10T27:16:00.000Z' AND c.parameterDateTime <= '2020-04-29T21:16:00.000Z' ORDER BY c.parameterDateTime DESC";
 
@@ -72,7 +72,7 @@ public class SampleQueryProfilerAsync {
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
-                .contentResponseOnWriteEnabled(true)
+                .contentResponseOnWriteEnabled(false)
                 .buildAsyncClient();
 
         // Describe the logic of database and container creation using Reactor...
@@ -92,10 +92,9 @@ public class SampleQueryProfilerAsync {
         Profile.tic();
 
         CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
-        queryOptions.setMaxDegreeOfParallelism(10000);
-        queryOptions.setMaxDegreeOfParallelism(0);
-        queryOptions.setMaxBufferedItemCount(10000);
-        int preferredPageSize = 10000;
+        queryOptions.setMaxDegreeOfParallelism(1000);
+        queryOptions.setMaxBufferedItemCount(1000);
+        int preferredPageSize = 1000;
         executeQuery(customQuery, queryOptions, preferredPageSize);
 
         double toc_time=Profile.toc_ms()/1000.0;
