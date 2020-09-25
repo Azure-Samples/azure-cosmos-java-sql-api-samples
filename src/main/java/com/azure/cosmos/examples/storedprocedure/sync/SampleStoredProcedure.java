@@ -11,19 +11,18 @@ import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
-import com.azure.cosmos.implementation.guava25.collect.Lists;
+import com.azure.cosmos.implementation.Utils;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
-import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosStoredProcedureProperties;
 import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
 import com.azure.cosmos.models.CosmosStoredProcedureResponse;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedIterable;
-import com.google.gson.Gson;
-import org.ietf.jgss.GSSContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +43,7 @@ public class SampleStoredProcedure {
     private String sprocId;
 
     protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class.getSimpleName());
+    private static final ObjectMapper OBJECT_MAPPER = Utils.getSimpleObjectMapper();
 
     public void close() {
         client.close();
@@ -239,9 +239,9 @@ public class SampleStoredProcedure {
         pojos.add(new CustomPOJO("idA", partitionValue));
         pojos.add(new CustomPOJO("idB", partitionValue));
         pojos.add(new CustomPOJO("idC", partitionValue));
-        Gson gson = new Gson();
+
         List<Object> sproc_args = new ArrayList<>();
-        sproc_args.add(gson.toJson(pojos));
+        sproc_args.add(OBJECT_MAPPER.writeValueAsString(pojos));
         CosmosStoredProcedureResponse executeResponse = container.getScripts()
                 .getStoredProcedure(sprocId+"ArrayArg")
                 .execute(sproc_args, options);

@@ -60,9 +60,9 @@ public class SampleQueryProfilerAsync {
     private static String containerName = "airlineDemoDB"; // Your Container name here
     private static String partitionKey = "/partitionKey"; // Your partition key here
     private static int manualThroughput = 400; // Your manual throughput here
-//    private static String customQuery = "SELECT * FROM c WHERE c.reportId = 669992495";
-    private static String customQuery =
-        "SELECT * FROM c WHERE c.partitionKey ='Z50V4-745167' AND c.parameterDateTime >= '2020-04-10T27:16:00.000Z' AND c.parameterDateTime <= '2020-04-29T21:16:00.000Z' ORDER BY c.parameterDateTime DESC";
+    private static String customQuery = "SELECT * FROM c WHERE c.reportId = 669992495";
+//    private static String customQuery =
+//        "SELECT * FROM c WHERE c.partitionKey ='Z50V4-745167' AND c.parameterDateTime >= '2020-04-10T27:16:00.000Z' AND c.parameterDateTime <= '2020-04-29T21:16:00.000Z' ORDER BY c.parameterDateTime DESC";
 
     public static void queryProfilerDemo() {
 
