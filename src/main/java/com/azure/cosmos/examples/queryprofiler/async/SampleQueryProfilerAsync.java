@@ -56,15 +56,13 @@ public class SampleQueryProfilerAsync {
     private static CosmosAsyncClient client;
     private static CosmosAsyncDatabase database;
     private static CosmosAsyncContainer container;
-    private static String databaseName = "airlineTelemetry";
-    private static String containerName = "airlineDemoDB";
-    private static String partitionKey = "/partitionKey";
-    private static int manualThroughput = 1000000;
-    //private static String customQuery = "SELECT * FROM c WHERE c.reportId = 669992495";
-    private static String customQuery =
-        "SELECT TOP 10 * FROM c WHERE c.partitionKey ='Z50V4-745167' AND c.parameterDateTime >= '2020-04-27T27:16:00.000Z' AND c.parameterDateTime <= '2020-04-29T21:16:00.000Z' ORDER BY c.parameterDateTime DESC";
-//private static String customQuery =
-//        "SELECT * FROM c WHERE c.partitionKey ='I9CSN-590807' AND c.parameterDateTime >= '2020-04-10T27:16:00.000Z' AND c.parameterDateTime <= '2020-04-29T21:16:00.000Z' ORDER BY c.parameterDateTime DESC";
+    private static String databaseName = "airlineTelemetry"; // Your Database name here
+    private static String containerName = "airlineDemoDB"; // Your Container name here
+    private static String partitionKey = "/partitionKey"; // Your partition key here
+    private static int manualThroughput = 400; // Your manual throughput here
+    private static String customQuery = "SELECT * FROM c WHERE c.reportId = 669992495";
+//    private static String customQuery =
+//        "SELECT * FROM c WHERE c.partitionKey ='Z50V4-745167' AND c.parameterDateTime >= '2020-04-10T27:16:00.000Z' AND c.parameterDateTime <= '2020-04-29T21:16:00.000Z' ORDER BY c.parameterDateTime DESC";
 
     public static void queryProfilerDemo() {
 
@@ -95,6 +93,7 @@ public class SampleQueryProfilerAsync {
 
         CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
         queryOptions.setMaxDegreeOfParallelism(10000);
+        queryOptions.setMaxDegreeOfParallelism(0);
         queryOptions.setMaxBufferedItemCount(10000);
         int preferredPageSize = 10000;
         executeQuery(customQuery, queryOptions, preferredPageSize);
