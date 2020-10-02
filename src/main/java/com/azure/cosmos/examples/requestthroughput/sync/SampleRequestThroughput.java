@@ -6,22 +6,18 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.ThrottlingRetryOptions;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
-import com.azure.cosmos.models.IndexingMode;
-import com.azure.cosmos.models.IndexingPolicy;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -39,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SampleRequestThroughput {
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleRequestThroughput.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(SampleRequestThroughput.class);
 
     public static void main(String[] args) {
         try {

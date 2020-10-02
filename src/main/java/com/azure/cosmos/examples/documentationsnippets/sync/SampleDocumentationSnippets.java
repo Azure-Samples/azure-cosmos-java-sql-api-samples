@@ -5,37 +5,25 @@ package com.azure.cosmos.examples.documentationsnippets.sync;
 
 import com.azure.core.http.ProxyOptions;
 import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosAsyncClient;
-import com.azure.cosmos.CosmosAsyncContainer;
-import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.DirectConnectionConfig;
 import com.azure.cosmos.GatewayConnectionConfig;
-import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
-import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.models.ConflictResolutionPolicy;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
-import com.azure.cosmos.models.CosmosStoredProcedureProperties;
-import com.azure.cosmos.models.CosmosStoredProcedureRequestOptions;
-import com.azure.cosmos.models.CosmosStoredProcedureResponse;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.models.PartitionKeyDefinition;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 
 public class SampleDocumentationSnippets {
 
@@ -44,7 +32,7 @@ public class SampleDocumentationSnippets {
     private CosmosDatabase database;
     private CosmosContainer container;
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(SampleDocumentationSnippets.class);
 
     /**
      * This file organizes Azure Docs Azure Cosmos DB sync code snippets to enable easily upgrading to new Maven artifacts.

@@ -9,7 +9,6 @@ import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
@@ -46,7 +45,7 @@ public class SampleIndexManagementAsync {
     private CosmosAsyncDatabase database;
     private CosmosAsyncContainer container;
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(SampleIndexManagementAsync.class);
 
     public void close() {
         client.close();

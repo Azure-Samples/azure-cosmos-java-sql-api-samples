@@ -10,18 +10,12 @@ import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.DirectConnectionConfig;
 import com.azure.cosmos.GatewayConnectionConfig;
-import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
-import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.examples.storedprocedure.async.SampleStoredProcedureAsync;
 import com.azure.cosmos.models.ConflictResolutionPolicy;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
@@ -47,9 +41,7 @@ import reactor.core.scheduler.Schedulers;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -62,7 +54,7 @@ public class SampleDocumentationSnippetsAsync {
     private CosmosAsyncDatabase database;
     private CosmosAsyncContainer container;
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(SampleDocumentationSnippetsAsync.class);
 
     /**
      * This file organizes Azure Docs Azure Cosmos DB async code snippets to enable easily upgrading to new Maven artifacts.

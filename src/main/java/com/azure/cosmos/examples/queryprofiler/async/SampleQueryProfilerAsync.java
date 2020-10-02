@@ -11,19 +11,12 @@ import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.examples.common.Profile;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedFlux;
-import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 
@@ -43,7 +36,7 @@ import java.util.stream.Collectors;
 
 public class SampleQueryProfilerAsync {
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleQueryProfilerAsync.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(SampleQueryProfilerAsync.class);
 
     public static void main(String[] args) {
         try {
