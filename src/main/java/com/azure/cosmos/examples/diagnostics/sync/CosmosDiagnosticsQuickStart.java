@@ -9,6 +9,7 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.CosmosDiagnostics;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.models.CosmosContainerProperties;
@@ -61,7 +62,7 @@ public class CosmosDiagnosticsQuickStart {
 
     private void diagnosticsDemo() throws Exception {
 
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
         //  Create sync client
         client = new CosmosClientBuilder()
@@ -77,6 +78,7 @@ public class CosmosDiagnosticsQuickStart {
 
         createDocument();
         readDocumentById();
+        readDocumentDoesntExist();
         queryDocuments();
         replaceDocument();
         upsertDocument();
@@ -84,7 +86,7 @@ public class CosmosDiagnosticsQuickStart {
 
     // Database Diagnostics
     private void createDatabaseIfNotExists() throws Exception {
-        logger.info("Creating database " + databaseName + " if not exists...");
+        logger.info("Creating database {} if not exists", databaseName);
 
         //  Create database if not exists
         CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
@@ -97,7 +99,7 @@ public class CosmosDiagnosticsQuickStart {
 
     // Container create
     private void createContainerIfNotExists() throws Exception {
-        logger.info("Creating container " + containerName + " if not exists.");
+        logger.info("Creating container {} if not exists", containerName);
 
         //  Create container if not exists
         CosmosContainerProperties containerProperties =
@@ -117,7 +119,7 @@ public class CosmosDiagnosticsQuickStart {
     }
 
     private void createDocument() throws Exception {
-        logger.info("Create document " + documentId);
+        logger.info("Create document : {}", documentId);
 
         // Define a document as a POJO (internally this
         // is converted to JSON via custom serialization)
@@ -138,7 +140,7 @@ public class CosmosDiagnosticsQuickStart {
 
     // Document read
     private void readDocumentById() throws Exception {
-        logger.info("Read document " + documentId + " by ID.");
+        logger.info("Read document by ID : {}", documentId);
 
         //  Read document by ID
         CosmosItemResponse<Family> familyCosmosItemResponse = container.readItem(documentId,
@@ -155,8 +157,24 @@ public class CosmosDiagnosticsQuickStart {
         logger.info("Done.");
     }
 
+    // Document read doesn't exist
+    private void readDocumentDoesntExist() throws Exception {
+        logger.info("Read document by ID : bad-ID");
+
+        //  Read document by ID
+        try {
+            CosmosItemResponse<Family> familyCosmosItemResponse = container.readItem("bad-ID",
+                new PartitionKey("bad-lastName"), Family.class);
+        } catch (CosmosException cosmosException) {
+            CosmosDiagnostics diagnostics = cosmosException.getDiagnostics();
+            logger.info("Read item exception diagnostics : {}", diagnostics);
+        }
+
+        logger.info("Done.");
+    }
+
     private void queryDocuments() throws Exception {
-        logger.info("Query documents in the container " + containerName + ".");
+        logger.info("Query documents in the container : {}", containerName);
 
         String sql = "SELECT * FROM c WHERE c.lastName = 'Witherspoon'";
 
@@ -178,7 +196,7 @@ public class CosmosDiagnosticsQuickStart {
     }
 
     private void replaceDocument() throws Exception {
-        logger.info("Replace document " + documentId);
+        logger.info("Replace document : {}", documentId);
 
         // Replace existing document with new modified document
         Family family = new Family();
@@ -199,7 +217,7 @@ public class CosmosDiagnosticsQuickStart {
     }
 
     private void upsertDocument() throws Exception {
-        logger.info("Replace document " + documentId);
+        logger.info("Replace document : {}", documentId);
 
         // Replace existing document with new modified document (contingent on modification).
         Family family = new Family();
@@ -218,7 +236,7 @@ public class CosmosDiagnosticsQuickStart {
 
     // Document delete
     private void deleteDocument() throws Exception {
-        logger.info("Delete document " + documentId + " by ID.");
+        logger.info("Delete document by ID {}", documentId);
 
         // Delete document
         CosmosItemResponse<Object> itemResponse = container.deleteItem(documentId,
@@ -232,7 +250,7 @@ public class CosmosDiagnosticsQuickStart {
 
     // Database delete
     private void deleteDatabase() throws Exception {
-        logger.info("Last step: delete database " + databaseName + " by ID.");
+        logger.info("Last step: delete database {} by ID", databaseName);
 
         // Delete database
         CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
@@ -248,9 +266,7 @@ public class CosmosDiagnosticsQuickStart {
             deleteDocument();
             deleteDatabase();
         } catch (Exception err) {
-            logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack "
-                + "trace below.");
-            err.printStackTrace();
+            logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client", err);
         }
         client.close();
         logger.info("Done with sample.");
