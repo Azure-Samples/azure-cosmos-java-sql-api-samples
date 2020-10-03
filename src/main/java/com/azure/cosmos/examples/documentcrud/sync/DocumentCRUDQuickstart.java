@@ -9,7 +9,6 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.models.CosmosContainerProperties;
@@ -39,7 +38,7 @@ public class DocumentCRUDQuickstart {
     private CosmosDatabase database;
     private CosmosContainer container;
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(DocumentCRUDQuickstart.class);
 
     public void close() {
         client.close();

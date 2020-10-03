@@ -19,7 +19,6 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.DoubleAccumulator;
 
 
 /*
@@ -38,7 +37,7 @@ import java.util.concurrent.atomic.DoubleAccumulator;
 
 public class SampleRequestThroughputAsync {
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleRequestThroughputAsync.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(SampleRequestThroughputAsync.class);
 
     public static void main(String[] args) {
         try {

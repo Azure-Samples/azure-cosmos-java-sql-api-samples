@@ -43,7 +43,7 @@ public class SampleChangeFeedProcessor {
     public static final String DATABASE_NAME = "db_" + RandomStringUtils.randomAlphabetic(7);
     public static final String COLLECTION_NAME = "coll_" + RandomStringUtils.randomAlphabetic(7);
     private static final ObjectMapper OBJECT_MAPPER = Utils.getSimpleObjectMapper();
-    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class);
 
 
     private static ChangeFeedProcessor changeFeedProcessorInstance;

@@ -8,7 +8,6 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
@@ -26,9 +25,8 @@ public class AnalyticalContainerCRUDQuickstart {
     private final String containerName = "FamilyContainer";
 
     private CosmosDatabase database;
-    private CosmosContainer container;
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(AnalyticalContainerCRUDQuickstart.class);
 
     public void close() {
         client.close();
@@ -102,7 +100,7 @@ public class AnalyticalContainerCRUDQuickstart {
 
         //  Create container
         CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties);
-        container = database.getContainer(databaseResponse.getProperties().getId());
+        CosmosContainer container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }

@@ -16,7 +16,7 @@ import java.util.UUID;
 public class Profile {
 
     private static long tic_ns = System.nanoTime(); // For execution timing
-    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class.getSimpleName());
+    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class);
 
     /* tic/toc pair - measure ms execution time between tic() and toc_ms()
        Undefined behavior if you you do not pair 'tic()' followed by 'toc_ms()'
