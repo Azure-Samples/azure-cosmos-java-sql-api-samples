@@ -9,12 +9,7 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.examples.common.AccountSettings;
-import com.azure.cosmos.models.CosmosContainerProperties;
-import com.azure.cosmos.models.CosmosContainerRequestOptions;
-import com.azure.cosmos.models.CosmosContainerResponse;
-import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
-import com.azure.cosmos.models.CosmosDatabaseResponse;
-import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,7 +99,7 @@ public class ContainerCRUDQuickstart {
         // Provision throughput
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
-        //  Create container with 200 RU/s
+        //  Create container with 400 RU/s
         CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
         container = database.getContainer(databaseResponse.getProperties().getId());
 
@@ -167,6 +162,104 @@ public class ContainerCRUDQuickstart {
         // Delete database
         CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
         logger.info("Status code for database delete: {}",dbResp.getStatusCode());
+
+        logger.info("Done.");
+    }
+
+    // Multi-master only: Container create: last-writer-wins conflict resolution
+    // Favor the newest write based on default (internal) timestamp
+    private void createContainerIfNotExistsLWWDefaultTimestamp() throws Exception {
+        logger.info("Create container " + containerName + " if not exists.");
+
+        //  Create container properties structure
+        CosmosContainerProperties containerProperties =
+                new CosmosContainerProperties(containerName, "/lastName");
+
+        // Define LWW policy
+        ConflictResolutionPolicy policy = ConflictResolutionPolicy.createLastWriterWinsPolicy();
+        containerProperties.setConflictResolutionPolicy(policy);
+
+        // Provision throughput
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        //  Create container with 400 RU/s
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(databaseResponse.getProperties().getId());
+
+        logger.info("Done.");
+    }
+
+    // Multi-master only: Container create: last-writer-wins conflict resolution
+    // Favor the newest write, using one of the document fields as a custom timestamp
+    private void createContainerIfNotExistsLWWCustomTimestamp() throws Exception {
+        logger.info("Create container " + containerName + " if not exists.");
+
+        //  Create container properties structure
+        CosmosContainerProperties containerProperties =
+                new CosmosContainerProperties(containerName, "/lastName");
+
+        // Define LWW policy
+        ConflictResolutionPolicy policy = ConflictResolutionPolicy.createLastWriterWinsPolicy("/customTimestamp");
+        containerProperties.setConflictResolutionPolicy(policy);
+
+        // Provision throughput
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        //  Create container with 400 RU/s
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(databaseResponse.getProperties().getId());
+
+        logger.info("Done.");
+    }
+
+    // Multi-master only: Container create: fully custom conflict resolution policy using stored procedure
+    // Implement a custom conflict resolution policy, using a stored procedure to merge conflicts
+    // A sample resolver.js stored procedure is adjacent in the sample directory.
+    // You will need to upload this stored procedure to the back-end using either
+    // the stored procedure sample in this repo, or the Azure portal.
+    private void createContainerIfNotExistsCustomSproc() throws Exception {
+        logger.info("Create container " + containerName + " if not exists.");
+
+        //  Create container properties structure
+        CosmosContainerProperties containerProperties =
+                new CosmosContainerProperties(containerName, "/lastName");
+
+        // Define Custom conflict resolution stored procedure (sproc)
+        ConflictResolutionPolicy policy = ConflictResolutionPolicy.createCustomPolicy("resolver");
+        containerProperties.setConflictResolutionPolicy(policy);
+
+        // Provision throughput
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        //  Create container with 400 RU/s
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(databaseResponse.getProperties().getId());
+
+        logger.info("Done.");
+    }
+
+    // Multi-master only: Container create: fully custom conflict resolution policy using conflict feed
+    // Implement a custom conflict resolution policy; client pulls conflict from the conflict
+    // feed and handles conflict resolution.
+    // This method will register the container as using conflict feed;
+    // a separate method is needed to actually monitor the conflict feed.
+    private void createContainerIfNotExistsCustomConflictFeed() throws Exception {
+        logger.info("Create container " + containerName + " if not exists.");
+
+        //  Create container properties structure
+        CosmosContainerProperties containerProperties =
+                new CosmosContainerProperties(containerName, "/lastName");
+
+        // Define policy indicating conflict-feed-based resolution
+        ConflictResolutionPolicy policy = ConflictResolutionPolicy.createCustomPolicy();
+        containerProperties.setConflictResolutionPolicy(policy);
+
+        // Provision throughput
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+
+        //  Create container with 400 RU/s
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
