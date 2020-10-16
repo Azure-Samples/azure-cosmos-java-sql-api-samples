@@ -21,17 +21,21 @@ import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
 import java.util.UUID;
 
 public class DocumentCRUDQuickstart {
 
     private CosmosClient client;
 
-    private final String databaseName = "AzureSampleFamilyDB";
-    private final String containerName = "FamilyContainer";
+    private final String databaseName = "AirlineDemoDB";
+    private final String containerName = "AirlineTelemetry";
     private final String documentId = UUID.randomUUID().toString();
     private final String documentLastName = "Witherspoon";
 
@@ -89,13 +93,13 @@ public class DocumentCRUDQuickstart {
         createContainerIfNotExists();
 
         createDocument();
-        readDocumentById();
+        //readDocumentById();
         //readAllDocumentsInContainer(); <Deprecated>
-        queryDocuments();
-        replaceDocument();
-        upsertDocument();
-        replaceDocumentWithConditionalEtagCheck();
-        readDocumentOnlyIfChanged();
+        //queryDocuments();
+        //replaceDocument();
+        //upsertDocument();
+        //replaceDocumentWithConditionalEtagCheck();
+        //readDocumentOnlyIfChanged();
         // deleteDocument() is called at shutdown()
 
     }
@@ -130,19 +134,32 @@ public class DocumentCRUDQuickstart {
     }
 
     private void createDocument() throws Exception {
-        logger.info("Create document " + documentId);
+        logger.info("Run document generator.");
 
-        // Define a document as a POJO (internally this
-        // is converted to JSON via custom serialization)
-        Family family = new Family();
-        family.setLastName(documentLastName);
-        family.setId(documentId);
+        ObjectMapper mapper = new ObjectMapper();
 
-        // Insert this item as a document
-        // Explicitly specifying the /pk value improves performance.
-        container.createItem(family,new PartitionKey(family.getLastName()),new CosmosItemRequestOptions());
+        Random rand = new Random();
 
-        logger.info("Done.");
+        while (true) {
+
+            ObjectNode tailParameter = mapper.createObjectNode();
+            String partitionKey = UUID.randomUUID().toString(), id = UUID.randomUUID().toString();
+            String sizeField = "";
+            int strSize = rand.nextInt(10000);
+
+            for (int i = 0; i<strSize; i++) sizeField += "a";
+
+            tailParameter.set("id", mapper.convertValue(id, JsonNode.class));
+            tailParameter.set("partitionKey", mapper.convertValue(partitionKey, JsonNode.class));
+            tailParameter.set("sizeField", mapper.convertValue(sizeField, JsonNode.class));
+            tailParameter.set("typeField", mapper.convertValue("logAnalyticsTest", JsonNode.class));
+
+            //logger.info(tailParameter.toPrettyString());
+
+            // Insert this item as a document
+            // Explicitly specifying the /pk value improves performance.
+            container.createItem(tailParameter,new PartitionKey(partitionKey),new CosmosItemRequestOptions());
+        }
     }
 
     // Document read
