@@ -112,6 +112,9 @@ public class SampleCRUDQuickstart {
         logger.info("Reading items.");
         readItems(familiesToCreate);
 
+        logger.info("Replacing items.");
+        replaceItems(familiesToCreate);
+
         logger.info("Querying items.");
         queryItems();
 
@@ -196,6 +199,25 @@ public class SampleCRUDQuickstart {
             } catch (CosmosException e) {
                 e.printStackTrace();
                 logger.info(String.format("Read Item failed with %s", e));
+            }
+            //  </ReadItem>
+        });
+    }
+
+    private void replaceItems(ArrayList<Family> familiesToCreate) {
+        familiesToCreate.forEach(family -> {
+            //  <ReadItem>
+            try {
+                String district = family.getDistrict();
+                family.setDistrict(district + "_newDistrict");
+                CosmosItemResponse<Family> item = container.replaceItem(family, family.getId(),
+                    new PartitionKey(family.getLastName()), new CosmosItemRequestOptions());
+                double requestCharge = item.getRequestCharge();
+                Duration requestLatency = item.getDuration();
+                logger.info("Item successfully replaced with id: {}, district: {}, charge: {}, duration: {}",
+                    item.getItem().getId(), item.getItem().getDistrict(), requestCharge, requestLatency);
+            } catch (CosmosException e) {
+                logger.error(String.format("Replace Item failed with %s", e));
             }
             //  </ReadItem>
         });
