@@ -4,12 +4,10 @@
 package com.azure.cosmos.examples.conflictfeed.async;
 
 
-import com.azure.core.util.IterableStream;
 import com.azure.cosmos.*;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.implementation.HttpConstants;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedFlux;
 import org.slf4j.Logger;
@@ -22,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.stream.Collectors;
 
-public class SampleCRUDQuickstartAsync {
+public class SampleConflictFeedAsync {
 
     private CosmosAsyncClient client;
 
@@ -32,7 +30,7 @@ public class SampleCRUDQuickstartAsync {
     private CosmosAsyncDatabase database;
     private CosmosAsyncContainer container;
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleCRUDQuickstartAsync.class);
+    protected static Logger logger = LoggerFactory.getLogger(SampleConflictFeedAsync.class);
 
     public void close() {
         client.close();
@@ -43,7 +41,7 @@ public class SampleCRUDQuickstartAsync {
      */
     //  <Main>
     public static void main(String[] args) {
-        SampleCRUDQuickstartAsync p = new SampleCRUDQuickstartAsync();
+        SampleConflictFeedAsync p = new SampleConflictFeedAsync();
 
         try {
             logger.info("Starting ASYNC main");
@@ -304,27 +302,31 @@ public class SampleCRUDQuickstartAsync {
     // Client-side conflict feed handler
     private void conflictFeedHandler() {
 
+        logger.info("\nReading conflicts feed to process any conflicts.\n");
+
+        // --------------------
+
         int requestPageSize = 3;
         CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
 
         CosmosPagedFlux<CosmosConflictProperties> conflictReadFeedFlux = container.readAllConflicts(options);
 
-        Iterator<FeedResponse<CosmosConflictProperties>> it = conflictReadFeedFlux.byPage(requestPageSize).toIterable().iterator();
+        conflictReadFeedFlux.byPage(requestPageSize).toIterable().forEach(page -> {
 
-        int expectedNumberOfConflicts = 0;
-
-        int numberOfResults = 0;
-        while (it.hasNext()) {
-            FeedResponse<CosmosConflictProperties> page = it.next();
+            int expectedNumberOfConflicts = 0;
+            int numberOfResults = 0;
             Iterator<CosmosConflictProperties> pageIt = page.getElements().iterator();
 
             while (pageIt.hasNext()) {
                 CosmosConflictProperties conflictProperties = pageIt.next();
 
-                // Resolve the conflict.
+                // Read the conflict and committed item
                 CosmosAsyncConflict conflict = container.getConflict(conflictProperties.getId());
+                CosmosConflictResponse response = conflict.read(new CosmosConflictRequestOptions()).block();
+
+                // response.
             }
-        }
+        });
     }
 
     private void shutdown() {
