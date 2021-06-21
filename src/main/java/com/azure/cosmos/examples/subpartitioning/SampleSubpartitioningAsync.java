@@ -7,8 +7,8 @@ import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.common.AccountSettings;
-import com.azure.cosmos.examples.common.Families;
-import com.azure.cosmos.examples.common.Family;
+import com.azure.cosmos.examples.common.UserSession;
+import com.azure.cosmos.examples.common.UserSessionData;
 import com.azure.cosmos.examples.crudquickstart.async.SampleCRUDQuickstartAsync;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
@@ -53,7 +53,7 @@ public class SampleSubpartitioningAsync {
      * <p>
      * This is a simple sample application intended to demonstrate Create, Read, Update, Delete (CRUD) operations
      * with Azure Cosmos DB Java SDK, as applied to databases, containers and items. This sample will
-     * 1. Create asynchronous client, database and container instances
+     * 1. Create asynchronous client, database and container instance with multiple partition key paths
      * 2. Create several items
      * 3. Upsert one of the items
      * 4. Perform a query over the items
@@ -102,27 +102,12 @@ public class SampleSubpartitioningAsync {
         createDatabaseIfNotExists();
         createContainerIfNotExists();
 
-        Family andersenFamilyItem = Families.getAndersenFamilyItem();
-        Family wakefieldFamilyItem = Families.getWakefieldFamilyItem();
-        Family johnsonFamilyItem = Families.getJohnsonFamilyItem();
-        Family smithFamilyItem = Families.getSmithFamilyItem();
-
-        //  Setup family items to create
-        Flux<Family> familiesToCreate = Flux.just(andersenFamilyItem,
-                wakefieldFamilyItem,
-                johnsonFamilyItem,
-                smithFamilyItem);
+        //  Setup UserSession items to create
+        List<UserSession> userSessions = UserSessionData.buildSampleSessionData();
+        Flux<UserSession> familiesToCreate = Flux.fromIterable(userSessions);
 
         // Creates several items in the container
         createFamilies(familiesToCreate);
-
-        // Upsert one of the items in the container
-        upsertFamily(wakefieldFamilyItem);
-
-        familiesToCreate = Flux.just(andersenFamilyItem,
-                wakefieldFamilyItem,
-                johnsonFamilyItem,
-                smithFamilyItem);
 
         logger.info("Reading items.");
         readItems(familiesToCreate);
@@ -131,7 +116,7 @@ public class SampleSubpartitioningAsync {
         queryItems();
 
         logger.info("Deleting an item.");
-        deleteItem(andersenFamilyItem);
+        deleteItem(userSessions.get(0));
     }
 
     private void createDatabaseIfNotExists() throws Exception {
@@ -154,8 +139,9 @@ public class SampleSubpartitioningAsync {
         //  Create container if not exists
         // <Create PartitionKeyDefinition>
         List<String> partitionKeyPaths = new ArrayList<String>();
-        partitionKeyPaths.add("/lastName");
-        partitionKeyPaths.add("/district");
+        partitionKeyPaths.add("/tenantId");
+        partitionKeyPaths.add("/userId");
+        partitionKeyPaths.add("/sessionId");
         PartitionKeyDefinition subpartitionKeyDefinition = new PartitionKeyDefinition();
         subpartitionKeyDefinition.setPaths(partitionKeyPaths);
         subpartitionKeyDefinition.setKind(PartitionKind.MULTI_HASH);
@@ -186,15 +172,15 @@ public class SampleSubpartitioningAsync {
 
     }
 
-    private void createFamilies(Flux<Family> families) throws Exception {
+    private void createFamilies(Flux<UserSession> userSessions) throws Exception {
 
         //  <CreateItem>
 
         try {
 
             //  Combine multiple item inserts, associated success println's, and a final aggregate stats println into one Reactive stream.
-            double charge = families.flatMap(family -> {
-                return container.createItem(family);
+            double charge = userSessions.flatMap(userSession -> {
+                return container.createItem(userSession);
             }) //Flux of item request responses
                     .flatMap(itemResponse -> {
                         logger.info(String.format("Created item with request charge of %.2f within" +
@@ -225,32 +211,21 @@ public class SampleSubpartitioningAsync {
         //  </CreateItem>
     }
 
-    private void upsertFamily(Family family_to_upsert) {
-        //Modify a field of the family object
-        logger.info(String.format("Upserting the item with id %s after modifying the isRegistered field...", family_to_upsert.getId()));
-        family_to_upsert.setRegistered(!family_to_upsert.isRegistered());
-
-        //Upsert the modified item
-        Mono.just(family_to_upsert).flatMap(item -> {
-            CosmosItemResponse<Family> item_resp = container.upsertItem(family_to_upsert).block();
-
-            //  Get upsert request charge and other properties like latency, and diagnostics strings, etc.
-            logger.info(String.format("Upserted item with request charge of %.2f within duration %s",
-                    item_resp.getRequestCharge(), item_resp.getDuration()));
-
-            return Mono.empty();
-        }).subscribe();
-    }
-
-    private void readItems(Flux<Family> familiesToCreate) {
+    private void readItems(Flux<UserSession> userSessionFlux) {
         //  Using partition key for point read scenarios.
         //  This will help fast look up of items because of partition key
         //  <ReadItem>
 
         try {
 
-            familiesToCreate.flatMap(family -> {
-                Mono<CosmosItemResponse<Family>> asyncItemResponseMono = container.readItem(family.getId(), new PartitionKeyBuilder().add(family.getLastName()).add(family.getDistrict()).build(), Family.class);
+            userSessionFlux.flatMap(userSession -> {
+                Mono<CosmosItemResponse<UserSession>> asyncItemResponseMono = container.readItem(userSession.getId(),
+                        new PartitionKeyBuilder()
+                                .add(userSession.getTenantId())
+                                .add(userSession.getUserId())
+                                .add(userSession.getSessionId())
+                                .build()
+                        , UserSession.class);
                 return asyncItemResponseMono;
             }).flatMap(itemResponse -> {
                 double requestCharge = itemResponse.getRequestCharge();
@@ -274,7 +249,7 @@ public class SampleSubpartitioningAsync {
 
         //  </ReadItem>
     }
-
+// Add the
     private void queryItems() {
         //  <QueryItems>
         // Set some common query options
@@ -286,8 +261,8 @@ public class SampleSubpartitioningAsync {
         //  Set populate query metrics to get metrics around query executions
         queryOptions.setQueryMetricsEnabled(true);
 
-        CosmosPagedFlux<Family> pagedFluxResponse = container.queryItems(
-                "SELECT * FROM Family WHERE Family.lastName IN ('Andersen', 'Wakefield', 'Johnson')", queryOptions, Family.class);
+        CosmosPagedFlux<UserSession> pagedFluxResponse = container.queryItems(
+                "SELECT * FROM t WHERE t.TenantId IN ('Microsoft')", queryOptions, UserSession.class);
 
         try {
 
@@ -299,7 +274,7 @@ public class SampleSubpartitioningAsync {
                 logger.info("Item Ids " + fluxResponse
                         .getResults()
                         .stream()
-                        .map(Family::getId)
+                        .map(UserSession::getId)
                         .collect(Collectors.toList()));
 
                 return Flux.empty();
@@ -320,8 +295,8 @@ public class SampleSubpartitioningAsync {
         // </QueryItems>
     }
 
-    private void deleteItem(Family item) {
-        container.deleteItem(item.getId(), new PartitionKeyBuilder().add(item.getLastName()).add(item.getDistrict()).build()).block();
+    private void deleteItem(UserSession item) {
+        container.deleteItem(item.getId(), new PartitionKeyBuilder().add(item.getTenantId()).add(item.getUserId()).add(item.getSessionId()).build()).block();
     }
 
     private void shutdown() {
