@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 package com.azure.cosmos.examples.subpartitioning;
 
 import com.azure.cosmos.ConsistencyLevel;
@@ -260,8 +263,12 @@ public class SampleSubpartitioningAsync {
 
         //  Set populate query metrics to get metrics around query executions
         queryOptions.setQueryMetricsEnabled(true);
-
-        CosmosPagedFlux<UserSession> pagedFluxResponse = container.queryItems(
+        /**  Subpartitioning support:
+         *      Specifying partial partition key values in query, will only route the query to
+         *      the subset of physical partitions on which the documents with this partition key
+         *      value exist.
+        **/
+         CosmosPagedFlux<UserSession> pagedFluxResponse = container.queryItems(
                 "SELECT * FROM t WHERE t.TenantId IN ('Microsoft')", queryOptions, UserSession.class);
 
         try {

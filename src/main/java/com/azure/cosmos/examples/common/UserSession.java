@@ -4,10 +4,11 @@
 package com.azure.cosmos.examples.common;
 
 public class UserSession {
-    public UserSession()
-    {
 
-    }
+    private String id;
+    private String tenantId;
+    private String userId;
+    private String sessionId;
 
     public String getId() {
         return id;
@@ -29,10 +30,6 @@ public class UserSession {
 
     public void setSessionId(String sessionId){this.sessionId = sessionId;}
 
-    private String id="";
-    private String tenantId="";
-    private String userId="";
-    private String sessionId="";
-    private boolean isRegistered=false;
+
 
 }
