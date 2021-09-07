@@ -3,14 +3,19 @@
 
 package com.azure.cosmos.examples.patch.sync;
 
+import com.azure.cosmos.BulkOperations;
 import com.azure.cosmos.ConsistencyLevel;
+import com.azure.cosmos.CosmosBulkOperationResponse;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.CosmosItemOperation;
 import com.azure.cosmos.CosmosPatchOperations;
 import com.azure.cosmos.TransactionalBatch;
+import com.azure.cosmos.TransactionalBatchOperationResult;
+import com.azure.cosmos.TransactionalBatchPatchItemRequestOptions;
 import com.azure.cosmos.TransactionalBatchResponse;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
@@ -99,28 +104,28 @@ public class SamplePatchQuickstart {
         createContainerIfNotExists();
 
         // Setup family items to create
-        ArrayList<Family> familiesToCreate = new ArrayList<>();
-        familiesToCreate.add(Families.getAndersenFamilyItem());
-        familiesToCreate.add(Families.getWakefieldFamilyItem());
-        familiesToCreate.add(Families.getJohnsonFamilyItem());
-        familiesToCreate.add(Families.getSmithFamilyItem());
+        ArrayList<Family> families = new ArrayList<>();
+        families.add(Families.getAndersenFamilyItem());
+        families.add(Families.getWakefieldFamilyItem());
+        families.add(Families.getJohnsonFamilyItem());
+        families.add(Families.getSmithFamilyItem());
 
         // Creates several items in the container
         // Also applies an upsert operation to one of the items (create if not present,
         // otherwise replace)
-        createFamilies(familiesToCreate);
+        createFamilies(families);
 
-        patchAddSingle(familiesToCreate.get(0).getId(), familiesToCreate.get(0).getLastName());
-        patchAddMultiple(familiesToCreate.get(0).getId(), familiesToCreate.get(0).getLastName());
-        patchAddArray(familiesToCreate.get(0).getId(), familiesToCreate.get(0).getLastName());
-        patchSet(familiesToCreate.get(2).getId(), familiesToCreate.get(2).getLastName());
-        patchReplace(familiesToCreate.get(0).getId(), familiesToCreate.get(0).getLastName());
-        patchIncrement(familiesToCreate.get(0).getId(), familiesToCreate.get(0).getLastName());
-        patchConditional(familiesToCreate.get(0).getId(), familiesToCreate.get(0).getLastName(),
-                "from f where f.registered = false");
+        patchAddSingle(families.get(0).getId(), families.get(0).getLastName());
+        patchAddMultiple(families.get(0).getId(), families.get(0).getLastName());
+        patchAddArray(families.get(0).getId(), families.get(0).getLastName());
+        patchSet(families.get(2).getId(), families.get(2).getLastName());
+        patchReplace(families.get(0).getId(), families.get(0).getLastName());
+        patchIncrement(families.get(0).getId(), families.get(0).getLastName());
+        patchConditional(families.get(0).getId(), families.get(0).getLastName(), "from f where f.registered = false");
         patchTransactionalBatch();
-
-        patchRemove(familiesToCreate.get(1).getId(), familiesToCreate.get(1).getLastName());
+        patchRemove(families.get(1).getId(), families.get(1).getLastName());
+        patchBulk();
+        patchTransactionalBatchAdvanced();
     }
 
     private void createDatabaseIfNotExists() throws Exception {
@@ -399,11 +404,13 @@ public class SamplePatchQuickstart {
         CosmosPatchOperations cosmosPatchOperations = CosmosPatchOperations.create();
         cosmosPatchOperations
                 // attribute does not exist, will be added
-                .add("/num", 42)
+                .add("/int", 42)
                 // attribute already exists, will be replaced
-                .increment("/num", 1)
+                .increment("/int", 1)
                 // negative increment works is equivalent to decrement
-                .increment("/num", -1);
+                .increment("/int", -1)
+                // floats work the same way
+                .add("/float", 42).increment("/float", 4.2).increment("/float", -4.2);
 
         CosmosPatchItemRequestOptions options = new CosmosPatchItemRequestOptions();
         try {
@@ -468,17 +475,112 @@ public class SamplePatchQuickstart {
         }
     }
 
+    // demonstrates a variety of patch operation in the context of a transactional
+    // batch - including a conditional predicate
+    private void patchTransactionalBatchAdvanced() {
+        logger.info("Executing Multiple Patch operations on multiple documents as part of a Transactional Batch");
+
+        String lastName = "testLastName";
+
+        // generating two random Family objects. these will be created and then patched
+        // (within a transaction)
+        Family family1 = Families.getWakefieldFamilyItem();
+        Family family2 = Families.getJohnsonFamilyItem();
+
+        // setting a fixed last name so that we can use it as a partition key for the
+        // transactional batch
+        family1.setLastName(lastName);
+        family2.setLastName(lastName);
+
+        TransactionalBatch batch = TransactionalBatch.createTransactionalBatch(new PartitionKey(lastName));
+
+        batch.createItemOperation(family1);
+        batch.createItemOperation(family2);
+
+        CosmosPatchOperations commonPatchOperation = CosmosPatchOperations.create();
+        commonPatchOperation.replace("/district", "new_replaced_value");
+
+        // replacing 'district' via patch
+        batch.patchItemOperation(family1.getId(), commonPatchOperation);
+        batch.patchItemOperation(family2.getId(), commonPatchOperation);
+
+        // if registered is false (predicate/condition), vaccinated status has to be
+        // false as well (defining this via conditional patch operation)
+        CosmosPatchOperations addVaccinatedStatus = CosmosPatchOperations.create().add("/vaccinated", false);
+        TransactionalBatchPatchItemRequestOptions options = new TransactionalBatchPatchItemRequestOptions();
+        options.setFilterPredicate("from f where f.registered = false");
+
+        batch.patchItemOperation(family2.getId(), addVaccinatedStatus, options);
+
+        // the below patch operation will fail (error 412) since the
+        // predicate/condition (registered = false) will not be satisfied. this in turn,
+        // will result in the
+        // transaction to fail as well (error 424)
+        // if you want to see this, un-comment the line below
+
+        // batch.patchItemOperation(family1.getId(), addVaccinatedStatus, options);
+
+        try {
+            TransactionalBatchResponse response = container.executeTransactionalBatch(batch);
+
+            for (TransactionalBatchOperationResult batchOpResult : response.getResults()) {
+
+                if (response.isSuccessStatusCode()) {
+                    logger.info(batchOpResult.getOperation().getOperationType().name() + " operation for ID "
+                            + batchOpResult.getItem(Family.class).getId() + " was successful");
+                } else {
+                    logger.info(batchOpResult.getOperation().getOperationType().name()
+                            + " operation failed. Status code: " + batchOpResult.getStatusCode());
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // this example shows heterogenous bulk operations (create, batch). we first
+    // create an item and then patch it.
+    private void patchBulk() {
+        logger.info("Executing Patch operation in bulk");
+
+        Family family = Families.getSmithFamilyItem();
+        String partitionKey = family.getLastName();
+
+        CosmosItemOperation createOperation = BulkOperations.getCreateItemOperation(family,
+                new PartitionKey(partitionKey));
+
+        CosmosItemOperation patchOperation = BulkOperations.getPatchItemOperation(family.getId(),
+                new PartitionKey(partitionKey),
+                CosmosPatchOperations.create().add("/vaccinated", false).replace("/district", "new_replaced_value"));
+
+        try {
+            List<CosmosBulkOperationResponse<Family>> bulkOperationsResponses = container
+                    .processBulkOperations(Arrays.asList(createOperation, patchOperation));
+
+            for (CosmosBulkOperationResponse<Family> response : bulkOperationsResponses) {
+                String result = response.getResponse().isSuccessStatusCode() ? "was successful" : "failed";
+
+                logger.info(response.getOperation().getOperationType() + " operation for item with ID "
+                        + response.getResponse().getItem(Family.class).getId() + " " + result);
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void shutdown() {
         try {
             // Clean shutdown
             logger.info("Deleting Cosmos DB resources");
             logger.info("-Deleting container...");
             if (container != null)
-                container.delete(
-                logger.info("-Deleting database...");
+                container.delete();
+            logger.info("-Deleting database...");
             if (database != null)
-                database.delete(
-                logger.info("-Closing the client...");
+                database.delete();
+            logger.info("-Closing the client...");
         } catch (Exception err) {
             logger.error(
                     "Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
