@@ -3,34 +3,34 @@
 
 package com.azure.cosmos.examples.patch.sync;
 
-import com.azure.cosmos.BulkOperations;
-import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosBulkOperationResponse;
-import com.azure.cosmos.CosmosClient;
-import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.CosmosItemOperation;
-import com.azure.cosmos.CosmosPatchOperations;
-import com.azure.cosmos.TransactionalBatch;
-import com.azure.cosmos.TransactionalBatchOperationResult;
-import com.azure.cosmos.TransactionalBatchPatchItemRequestOptions;
-import com.azure.cosmos.TransactionalBatchResponse;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.examples.common.Child;
+
+import com.azure.cosmos.ConsistencyLevel;
+import com.azure.cosmos.models.CosmosBulkOperationResponse;
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosDatabase;
+
+import com.azure.cosmos.models.CosmosItemOperation;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosPatchItemRequestOptions;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.CosmosPatchOperations;
+import com.azure.cosmos.models.CosmosBatch;
+import com.azure.cosmos.models.CosmosBatchOperationResult;
+import com.azure.cosmos.models.CosmosBatchPatchItemRequestOptions;
+import com.azure.cosmos.models.CosmosBatchResponse;
+import com.azure.cosmos.models.CosmosBulkOperations;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
-import com.azure.cosmos.util.CosmosPagedIterable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,14 +89,14 @@ public class SamplePatchQuickstart {
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
-        ArrayList<String> preferredRegions = new ArrayList<String>();
-        preferredRegions.add("West US");
+        // ArrayList<String> preferredRegions = new ArrayList<String>();
+        // preferredRegions.add("West US");
 
         // Create sync client
         // <CreateSyncClient>
         client = new CosmosClientBuilder().endpoint(AccountSettings.HOST).key(AccountSettings.MASTER_KEY)
-                .preferredRegions(preferredRegions).consistencyLevel(ConsistencyLevel.EVENTUAL)
-                .contentResponseOnWriteEnabled(true).buildClient();
+                // .preferredRegions(preferredRegions)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL).contentResponseOnWriteEnabled(true).buildClient();
 
         // </CreateSyncClient>
 
@@ -453,7 +453,9 @@ public class SamplePatchQuickstart {
 
         Family family = Families.getAndersenFamilyItem();
 
-        TransactionalBatch batch = TransactionalBatch.createTransactionalBatch(new PartitionKey(family.getLastName()));
+        // TransactionalBatch batch = TransactionalBatch.createTransactionalBatch(new
+        // PartitionKey(family.getLastName()));
+        CosmosBatch batch = CosmosBatch.createCosmosBatch(new PartitionKey(family.getLastName()));
 
         batch.createItemOperation(family);
 
@@ -463,7 +465,7 @@ public class SamplePatchQuickstart {
         batch.patchItemOperation(family.getId(), cosmosPatchOperations);
 
         try {
-            TransactionalBatchResponse response = container.executeTransactionalBatch(batch);
+            CosmosBatchResponse response = container.executeCosmosBatch(batch);
 
             logger.info("Response code for transactional batch operation: " + response.getStatusCode());
             if (response.isSuccessStatusCode()) {
@@ -492,7 +494,9 @@ public class SamplePatchQuickstart {
         family1.setLastName(lastName);
         family2.setLastName(lastName);
 
-        TransactionalBatch batch = TransactionalBatch.createTransactionalBatch(new PartitionKey(lastName));
+        // TransactionalBatch batch = TransactionalBatch.createTransactionalBatch(new
+        // PartitionKey(lastName));
+        CosmosBatch batch = CosmosBatch.createCosmosBatch(new PartitionKey(lastName));
 
         batch.createItemOperation(family1);
         batch.createItemOperation(family2);
@@ -507,7 +511,10 @@ public class SamplePatchQuickstart {
         // if registered is false (predicate/condition), vaccinated status has to be
         // false as well (defining this via conditional patch operation)
         CosmosPatchOperations addVaccinatedStatus = CosmosPatchOperations.create().add("/vaccinated", false);
-        TransactionalBatchPatchItemRequestOptions options = new TransactionalBatchPatchItemRequestOptions();
+        // TransactionalBatchPatchItemRequestOptions options = new
+        // TransactionalBatchPatchItemRequestOptions();
+        CosmosBatchPatchItemRequestOptions options = new CosmosBatchPatchItemRequestOptions();
+
         options.setFilterPredicate("from f where f.registered = false");
 
         batch.patchItemOperation(family2.getId(), addVaccinatedStatus, options);
@@ -521,9 +528,9 @@ public class SamplePatchQuickstart {
         // batch.patchItemOperation(family1.getId(), addVaccinatedStatus, options);
 
         try {
-            TransactionalBatchResponse response = container.executeTransactionalBatch(batch);
+            CosmosBatchResponse response = container.executeCosmosBatch(batch);
 
-            for (TransactionalBatchOperationResult batchOpResult : response.getResults()) {
+            for (CosmosBatchOperationResult batchOpResult : response.getResults()) {
 
                 if (response.isSuccessStatusCode()) {
                     logger.info(batchOpResult.getOperation().getOperationType().name() + " operation for ID "
@@ -547,16 +554,16 @@ public class SamplePatchQuickstart {
         Family family = Families.getSmithFamilyItem();
         String partitionKey = family.getLastName();
 
-        CosmosItemOperation createOperation = BulkOperations.getCreateItemOperation(family,
+        CosmosItemOperation createOperation = CosmosBulkOperations.getCreateItemOperation(family,
                 new PartitionKey(partitionKey));
 
-        CosmosItemOperation patchOperation = BulkOperations.getPatchItemOperation(family.getId(),
+        CosmosItemOperation patchOperation = CosmosBulkOperations.getPatchItemOperation(family.getId(),
                 new PartitionKey(partitionKey),
                 CosmosPatchOperations.create().add("/vaccinated", false).replace("/district", "new_replaced_value"));
 
         try {
             List<CosmosBulkOperationResponse<Family>> bulkOperationsResponses = container
-                    .processBulkOperations(Arrays.asList(createOperation, patchOperation));
+                    .executeBulkOperations(Arrays.asList(createOperation, patchOperation));
 
             for (CosmosBulkOperationResponse<Family> response : bulkOperationsResponses) {
                 String result = response.getResponse().isSuccessStatusCode() ? "was successful" : "failed";
