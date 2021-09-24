@@ -75,8 +75,7 @@ public class SamplePatchQuickstart {
             p.getStartedDemo();
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
-            e.printStackTrace();
-            logger.error(String.format("Cosmos getStarted failed with %s", e));
+            logger.error("Cosmos getStarted failed", e);
         } finally {
             logger.info("Closing the client");
             p.shutdown();
@@ -87,8 +86,7 @@ public class SamplePatchQuickstart {
 
     private void getStartedDemo() throws Exception {
 
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
-
+        logger.info("Using Azure Cosmos DB endpoint {}", AccountSettings.HOST);
         // ArrayList<String> preferredRegions = new ArrayList<String>();
         // preferredRegions.add("West US");
 
@@ -129,7 +127,7 @@ public class SamplePatchQuickstart {
     }
 
     private void createDatabaseIfNotExists() throws Exception {
-        logger.info("Create database " + databaseName + " if not exists.");
+        logger.info("Create database {} if not exists.", databaseName);
 
         // Create database if not exists
         // <CreateDatabaseIfNotExists>
@@ -138,11 +136,11 @@ public class SamplePatchQuickstart {
 
         // </CreateDatabaseIfNotExists>
 
-        logger.info("Checking database " + database.getId() + " completed!\n");
+        logger.info("Checking database {} completed!\n", database.getId());
     }
 
     private void createContainerIfNotExists() throws Exception {
-        logger.info("Create container " + containerName + " if not exists.");
+        logger.info("Create container {} if not exists.", containerName);
 
         // Create container if not exists
         // <CreateContainerIfNotExists>
@@ -155,7 +153,7 @@ public class SamplePatchQuickstart {
         container = database.getContainer(containerResponse.getProperties().getId());
         // </CreateContainerIfNotExists>
 
-        logger.info("Checking container " + container.getId() + " completed!\n");
+        logger.info("Checking container {} completed!\n", container.getId());
     }
 
     private void createFamilies(List<Family> families) throws Exception {
@@ -173,27 +171,24 @@ public class SamplePatchQuickstart {
                     cosmosItemRequestOptions);
             // </CreateItem>
 
-            // Get request charge and other properties like latency, and diagnostics
-            // strings, etc.
-            logger.info(String.format("Created item with request charge of %.2f within duration %s",
-                    item.getRequestCharge(), item.getDuration()));
+            logger.info("Created item with request charge of {} within duration {}", item.getRequestCharge(),
+                    item.getDuration());
 
             totalRequestCharge += item.getRequestCharge();
         }
-        logger.info(String.format("Created %d items with total request charge of %.2f", families.size(),
-                totalRequestCharge));
+        logger.info("Created {} items with total request charge of {}", families.size(), totalRequestCharge);
 
         Family family_to_upsert = families.get(0);
-        logger.info(String.format("Upserting the item with id %s after modifying the isRegistered field...",
-                family_to_upsert.getId()));
+        logger.info("Upserting the item with id {} after modifying the isRegistered field...",
+                family_to_upsert.getId());
         family_to_upsert.setRegistered(!family_to_upsert.isRegistered());
 
         CosmosItemResponse<Family> item = container.upsertItem(family_to_upsert);
 
         // Get upsert request charge and other properties like latency, and diagnostics
         // strings, etc.
-        logger.info(String.format("Upserted item with request charge of %.2f within duration %s",
-                item.getRequestCharge(), item.getDuration()));
+        logger.info("Upserted item with request charge of {} within duration %s", item.getRequestCharge(),
+                item.getDuration());
     }
 
     // demonstrates a single patch (add) operation
@@ -208,9 +203,9 @@ public class SamplePatchQuickstart {
         try {
             CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
                     cosmosPatchOperations, options, Family.class);
-            logger.info("Item with ID " + response.getItem().getId() + " has been patched");
+            logger.info("Item with ID {} has been patched", response.getItem().getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -229,9 +224,9 @@ public class SamplePatchQuickstart {
         try {
             CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
                     cosmosPatchOperations, options, Family.class);
-            logger.info("Item with ID " + response.getItem().getId() + " has been patched");
+            logger.info("Item with ID {} has been patched", response.getItem().getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -283,9 +278,10 @@ public class SamplePatchQuickstart {
         try {
             CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
                     cosmosPatchOperations, options, Family.class);
-            logger.info("Item with ID " + response.getItem().getId() + " has been patched");
+            logger.info("Item with ID {} has been patched", response.getItem().getId());
+
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -328,9 +324,9 @@ public class SamplePatchQuickstart {
         try {
             CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
                     cosmosPatchOperations, options, Family.class);
-            logger.info("Item with ID " + response.getItem().getId() + " has been patched");
+            logger.info("Item with ID {} has been patched", response.getItem().getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -370,9 +366,9 @@ public class SamplePatchQuickstart {
         try {
             CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
                     cosmosPatchOperations, options, Family.class);
-            logger.info("Item with ID " + response.getItem().getId() + " has been patched");
+            logger.info("Item with ID {} has been patched", response.getItem().getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -385,16 +381,16 @@ public class SamplePatchQuickstart {
 
         CosmosPatchItemRequestOptions options = new CosmosPatchItemRequestOptions();
 
-        logger.info("predicate " + predicate);
+        logger.info("predicate: {}", predicate);
         options.setFilterPredicate(predicate);
 
         // predicate match failure will result in BadRequestException
         try {
             CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
                     cosmosPatchOperations, options, Family.class);
-            logger.info("Item with ID " + response.getItem().getId() + " has been patched");
+            logger.info("Item with ID {} has been patched", response.getItem().getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -416,9 +412,10 @@ public class SamplePatchQuickstart {
         try {
             CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
                     cosmosPatchOperations, options, Family.class);
-            logger.info("Item with ID " + response.getItem().getId() + " has been patched");
+
+            logger.info("Item with ID {} has been patched", response.getItem().getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -442,9 +439,9 @@ public class SamplePatchQuickstart {
         try {
             CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
                     cosmosPatchOperations, options, Family.class);
-            logger.info("Item with ID " + response.getItem().getId() + " has been patched");
+            logger.info("Item with ID {} has been patched", response.getItem().getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -467,13 +464,13 @@ public class SamplePatchQuickstart {
         try {
             CosmosBatchResponse response = container.executeCosmosBatch(batch);
 
-            logger.info("Response code for transactional batch operation: " + response.getStatusCode());
+            logger.info("Response code for transactional batch operation: ", response.getStatusCode());
             if (response.isSuccessStatusCode()) {
-                logger.info("Transactional batch operation executed for ID "
-                        + response.getResults().get(0).getItem(Family.class).getId());
+                logger.info("Transactional batch operation executed for ID {}",
+                        response.getResults().get(0).getItem(Family.class).getId());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -533,16 +530,17 @@ public class SamplePatchQuickstart {
             for (CosmosBatchOperationResult batchOpResult : response.getResults()) {
 
                 if (response.isSuccessStatusCode()) {
-                    logger.info(batchOpResult.getOperation().getOperationType().name() + " operation for ID "
-                            + batchOpResult.getItem(Family.class).getId() + " was successful");
+                    logger.info("{} operation for ID {} was successful",
+                            batchOpResult.getOperation().getOperationType().name(),
+                            batchOpResult.getItem(Family.class).getId());
                 } else {
-                    logger.info(batchOpResult.getOperation().getOperationType().name()
-                            + " operation failed. Status code: " + batchOpResult.getStatusCode());
+                    logger.info("{} operation failed. Status code: {}",
+                            batchOpResult.getOperation().getOperationType().name(), batchOpResult.getStatusCode());
                 }
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -562,18 +560,17 @@ public class SamplePatchQuickstart {
                 CosmosPatchOperations.create().add("/vaccinated", false).replace("/district", "new_replaced_value"));
 
         try {
-            List<CosmosBulkOperationResponse<Family>> bulkOperationsResponses = container
+            Iterable<CosmosBulkOperationResponse<Family>> bulkOperationsResponses = container
                     .executeBulkOperations(Arrays.asList(createOperation, patchOperation));
 
             for (CosmosBulkOperationResponse<Family> response : bulkOperationsResponses) {
                 String result = response.getResponse().isSuccessStatusCode() ? "was successful" : "failed";
 
-                logger.info(response.getOperation().getOperationType() + " operation for item with ID "
-                        + response.getResponse().getItem(Family.class).getId() + " " + result);
-
+                logger.info("{} operation for item with ID {} {}", response.getOperation().getOperationType(),
+                        response.getResponse().getItem(Family.class).getId(), result);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed", e);
         }
     }
 
@@ -583,15 +580,16 @@ public class SamplePatchQuickstart {
             logger.info("Deleting Cosmos DB resources");
             logger.info("-Deleting container...");
             if (container != null)
-                container.delete();
-            logger.info("-Deleting database...");
+                 container.delete();
+                logger.info("-Deleting database...");
             if (database != null)
-                database.delete();
-            logger.info("-Closing the client...");
+                 database.delete();
+                logger.info("-Closing the client...");
         } catch (Exception err) {
             logger.error(
-                    "Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
-            err.printStackTrace();
+                    "Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.",
+                    err);
+
         }
         client.close();
         logger.info("Done.");
