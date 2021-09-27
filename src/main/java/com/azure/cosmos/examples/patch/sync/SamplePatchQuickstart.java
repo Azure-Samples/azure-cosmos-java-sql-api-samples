@@ -187,7 +187,7 @@ public class SamplePatchQuickstart {
 
         // Get upsert request charge and other properties like latency, and diagnostics
         // strings, etc.
-        logger.info("Upserted item with request charge of {} within duration %s", item.getRequestCharge(),
+        logger.info("Upserted item with request charge of {} within duration {}", item.getRequestCharge(),
                 item.getDuration());
     }
 
@@ -580,11 +580,11 @@ public class SamplePatchQuickstart {
             logger.info("Deleting Cosmos DB resources");
             logger.info("-Deleting container...");
             if (container != null)
-                 container.delete();
-                logger.info("-Deleting database...");
+                container.delete();
+            logger.info("-Deleting database...");
             if (database != null)
-                 database.delete();
-                logger.info("-Closing the client...");
+                database.delete();
+            logger.info("-Closing the client...");
         } catch (Exception err) {
             logger.error(
                     "Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.",
