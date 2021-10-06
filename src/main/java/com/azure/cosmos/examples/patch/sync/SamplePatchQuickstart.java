@@ -268,6 +268,15 @@ public class SamplePatchQuickstart {
 
         cosmosPatchOperations.add("/children/3", c4);
 
+        Child c5 = new Child();
+        c5.setFamilyName("Andersen");
+        c5.setFirstName("Brian");
+        c5.setGender("m");
+
+        // to append to end of an array, you can use the convenience character "-". you
+        // can skip index calculation
+        cosmosPatchOperations.add("/children/-", c5);
+
         // un-commenting below will result in BadRequestException: array contains 4
         // elements now. an attempt to add element at an index that is greater than the
         // length
@@ -580,11 +589,11 @@ public class SamplePatchQuickstart {
             logger.info("Deleting Cosmos DB resources");
             logger.info("-Deleting container...");
             if (container != null)
-                container.delete();
-            logger.info("-Deleting database...");
+                 container.delete();
+                logger.info("-Deleting database...");
             if (database != null)
-                database.delete();
-            logger.info("-Closing the client...");
+                 database.delete();
+                logger.info("-Closing the client...");
         } catch (Exception err) {
             logger.error(
                     "Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.",
