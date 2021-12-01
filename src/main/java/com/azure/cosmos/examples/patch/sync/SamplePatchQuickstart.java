@@ -31,6 +31,8 @@ import com.azure.cosmos.models.CosmosBulkOperations;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +116,7 @@ public class SamplePatchQuickstart {
         createFamilies(families);
 
         patchAddSingle(families.get(0).getId(), families.get(0).getLastName());
+        patchAddSingleJsonString(families.get(0).getId(), families.get(0).getLastName());
         patchAddMultiple(families.get(0).getId(), families.get(0).getLastName());
         patchAddArray(families.get(0).getId(), families.get(0).getLastName());
         patchSet(families.get(2).getId(), families.get(2).getLastName());
@@ -201,6 +204,28 @@ public class SamplePatchQuickstart {
 
         CosmosPatchItemRequestOptions options = new CosmosPatchItemRequestOptions();
         try {
+            CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
+                    cosmosPatchOperations, options, Family.class);
+            logger.info("Item with ID {} has been patched", response.getItem().getId());
+        } catch (Exception e) {
+            logger.error("failed", e);
+        }
+    }
+
+    // demonstrates a single patch (add) operation using json String
+    private void patchAddSingleJsonString(String id, String partitionKey) {
+        logger.info("Executing Patch with single 'add' operation to add json from String");
+        String json = "[{\"givenName\": \"Goofy\"},{\"givenName\": \"Shadow\"}]";
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+        //Converting json String to JsonNode using Jackson
+        JsonNode jsonNode = objectMapper.readTree(json);
+        CosmosPatchOperations cosmosPatchOperations = CosmosPatchOperations.create();
+        // attribute does not exist, will be added
+        cosmosPatchOperations.add("/pets", jsonNode);
+
+        CosmosPatchItemRequestOptions options = new CosmosPatchItemRequestOptions();
+
             CosmosItemResponse<Family> response = this.container.patchItem(id, new PartitionKey(partitionKey),
                     cosmosPatchOperations, options, Family.class);
             logger.info("Item with ID {} has been patched", response.getItem().getId());
