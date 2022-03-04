@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 package com.azure.cosmos.examples.bulk.async;
 
 import com.azure.cosmos.*;
@@ -16,7 +19,7 @@ import java.util.ArrayList;
 
 public class SampleBulkQuickStartAsync {
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleBulkQuickStartAsync.class);
+    private static Logger logger = LoggerFactory.getLogger(SampleBulkQuickStartAsync.class);
     private final String databaseName = "AzureSampleFamilyDB";
     private final String containerName = "FamilyContainer";
     private CosmosAsyncClient client;
@@ -93,8 +96,9 @@ public class SampleBulkQuickStartAsync {
         bulkReplaceItems(familiesToReplace);
         logger.info("Bulk deletes.");
         bulkDeleteItems(families);
-        logger.info("Bulk creates with response processing.");
+        logger.info("Bulk create response processing without errors.");
         bulkCreateItemsWithResponseProcessing(families);
+        logger.info("Bulk create response processing with 409 error");
         bulkCreateItemsWithResponseProcessing(families);
         logger.info("Bulk deletes.");
         bulkDeleteItems(families);
@@ -189,13 +193,12 @@ public class SampleBulkQuickStartAsync {
             if (cosmosBulkOperationResponse.getException() != null) {
                 logger.error("Bulk operation failed", cosmosBulkOperationResponse.getException());
             } else if (cosmosBulkOperationResponse.getResponse() == null || !cosmosBulkOperationResponse.getResponse().isSuccessStatusCode()) {
-                logger.error("The operation for Document ID: {}  Document PK: {} did not complete successfully with " +
-                                "a" + " {} response code.", cosmosItemOperation.getId(),
-                        cosmosItemOperation.getPartitionKeyValue(), cosmosBulkItemResponse.getStatusCode());
+                logger.error("The operation for Item ID: [{}]  Item PartitionKey Value: [{}] did not complete successfully with " +
+                                "a" + " {} response code.", cosmosItemOperation.<Family>getItem().getId(),
+                        cosmosItemOperation.<Family>getItem().getLastName(), cosmosBulkItemResponse.getStatusCode());
             } else {
-                //TODO why is the ID null?
-                logger.info("Document ID: {}  Document PK: {}", cosmosItemOperation.getId(),
-                        cosmosItemOperation.getPartitionKeyValue());
+                logger.info("Item ID: [{}]  Item PartitionKey Value: [{}]", cosmosItemOperation.<Family>getItem().getId(),
+                        cosmosItemOperation.<Family>getItem().getLastName());
                 logger.info("Status Code: {}", String.valueOf(cosmosBulkItemResponse.getStatusCode()));
                 logger.info("Request Charge: {}", String.valueOf(cosmosBulkItemResponse.getRequestCharge()));
             }
@@ -214,19 +217,6 @@ public class SampleBulkQuickStartAsync {
                         new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations, bulkExecutionOptions).blockLast();
     }
-
-    private void bulkCreateItemsWithThroughputControl(Flux<Family> families) {
-        CosmosBulkExecutionOptions bulkExecutionOptions = new CosmosBulkExecutionOptions();
-        ImplementationBridgeHelpers
-                .CosmosBulkExecutionOptionsHelper
-                .getCosmosBulkExecutionOptionsAccessor()
-                .setMaxMicroBatchSize(bulkExecutionOptions, 10);
-        Flux<CosmosItemOperation> cosmosItemOperations =
-                families.map(family -> CosmosBulkOperations.getCreateItemOperation(family,
-                        new PartitionKey(family.getLastName())));
-        container.executeBulkOperations(cosmosItemOperations, bulkExecutionOptions).blockLast();
-    }
-
 
     private void shutdown() {
         try {
