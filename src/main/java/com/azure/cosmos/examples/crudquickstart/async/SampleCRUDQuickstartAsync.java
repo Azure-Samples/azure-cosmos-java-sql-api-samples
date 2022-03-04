@@ -41,7 +41,7 @@ public class SampleCRUDQuickstartAsync {
     private CosmosAsyncDatabase database;
     private CosmosAsyncContainer container;
 
-    protected static Logger logger = LoggerFactory.getLogger(SampleCRUDQuickstartAsync.class);
+    private static Logger logger = LoggerFactory.getLogger(SampleCRUDQuickstartAsync.class);
 
     public void close() {
         client.close();

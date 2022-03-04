@@ -36,5 +36,5 @@ public class AccountSettings {
             System.getProperty("ACCOUNT_HOST",
                     StringUtils.defaultString(StringUtils.trimToNull(
                             System.getenv().get("ACCOUNT_HOST")),
-                            "https://localhost:443/"));
+                            "https://localhost:8081"));
 }

@@ -52,7 +52,7 @@ public class SamplePatchQuickstart {
     private CosmosDatabase database;
     private CosmosContainer container;
 
-    protected static Logger logger = LoggerFactory.getLogger(SamplePatchQuickstart.class);
+   private static Logger logger = LoggerFactory.getLogger(SamplePatchQuickstart.class);
 
     public void close() {
         client.close();
