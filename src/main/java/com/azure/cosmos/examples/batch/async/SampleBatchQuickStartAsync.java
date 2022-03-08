@@ -120,6 +120,13 @@ public class SampleBatchQuickStartAsync {
         executeBatchOperationsWithRead(batchWithReadOperation);
         deleteItem(andersenFamily);
 
+        logger.info("A batch of upsert and delete operations.");
+        CosmosBatch batchOfUpsertAndDeleteOperations = CosmosBatch.createCosmosBatch(new PartitionKey(andersenFamily.getLastName()));
+        //creating an upsert operation and a delete operation for the same family item
+        batchOfUpsertAndDeleteOperations.upsertItemOperation(andersenFamily);
+        batchOfUpsertAndDeleteOperations.deleteItemOperation(andersenFamily.getId());
+        //executing the batch of operations
+        executeBatchOperations(batchOfUpsertAndDeleteOperations);
     }
 
     private void createDatabaseIfNotExists() throws Exception {
