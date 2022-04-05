@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-
 /**
  * The BulkWriter class is an attempt to provide guidance for creating
  * a higher level abstraction over the existing low level Java Bulk API
