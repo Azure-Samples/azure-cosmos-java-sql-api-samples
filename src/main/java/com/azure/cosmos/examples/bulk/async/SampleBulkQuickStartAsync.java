@@ -14,7 +14,9 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.UUID;
 
 
 public class SampleBulkQuickStartAsync {
@@ -103,7 +105,12 @@ public class SampleBulkQuickStartAsync {
         bulkCreateItemsWithExecutionOptions(families);
         logger.info("Bulk deletes.");
         bulkDeleteItems(families);
-        bulkCreateItemsSimple();
+        logger.info("Bulk upserts with BulkWriter abstraction");
+        bulkUpsertItemsWithBulkWriterAbstraction();
+        logger.info("Bulk upserts with BulkWriter Abstraction and Local Throughput Control");
+        bulkUpsertItemsWithBulkWriterAbstractionAndLocalThroughPutControl();
+        logger.info("Bulk upserts with BulkWriter Abstraction and Global Throughput Control");
+        bulkCreateItemsWithBulkWriterAbstractionAndGlobalThroughputControl();
     }
 
     private void createDatabaseIfNotExists() throws Exception {
@@ -194,8 +201,57 @@ public class SampleBulkQuickStartAsync {
         container.executeBulkOperations(cosmosItemOperations, bulkExecutionOptions).blockLast();
     }
 
+    // BulkWriter Abstraction
+    private void bulkUpsertItemsWithBulkWriterAbstraction() {
+        Family andersenFamilyItem = Families.getAndersenFamilyItem();
+        Family wakefieldFamilyItem = Families.getWakefieldFamilyItem();
+        CosmosItemOperation wakeFieldItemOperation = CosmosBulkOperations.getUpsertItemOperation(wakefieldFamilyItem, new PartitionKey(wakefieldFamilyItem.getLastName()));
+        CosmosItemOperation andersonItemOperation = CosmosBulkOperations.getUpsertItemOperation(andersenFamilyItem, new PartitionKey(andersenFamilyItem.getLastName()));
+        BulkWriter bulkWriter = new BulkWriter(container);
+        bulkWriter.scheduleWrites(andersonItemOperation);
+        bulkWriter.scheduleWrites(wakeFieldItemOperation);
+        bulkWriter.execute().subscribe();
+    }
 
-    private void bulkCreateItemsSimple() {
+
+    // BulkWriter Abstraction
+    private void bulkUpsertItemsWithBulkWriterAbstractionAndLocalThroughPutControl() {
+        ThroughputControlGroupConfig groupConfig =
+                new ThroughputControlGroupConfigBuilder()
+                        .setGroupName("group1")
+                        .setTargetThroughput(200)
+                        .build();
+        container.enableLocalThroughputControlGroup(groupConfig);
+        Family andersenFamilyItem = Families.getAndersenFamilyItem();
+        Family wakefieldFamilyItem = Families.getWakefieldFamilyItem();
+        CosmosItemOperation wakeFieldItemOperation = CosmosBulkOperations.getUpsertItemOperation(wakefieldFamilyItem, new PartitionKey(wakefieldFamilyItem.getLastName()));
+        CosmosItemOperation andersonItemOperation = CosmosBulkOperations.getUpsertItemOperation(andersenFamilyItem, new PartitionKey(andersenFamilyItem.getLastName()));
+        BulkWriter bulkWriter = new BulkWriter(container);
+        bulkWriter.scheduleWrites(andersonItemOperation);
+        bulkWriter.scheduleWrites(wakeFieldItemOperation);
+        bulkWriter.execute().subscribe();
+    }
+
+    // BulkWriter Abstraction
+    private void bulkCreateItemsWithBulkWriterAbstractionAndGlobalThroughputControl() {
+        String controlContainerId = "throughputControlContainer";
+        CosmosAsyncContainer controlContainer = database.getContainer(controlContainerId);
+        database.createContainerIfNotExists(controlContainer.getId(), "/groupId").block();
+
+        ThroughputControlGroupConfig groupConfig =
+                new ThroughputControlGroupConfigBuilder()
+                        .setGroupName("group-" + UUID.randomUUID())
+                        .setTargetThroughput(200)
+                        .build();
+
+        GlobalThroughputControlConfig globalControlConfig = this.client.createGlobalThroughputControlConfigBuilder(this.database.getId(), controlContainerId)
+                .setControlItemRenewInterval(Duration.ofSeconds(5))
+                .setControlItemExpireInterval(Duration.ofSeconds(20))
+                .build();
+
+        container.enableGlobalThroughputControlGroup(groupConfig, globalControlConfig);
+        CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
+        requestOptions.setThroughputControlGroupName(groupConfig.getGroupName());
         Family andersenFamilyItem = Families.getAndersenFamilyItem();
         Family wakefieldFamilyItem = Families.getWakefieldFamilyItem();
         CosmosItemOperation andersonItemOperation = CosmosBulkOperations.getCreateItemOperation(andersenFamilyItem, new PartitionKey(andersenFamilyItem.getLastName()));
@@ -203,11 +259,14 @@ public class SampleBulkQuickStartAsync {
         BulkWriter bulkWriter = new BulkWriter(container);
         bulkWriter.scheduleWrites(andersonItemOperation);
         bulkWriter.scheduleWrites(wakeFieldItemOperation);
-        bulkWriter.execute().blockLast();
+        bulkWriter.execute().subscribe();
     }
+    //  <BulkWriter Abstraction>
 
     private void shutdown() {
         try {
+            // To allow for the sequence to complete after subscribe() calls
+            Thread.sleep(5000);
             //Clean shutdown
             logger.info("Deleting Cosmos DB resources");
             logger.info("-Deleting container...");
@@ -215,6 +274,8 @@ public class SampleBulkQuickStartAsync {
             logger.info("-Deleting database...");
             if (database != null) database.delete().subscribe();
             logger.info("-Closing the client...");
+        } catch (InterruptedException err) {
+            err.printStackTrace();
         } catch (Exception err) {
             logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack " + "trace below.");
             err.printStackTrace();

@@ -1,7 +1,15 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+/**
+ * The BulkWriter class is an attempt to provide guidance for creating
+ * a higher level abstraction over the existing low level Java Bulk API
+  */
 package com.azure.cosmos.examples.bulk.async;
 
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.implementation.HttpConstants;
 import com.azure.cosmos.models.CosmosBulkItemResponse;
 import com.azure.cosmos.models.CosmosBulkOperationResponse;
@@ -12,8 +20,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.concurrent.Semaphore;
+
+
 public class BulkWriter {
     private static Logger logger = LoggerFactory.getLogger(BulkWriter.class);
+    Sinks.Many<CosmosItemOperation> bulkInputEmitter = Sinks.many().unicast().onBackpressureBuffer();
+    private CosmosAsyncContainer cosmosAsyncContainer;
+    private int cpuCount = Runtime.getRuntime().availableProcessors();
+    //Max items to be buffered to avoid out of memory error
+    private Semaphore semaphore = new Semaphore(1024 * 167 / cpuCount);
     private final Sinks.EmitFailureHandler emitFailureHandler =
             (signalType, emitResult) -> {
                 if (emitResult.equals(Sinks.EmitResult.FAIL_NON_SERIALIZED)) {
@@ -24,22 +40,32 @@ public class BulkWriter {
                     return false;
                 }
             };
-    Sinks.Many<CosmosItemOperation> bulkInputEmitter = Sinks.many().unicast().onBackpressureBuffer();
-    private CosmosAsyncContainer cosmosAsyncContainer;
-
 
     public BulkWriter(CosmosAsyncContainer cosmosAsyncContainer) {
         this.cosmosAsyncContainer = cosmosAsyncContainer;
     }
 
+    public void setCpuCount(int cpuCount) {
+        this.cpuCount = cpuCount;
+    }
+
     public void scheduleWrites(CosmosItemOperation cosmosItemOperation) {
+        while(!semaphore.tryAcquire()){
+            logger.info("Unable to acquire permit");
+        };
+        logger.info("Acquired permit");
+        scheduleInternalWrites(cosmosItemOperation);
+    }
+
+    private void scheduleInternalWrites(CosmosItemOperation cosmosItemOperation) {
         bulkInputEmitter.emitNext(cosmosItemOperation, emitFailureHandler);
     }
 
 
     public Flux<CosmosBulkOperationResponse> execute() {
-        return cosmosAsyncContainer.executeBulkOperations(bulkInputEmitter.asFlux()).publishOn(Schedulers.boundedElastic()).map(bulkOperationResponse -> {
+         return cosmosAsyncContainer.executeBulkOperations(bulkInputEmitter.asFlux()).publishOn(Schedulers.boundedElastic()).map(bulkOperationResponse -> {
             processBulkOperationResponse(bulkOperationResponse.getResponse(), bulkOperationResponse.getOperation(), bulkOperationResponse.getException());
+            semaphore.release();
             return bulkOperationResponse;
         });
     }
@@ -86,5 +112,6 @@ public class BulkWriter {
         return statusCode == HttpConstants.StatusCodes.REQUEST_TIMEOUT || statusCode == HttpConstants.StatusCodes.TOO_MANY_REQUESTS;
 
     }
+
 
 }
