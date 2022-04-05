@@ -18,10 +18,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.UUID;
 
-
 public class SampleBulkQuickStartAsync {
 
-    private static Logger logger = LoggerFactory.getLogger(SampleBulkQuickStartAsync.class);
+    private static final Logger logger = LoggerFactory.getLogger(SampleBulkQuickStartAsync.class);
     private final String databaseName = "AzureSampleFamilyDB";
     private final String containerName = "FamilyContainer";
     private CosmosAsyncClient client;
@@ -48,11 +47,11 @@ public class SampleBulkQuickStartAsync {
         client.close();
     }
 
-    private void getStartedDemo() throws Exception {
+    private void getStartedDemo() {
 
         logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
 
-        ArrayList<String> preferredRegions = new ArrayList<String>();
+        ArrayList<String> preferredRegions = new ArrayList<>();
         preferredRegions.add("West US");
 
         //  Setting the preferred location to Cosmos DB Account region
@@ -61,7 +60,12 @@ public class SampleBulkQuickStartAsync {
 
         //  Create async client
         //  <CreateAsyncClient>
-        client = new CosmosClientBuilder().endpoint(AccountSettings.HOST).key(AccountSettings.MASTER_KEY).preferredRegions(preferredRegions).contentResponseOnWriteEnabled(true).consistencyLevel(ConsistencyLevel.SESSION).buildAsyncClient();
+        client = new CosmosClientBuilder()
+            .endpoint(AccountSettings.HOST)
+            .key(AccountSettings.MASTER_KEY)
+            .preferredRegions(preferredRegions)
+            .contentResponseOnWriteEnabled(true)
+            .consistencyLevel(ConsistencyLevel.SESSION).buildAsyncClient();
 
         //  </CreateAsyncClient>
 
@@ -83,14 +87,16 @@ public class SampleBulkQuickStartAsync {
         andersenFamilyItem.setRegistered(false);
         wakefieldFamilyItem.setRegistered(false);
 
-        Flux<Family> familiesToUpsert = Flux.just(andersenFamilyItem, wakefieldFamilyItem, johnsonFamilyItem, smithFamilyItem);
+        Flux<Family> familiesToUpsert = Flux.just(
+            andersenFamilyItem, wakefieldFamilyItem, johnsonFamilyItem, smithFamilyItem);
         logger.info("Bulk upserts.");
         bulkUpsertItems(familiesToUpsert);
 
         andersenFamilyItem.setRegistered(true);
         wakefieldFamilyItem.setRegistered(true);
 
-        Flux<Family> familiesToReplace = Flux.just(andersenFamilyItem, wakefieldFamilyItem, johnsonFamilyItem, smithFamilyItem);
+        Flux<Family> familiesToReplace = Flux.just(
+            andersenFamilyItem, wakefieldFamilyItem, johnsonFamilyItem, smithFamilyItem);
         logger.info("Bulk replace.");
         bulkReplaceItems(familiesToReplace);
         logger.info("Bulk deletes.");
@@ -113,7 +119,7 @@ public class SampleBulkQuickStartAsync {
         bulkCreateItemsWithBulkWriterAbstractionAndGlobalThroughputControl();
     }
 
-    private void createDatabaseIfNotExists() throws Exception {
+    private void createDatabaseIfNotExists() {
         logger.info("Create database " + databaseName + " if not exists.");
 
         //  Create database if not exists
@@ -127,70 +133,105 @@ public class SampleBulkQuickStartAsync {
         //  </CreateDatabaseIfNotExists>
     }
 
-    private void createContainerIfNotExists() throws Exception {
+    private void createContainerIfNotExists() {
         logger.info("Create container " + containerName + " if not exists.");
 
         //  Create container if not exists
         //  <CreateContainerIfNotExists>
 
-        CosmosContainerProperties containerProperties = new CosmosContainerProperties(containerName, "/lastName");
+        CosmosContainerProperties containerProperties = new CosmosContainerProperties(
+            containerName, "/lastName");
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
-        Mono<CosmosContainerResponse> containerIfNotExists = database.createContainerIfNotExists(containerProperties, throughputProperties);
+        Mono<CosmosContainerResponse> containerIfNotExists = database
+            .createContainerIfNotExists(containerProperties, throughputProperties);
 
         //  Create container with 400 RU/s
         CosmosContainerResponse cosmosContainerResponse = containerIfNotExists.block();
+        assert(cosmosContainerResponse != null);
+        assert(cosmosContainerResponse.getProperties() != null);
         container = database.getContainer(cosmosContainerResponse.getProperties().getId());
         //  </CreateContainerIfNotExists>
 
         //Modify existing container
         containerProperties = cosmosContainerResponse.getProperties();
-        Mono<CosmosContainerResponse> propertiesReplace = container.replace(containerProperties, new CosmosContainerRequestOptions());
+        Mono<CosmosContainerResponse> propertiesReplace =
+            container.replace(containerProperties, new CosmosContainerRequestOptions());
         propertiesReplace.flatMap(containerResponse -> {
-            logger.info("setupContainer(): Container " + container.getId() + " in " + database.getId() + "has been " + "updated with it's new " + "properties.");
+            logger.info(
+                "setupContainer(): Container {}} in {} has been updated with it's new properties.",
+                container.getId(),
+                database.getId());
             return Mono.empty();
         }).onErrorResume((exception) -> {
-            logger.error("setupContainer(): Unable to update properties for container " + container.getId() + " in " + "database " + database.getId() + ". e: " + exception.getLocalizedMessage());
+            logger.error(
+                "setupContainer(): Unable to update properties for container {} in database {}. e: {}",
+                container.getId(),
+                database.getId(),
+                exception.getLocalizedMessage(),
+                exception);
             return Mono.empty();
         }).block();
 
     }
 
     private void bulkCreateItems(Flux<Family> families) {
-        Flux<CosmosItemOperation> cosmosItemOperations = families.map(family -> CosmosBulkOperations.getCreateItemOperation(family, new PartitionKey(family.getLastName())));
+        Flux<CosmosItemOperation> cosmosItemOperations = families.map(
+            family -> CosmosBulkOperations.getCreateItemOperation(family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).blockLast();
     }
 
     private void bulkDeleteItems(Flux<Family> families) {
-        Flux<CosmosItemOperation> cosmosItemOperations = families.map(family -> CosmosBulkOperations.getDeleteItemOperation(family.getId(), new PartitionKey(family.getLastName())));
+        Flux<CosmosItemOperation> cosmosItemOperations = families.map(
+            family -> CosmosBulkOperations
+                .getDeleteItemOperation(family.getId(), new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).blockLast();
     }
 
     private void bulkUpsertItems(Flux<Family> families) {
-        Flux<CosmosItemOperation> cosmosItemOperations = families.map(family -> CosmosBulkOperations.getUpsertItemOperation(family, new PartitionKey(family.getLastName())));
+        Flux<CosmosItemOperation> cosmosItemOperations = families.map(
+            family -> CosmosBulkOperations.getUpsertItemOperation(family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).blockLast();
     }
 
     private void bulkReplaceItems(Flux<Family> families) {
-        Flux<CosmosItemOperation> cosmosItemOperations = families.map(family -> CosmosBulkOperations.getReplaceItemOperation(family.getId(), family, new PartitionKey(family.getLastName())));
+        Flux<CosmosItemOperation> cosmosItemOperations = families.map(
+            family -> CosmosBulkOperations
+                .getReplaceItemOperation(family.getId(), family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).blockLast();
     }
 
     private void bulkCreateItemsWithResponseProcessing(Flux<Family> families) {
-        Flux<CosmosItemOperation> cosmosItemOperations = families.map(family -> CosmosBulkOperations.getCreateItemOperation(family, new PartitionKey(family.getLastName())));
+        Flux<CosmosItemOperation> cosmosItemOperations = families.map(
+            family -> CosmosBulkOperations.getCreateItemOperation(family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).flatMap(cosmosBulkOperationResponse -> {
+
             CosmosBulkItemResponse cosmosBulkItemResponse = cosmosBulkOperationResponse.getResponse();
             CosmosItemOperation cosmosItemOperation = cosmosBulkOperationResponse.getOperation();
 
             if (cosmosBulkOperationResponse.getException() != null) {
                 logger.error("Bulk operation failed", cosmosBulkOperationResponse.getException());
-            } else if (cosmosBulkOperationResponse.getResponse() == null || !cosmosBulkOperationResponse.getResponse().isSuccessStatusCode()) {
-                logger.error("The operation for Item ID: [{}]  Item PartitionKey Value: [{}] did not complete successfully with " + "a" + " {} response code.", cosmosItemOperation.<Family>getItem().getId(), cosmosItemOperation.<Family>getItem().getLastName(), cosmosBulkItemResponse.getStatusCode());
+            } else if (cosmosBulkItemResponse == null ||
+                !cosmosBulkOperationResponse.getResponse().isSuccessStatusCode()) {
+
+                logger.error(
+                    "The operation for Item ID: [{}]  Item PartitionKey Value: [{}] did not complete " +
+                        "successfully with " + "a" + " {} response code.",
+                    cosmosItemOperation.<Family>getItem().getId(),
+                    cosmosItemOperation.<Family>getItem().getLastName(),
+                    cosmosBulkItemResponse != null ? cosmosBulkItemResponse.getStatusCode() : "n/a");
             } else {
-                logger.info("Item ID: [{}]  Item PartitionKey Value: [{}]", cosmosItemOperation.<Family>getItem().getId(), cosmosItemOperation.<Family>getItem().getLastName());
-                logger.info("Status Code: {}", String.valueOf(cosmosBulkItemResponse.getStatusCode()));
-                logger.info("Request Charge: {}", String.valueOf(cosmosBulkItemResponse.getRequestCharge()));
+                logger.info(
+                    "Item ID: [{}]  Item PartitionKey Value: [{}]",
+                    cosmosItemOperation.<Family>getItem().getId(),
+                    cosmosItemOperation.<Family>getItem().getLastName());
+                logger.info("Status Code: {}", cosmosBulkItemResponse.getStatusCode());
+                logger.info("Request Charge: {}", cosmosBulkItemResponse.getRequestCharge());
             }
-            return Mono.just(cosmosBulkItemResponse);
+            if (cosmosBulkItemResponse == null) {
+                return Mono.error(new IllegalStateException("No response retrieved."));
+            } else {
+                return Mono.just(cosmosBulkItemResponse);
+            }
         }).blockLast();
     }
 
