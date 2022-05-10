@@ -71,7 +71,6 @@ public class SampleChangeFeedEstimator {
             //The next line causes the worker to create and start an instance of the Change Feed Processor. See the implementation of getChangeFeedProcessor() for guidance
             //on creating a handler for Change Feed events. In this stream, we also trigger the insertion of 10 documents on a separate
             //thread.
-            // <DefineProcessor>
             logger.info("Start Change Feed Processor on worker (handles changes asynchronously)");
             ChangeFeedProcessor changeFeedProcessorInstance = new ChangeFeedProcessorBuilder()
                 .hostName("SampleHost_1")
@@ -83,7 +82,6 @@ public class SampleChangeFeedEstimator {
             changeFeedProcessorInstance.start()
                                        .subscribeOn(Schedulers.boundedElastic())
                                        .subscribe();
-            // </DefineProcessor>
 
             //These two lines model an application which is inserting ten documents into the feed container
             logger.info("Start application that inserts documents into feed container");
