@@ -8,7 +8,9 @@ import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.implementation.ImplementationBridgeHelpers;
+//  <CosmosBulkOperationsImport>
 import com.azure.cosmos.models.*;
+//  </CosmosBulkOperationsImport>
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -69,6 +71,7 @@ public class SampleBulkQuickStartAsync {
 
         //  </CreateAsyncClient>
 
+        //  <AddDocsToStream>
         createDatabaseIfNotExists();
         createContainerIfNotExists();
 
@@ -79,6 +82,7 @@ public class SampleBulkQuickStartAsync {
 
         //  Setup family items to create
         Flux<Family> families = Flux.just(andersenFamilyItem, wakefieldFamilyItem, johnsonFamilyItem, smithFamilyItem);
+        //  </AddDocsToStream>
 
         logger.info("Bulk creates.");
         bulkCreateItems(families);
@@ -174,32 +178,42 @@ public class SampleBulkQuickStartAsync {
 
     }
 
+    
+    //  <BulkCreateItems>
     private void bulkCreateItems(Flux<Family> families) {
         Flux<CosmosItemOperation> cosmosItemOperations = families.map(
             family -> CosmosBulkOperations.getCreateItemOperation(family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).blockLast();
     }
+    //  </BulkCreateItems>
 
+    //  <BulkDeleteItems>
     private void bulkDeleteItems(Flux<Family> families) {
         Flux<CosmosItemOperation> cosmosItemOperations = families.map(
             family -> CosmosBulkOperations
                 .getDeleteItemOperation(family.getId(), new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).blockLast();
     }
+    //  </BulkDeleteItems>
 
+    //  <BulkUpsertItems>
     private void bulkUpsertItems(Flux<Family> families) {
         Flux<CosmosItemOperation> cosmosItemOperations = families.map(
             family -> CosmosBulkOperations.getUpsertItemOperation(family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).blockLast();
     }
+    //  </BulkUpsertItems>
 
+    //  <BulkReplaceItems>
     private void bulkReplaceItems(Flux<Family> families) {
         Flux<CosmosItemOperation> cosmosItemOperations = families.map(
             family -> CosmosBulkOperations
                 .getReplaceItemOperation(family.getId(), family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).blockLast();
     }
+    //  </BulkReplaceItems>
 
+    //  <BulkCreateItemsWithResponseProcessingAndExecutionOptions>
     private void bulkCreateItemsWithResponseProcessing(Flux<Family> families) {
         Flux<CosmosItemOperation> cosmosItemOperations = families.map(
             family -> CosmosBulkOperations.getCreateItemOperation(family, new PartitionKey(family.getLastName())));
@@ -241,8 +255,9 @@ public class SampleBulkQuickStartAsync {
         Flux<CosmosItemOperation> cosmosItemOperations = families.map(family -> CosmosBulkOperations.getCreateItemOperation(family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations, bulkExecutionOptions).blockLast();
     }
+    //  </BulkCreateItemsWithResponseProcessingAndExecutionOptions>
 
-    // BulkWriter Abstraction
+    //  <BulkWriterAbstraction>
     private void bulkUpsertItemsWithBulkWriterAbstraction() {
         Family andersenFamilyItem = Families.getAndersenFamilyItem();
         Family wakefieldFamilyItem = Families.getWakefieldFamilyItem();
@@ -254,8 +269,6 @@ public class SampleBulkQuickStartAsync {
         bulkWriter.execute().subscribe();
     }
 
-
-    // BulkWriter Abstraction
     private void bulkUpsertItemsWithBulkWriterAbstractionAndLocalThroughPutControl() {
         ThroughputControlGroupConfig groupConfig =
                 new ThroughputControlGroupConfigBuilder()
@@ -273,7 +286,6 @@ public class SampleBulkQuickStartAsync {
         bulkWriter.execute().subscribe();
     }
 
-    // BulkWriter Abstraction
     private void bulkCreateItemsWithBulkWriterAbstractionAndGlobalThroughputControl() {
         String controlContainerId = "throughputControlContainer";
         CosmosAsyncContainer controlContainer = database.getContainer(controlContainerId);
@@ -302,7 +314,8 @@ public class SampleBulkQuickStartAsync {
         bulkWriter.scheduleWrites(wakeFieldItemOperation);
         bulkWriter.execute().subscribe();
     }
-    //  <BulkWriter Abstraction>
+    //  </BulkWriterAbstraction>
+    
 
     private void shutdown() {
         try {
