@@ -70,11 +70,11 @@ public class SampleBulkQuickStartAsync {
             .consistencyLevel(ConsistencyLevel.SESSION).buildAsyncClient();
 
         //  </CreateAsyncClient>
-
-        //  <AddDocsToStream>
+ 
         createDatabaseIfNotExists();
         createContainerIfNotExists();
 
+        //  <AddDocsToStream>
         Family andersenFamilyItem = Families.getAndersenFamilyItem();
         Family wakefieldFamilyItem = Families.getWakefieldFamilyItem();
         Family johnsonFamilyItem = Families.getJohnsonFamilyItem();
