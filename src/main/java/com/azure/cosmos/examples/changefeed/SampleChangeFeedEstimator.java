@@ -20,14 +20,12 @@ import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor.createNewCollection;
 import static com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor.createNewDatabase;
-import static com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor.createNewDocumentsCustomPOJO;
 import static com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor.createNewLeaseCollection;
 import static com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor.deleteDatabase;
 import static com.azure.cosmos.examples.changefeed.SampleChangeFeedProcessor.getCosmosClient;
@@ -72,61 +70,97 @@ public class SampleChangeFeedEstimator {
             //on creating a handler for Change Feed events. In this stream, we also trigger the insertion of 10 documents on a separate
             //thread.
             logger.info("Start Change Feed Processor on worker (handles changes asynchronously)");
-            ChangeFeedProcessor changeFeedProcessorInstance = new ChangeFeedProcessorBuilder()
+            ChangeFeedProcessor changeFeedProcessorMainInstance = new ChangeFeedProcessorBuilder()
                 .hostName("SampleHost_1")
                 .feedContainer(feedContainer)
                 .leaseContainer(leaseContainer)
                 .handleChanges(handleChangesWithLag())
                 .buildChangeFeedProcessor();
 
-            changeFeedProcessorInstance.start()
-                                       .subscribeOn(Schedulers.boundedElastic())
-                                       .subscribe();
+            try {
+                changeFeedProcessorMainInstance
+                    .start()
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .timeout(Duration.ofSeconds(10))
+                    .then(Mono.just(changeFeedProcessorMainInstance)
+                              .delayElement(Duration.ofSeconds(10))
+                              .flatMap(value -> changeFeedProcessorMainInstance
+                                  .stop()
+                                  .subscribeOn(Schedulers.boundedElastic())
+                                  .timeout(Duration.ofSeconds(10))))
+                    .subscribe();
+            } catch (Exception ex) {
+                logger.error("Change feed processor did not start and stopped in the expected time", ex);
+                throw ex;
+            }
 
-            //These two lines model an application which is inserting ten documents into the feed container
-            logger.info("Start application that inserts documents into feed container");
-            createNewDocumentsCustomPOJO(feedContainer, 10, Duration.ofSeconds(3));
+            Thread.sleep(Duration.ofSeconds(20).toMillis());
 
-            Thread.sleep(Duration.ofSeconds(4).toMillis());
+            ChangeFeedProcessor changeFeedProcessorSideCart = new ChangeFeedProcessorBuilder()
+                .hostName("side-cart")
+                .feedContainer(feedContainer)
+                .leaseContainer(leaseContainer)
+                .handleChanges(nodes -> {
+                    logger.error("This never needs to be called, as this is just monitoring the state");
+                })
+                .buildChangeFeedProcessor();
 
             AtomicInteger totalLag = new AtomicInteger();
-
             // <EstimatedLag>
-            Mono<Map<String, Integer>> estimatedLagResult = changeFeedProcessorInstance
-                .getEstimatedLag()
-                .map(estimatedLag -> {
-                    try {
-                        logger.info("Estimated lag result is : {}", OBJECT_MAPPER.writeValueAsString(estimatedLag));
-                     } catch (JsonProcessingException ex) {
-                         logger.error("Unexpected", ex);
-                     }
-                     return estimatedLag;
-                })
-                .map(estimatedLag -> {
-                    for (int lag : estimatedLag.values()) {
-                        totalLag.addAndGet(lag);
-                    }
-                    logger.info("Total lag is : {}", totalLag.get());
-                    return estimatedLag;
-                });
-
-            estimatedLagResult.subscribe();
-            // </EstimatedLag>
-
-            // <EstimatedLagWithState>
-            Mono<List<ChangeFeedProcessorState>> currentState = changeFeedProcessorInstance.getCurrentState();
+            Mono<List<ChangeFeedProcessorState>> currentState = changeFeedProcessorMainInstance.getCurrentState();
             currentState.map(state -> {
                 for (ChangeFeedProcessorState changeFeedProcessorState : state) {
-                    int estimatedLag = changeFeedProcessorState.getEstimatedLag();
-                    String hostName = changeFeedProcessorState.getHostName();
-                    logger.info("Host name {} with estimated lag {}", hostName, estimatedLag);
+                    totalLag.addAndGet(changeFeedProcessorState.getEstimatedLag());
                 }
                 return state;
             }).subscribe();
-            // </EstimatedLagWithState>
 
-            //When all documents have been processed, clean up
-            changeFeedProcessorInstance.stop().subscribe();
+            // Initially totalLag should be zero
+            logger.info("Initially total lag is : {}", totalLag.get());
+
+            totalLag.set(0);
+            currentState = changeFeedProcessorSideCart.getCurrentState();
+            currentState.map(state -> {
+                for (ChangeFeedProcessorState changeFeedProcessorState : state) {
+                    totalLag.addAndGet(changeFeedProcessorState.getEstimatedLag());
+                }
+                return state;
+            }).subscribe();
+
+            // Initially totalLag should be zero
+            logger.info("Initially total lag is : {}", totalLag.get());
+            // </EstimatedLag>
+
+            //These two lines model an application which is inserting ten documents into the feed container
+            logger.info("Start application that inserts documents into feed container");
+            createNewDocumentsCustomPOJO(feedContainer, 10);
+
+            currentState = changeFeedProcessorMainInstance.getCurrentState();
+            currentState.map(state -> {
+                for (ChangeFeedProcessorState changeFeedProcessorState : state) {
+                    totalLag.addAndGet(changeFeedProcessorState.getEstimatedLag());
+                }
+                return state;
+            }).block();
+
+            // Finally, totalLag should be equal to number of documents created
+            logger.info("Finally total lag is : {}", totalLag.get());
+
+            totalLag.set(0);
+            changeFeedProcessorSideCart.start().block();
+            currentState = changeFeedProcessorSideCart.getCurrentState();
+            currentState.map(state -> {
+                for (ChangeFeedProcessorState changeFeedProcessorState : state) {
+                    totalLag.addAndGet(changeFeedProcessorState.getEstimatedLag());
+                }
+                return state;
+            }).block();
+
+            logger.info("Finally total lag is : {}", totalLag.get());
+
+            changeFeedProcessorSideCart.stop().subscribe();
+
+            Thread.sleep(Duration.ofSeconds(30).toMillis());
 
             logger.info("Delete sample's database: " + DATABASE_NAME);
             deleteDatabase(cosmosDatabase);
@@ -168,5 +202,16 @@ public class SampleChangeFeedEstimator {
             }
             logger.info("End handleChangesWithLag()");
         };
+    }
+
+    public static void createNewDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count) {
+        String suffix = UUID.randomUUID().toString();
+        for (int i = 0; i < count; i++) {
+            CustomPOJO2 document = new CustomPOJO2();
+            document.setId(String.format("0%d-%s", i, suffix));
+            document.setPk(document.getId()); // This is a very simple example, so we'll just have a partition key (/pk) field that we set equal to id
+
+            containerClient.createItem(document).block();
+        }
     }
 }
