@@ -113,6 +113,15 @@ public class SampleBulkQuickStartAsync {
         bulkDeleteItems(families);
         logger.info("Bulk creates with execution options.");
         bulkCreateItemsWithExecutionOptions(families);
+        logger.info("Bulk patches.");
+        //  <PatchOperations>
+        CosmosPatchOperations patchOps = CosmosPatchOperations.create().add("/country", "United States")
+                .set("/registered", 0);
+        //  </PatchOperations>
+        // Note: here we apply "add" and "set" to patch elements whose root parent
+        // exists, but we cannot do this where the root parent does not exist. When this
+        // is required, read the full document first, then use replace.                
+        bulkPatchItems(familiesToReplace, patchOps);        
         logger.info("Bulk deletes.");
         bulkDeleteItems(families);
         logger.info("Bulk upserts with BulkWriter abstraction");
@@ -202,7 +211,16 @@ public class SampleBulkQuickStartAsync {
             family -> CosmosBulkOperations.getUpsertItemOperation(family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations).blockLast();
     }
-    //  </BulkUpsertItems>
+    //  </BulkUpsertItems>   
+
+    //  <BulkPatchItems>
+    private void bulkPatchItems(Flux<Family> families, CosmosPatchOperations operations) {
+        Flux<CosmosItemOperation> cosmosItemOperations = families.map(
+            family -> CosmosBulkOperations
+                .getPatchItemOperation(family.getId(), new PartitionKey(family.getLastName()), operations));
+        container.executeBulkOperations(cosmosItemOperations).blockLast();
+    }
+    //  </BulkPatchItems>
 
     //  <BulkReplaceItems>
     private void bulkReplaceItems(Flux<Family> families) {
