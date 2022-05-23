@@ -94,8 +94,13 @@ public class SampleChangeFeedEstimator {
                 throw ex;
             }
 
+            //  Sleeping here because the CFP instance above requires some time to initialize the lease container
+            //  with all the documents that will keep track of the ongoing work.
             Thread.sleep(Duration.ofSeconds(20).toMillis());
 
+            //  CFP lag checking can be performed on a separate application (like a health monitor)
+            //  as long as the same input containers (feedContainer and leaseContainer) and the exact same lease prefix are used.
+            //  The estimator code requires that the CFP had an opportunity to fully initialize the leaseContainer's documents.
             ChangeFeedProcessor changeFeedProcessorSideCart = new ChangeFeedProcessorBuilder()
                 .hostName("side-cart")
                 .feedContainer(feedContainer)
@@ -143,22 +148,8 @@ public class SampleChangeFeedEstimator {
                 return state;
             }).block();
 
-            // Finally, totalLag should be equal to number of documents created
+            // Finally, totalLag should be greater or equal to the number of documents created
             logger.info("Finally total lag is : {}", totalLag.get());
-
-            totalLag.set(0);
-            changeFeedProcessorSideCart.start().block();
-            currentState = changeFeedProcessorSideCart.getCurrentState();
-            currentState.map(state -> {
-                for (ChangeFeedProcessorState changeFeedProcessorState : state) {
-                    totalLag.addAndGet(changeFeedProcessorState.getEstimatedLag());
-                }
-                return state;
-            }).block();
-
-            logger.info("Finally total lag is : {}", totalLag.get());
-
-            changeFeedProcessorSideCart.stop().subscribe();
 
             Thread.sleep(Duration.ofSeconds(30).toMillis());
 
