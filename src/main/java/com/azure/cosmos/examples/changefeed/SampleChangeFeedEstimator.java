@@ -151,6 +151,19 @@ public class SampleChangeFeedEstimator {
             // Finally, totalLag should be greater or equal to the number of documents created
             logger.info("Finally total lag is : {}", totalLag.get());
 
+            totalLag.set(0);
+            changeFeedProcessorSideCart.start().block();
+            currentState = changeFeedProcessorSideCart.getCurrentState();
+            currentState.map(state -> {
+                for (ChangeFeedProcessorState changeFeedProcessorState : state) {
+                    totalLag.addAndGet(changeFeedProcessorState.getEstimatedLag());
+                }
+                return state;
+            }).block();
+
+            // Finally, totalLag should be greater or equal to the number of documents created
+            logger.info("Finally total lag is : {}", totalLag.get());
+
             Thread.sleep(Duration.ofSeconds(30).toMillis());
 
             logger.info("Delete sample's database: " + DATABASE_NAME);
