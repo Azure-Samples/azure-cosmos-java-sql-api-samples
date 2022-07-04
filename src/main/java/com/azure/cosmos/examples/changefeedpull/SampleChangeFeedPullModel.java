@@ -11,6 +11,7 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.examples.changefeed.SampleConfigurations;
 import com.azure.cosmos.models.CosmosChangeFeedRequestOptions;
 import com.azure.cosmos.models.FeedRange;
+import com.azure.cosmos.models.PartitionKey;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,7 @@ import reactor.core.publisher.Mono;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SampleChangeFeedPullModel {
 
@@ -182,6 +184,52 @@ public class SampleChangeFeedPullModel {
         logger.info("*************************************************************");
         logger.info("*************************************************************");
         logger.info("Finished reading feed ranges on machine 2!");
+        logger.info("*************************************************************");
+        logger.info("*************************************************************");
+
+        
+        //grab first pk in keySet()
+        Set<String> keySet = resources.partitionKeyToDocuments.keySet();
+        String partitionKey="";
+        for (String string : keySet) {
+            partitionKey = string;
+            break;
+        }
+
+        logger.info("*************************************************************");
+        logger.info("*************************************************************");
+        logger.info("Reading change feed from logical partition key!");
+        logger.info("*************************************************************");
+        logger.info("*************************************************************");
+
+        // <PartitionKeyProcessing>
+        options = CosmosChangeFeedRequestOptions
+                .createForProcessingFromBeginning(FeedRange.forLogicalPartition(new PartitionKey(partitionKey)));
+        Map<Integer, String> continuationsPk = new HashMap<>();
+        int pkIndex = 0;
+        while (true) {
+            List<JsonNode> results;
+            final Integer index = i;
+            results = container
+                    .queryChangeFeed(options, JsonNode.class)
+                    .handle((r) -> continuationsPk.put(index, r.getContinuationToken()))
+                    .collectList()
+                    .block();
+            logger.info("Got " + results.size() + " items(s)");
+            options = CosmosChangeFeedRequestOptions
+                    .createForProcessingFromContinuation(continuationsPk.get(i));
+            pkIndex++;
+            if (pkIndex >= 5) {
+                // artificially breaking out of loop
+                System.out.println("breaking....");
+                break;
+            }
+        }
+        // </PartitionKeyProcessing>        
+
+        logger.info("*************************************************************");
+        logger.info("*************************************************************");
+        logger.info("Finished reading change feed from logical partition key!");
         logger.info("*************************************************************");
         logger.info("*************************************************************");
 

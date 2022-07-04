@@ -34,7 +34,7 @@ public class Resources {
     CosmosAsyncClient clientAsync;
     public String DATABASE_NAME;
     public String COLLECTION_NAME;
-    private final ArrayListValuedHashMap<String, ObjectNode> partitionKeyToDocuments = new ArrayListValuedHashMap<String, ObjectNode>();
+    public final ArrayListValuedHashMap<String, ObjectNode> partitionKeyToDocuments = new ArrayListValuedHashMap<String, ObjectNode>();
     protected static Logger logger = LoggerFactory.getLogger(Resources.class);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
