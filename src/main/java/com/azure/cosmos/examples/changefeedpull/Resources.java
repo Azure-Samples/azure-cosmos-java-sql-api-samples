@@ -1,10 +1,11 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 package com.azure.cosmos.examples.changefeedpull;
 
-import com.azure.cosmos.implementation.guava25.collect.Multimap;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
-import com.azure.cosmos.implementation.guava25.collect.ArrayListMultimap;
 import com.azure.cosmos.models.ChangeFeedPolicy;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerResponse;
@@ -15,6 +16,8 @@ import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -31,7 +34,7 @@ public class Resources {
     CosmosAsyncClient clientAsync;
     public String DATABASE_NAME;
     public String COLLECTION_NAME;
-    private final Multimap<String, ObjectNode> partitionKeyToDocuments = ArrayListMultimap.create();
+    private final ArrayListValuedHashMap<String, ObjectNode> partitionKeyToDocuments = new ArrayListValuedHashMap<String, ObjectNode>();
     protected static Logger logger = LoggerFactory.getLogger(Resources.class);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
