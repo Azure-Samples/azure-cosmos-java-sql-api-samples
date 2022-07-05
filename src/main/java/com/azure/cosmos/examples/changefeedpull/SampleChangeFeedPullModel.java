@@ -11,15 +11,15 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.examples.changefeed.SampleConfigurations;
 import com.azure.cosmos.models.CosmosChangeFeedRequestOptions;
 import com.azure.cosmos.models.FeedRange;
+import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.PartitionKey;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class SampleChangeFeedPullModel {
@@ -67,19 +67,23 @@ public class SampleChangeFeedPullModel {
         // <AllFeedRanges>
         CosmosChangeFeedRequestOptions options = CosmosChangeFeedRequestOptions
                 .createForProcessingFromBeginning(FeedRange.forFullRange());
-        Map<Integer, String> continuations = new HashMap<>();
         int i = 0;
-        while (true) {
-            List<JsonNode> results;
-            final Integer index = i;
-            results = container
-                    .queryChangeFeed(options, JsonNode.class)
-                    .handle((r) -> continuations.put(index, r.getContinuationToken()))
-                    .collectList()
-                    .block();
+        List<JsonNode> results;
+        Iterator<FeedResponse<JsonNode>> responseIterator = container
+            .queryChangeFeed(options, JsonNode.class)
+            .byPage()
+            .toIterable()
+            .iterator();
+
+        while (responseIterator.hasNext()) {
+            FeedResponse<JsonNode> response = responseIterator.next();
+            results = response.getResults();
             logger.info("Got " + results.size() + " items(s)");
+
+            // applying teh continuation token
+            // only after processing all events
             options = CosmosChangeFeedRequestOptions
-                    .createForProcessingFromContinuation(continuations.get(i));
+                    .createForProcessingFromContinuation(response.getContinuationToken());
             i++;
             if (i >= 5) {
                 // artificially breaking out of loop
@@ -116,20 +120,23 @@ public class SampleChangeFeedPullModel {
         options = CosmosChangeFeedRequestOptions
                 .createForProcessingFromBeginning(range1);
 
-        Map<Integer, String> machine1continuations = new HashMap<>();
-
         int machine1index = 0;
-        while (true) {
-            List<JsonNode> results;
-            final Integer index = machine1index;
-            results = container
-                    .queryChangeFeed(options, JsonNode.class)
-                    .handle((r) -> machine1continuations.put(index, r.getContinuationToken()))
-                    .collectList()
-                    .block();
+        responseIterator = container
+            .queryChangeFeed(options, JsonNode.class)
+            .byPage()
+            .toIterable()
+            .iterator();
+
+        while (responseIterator.hasNext()) {
+            FeedResponse<JsonNode> response = responseIterator.next();
+            results = response.getResults();
             logger.info("Got " + results.size() + " items(s) retrieved");
+
+            // applying teh continuation token
+            // only after processing all events
             options = CosmosChangeFeedRequestOptions
-                    .createForProcessingFromContinuation(machine1continuations.get(machine1index));
+                .createForProcessingFromContinuation(response.getContinuationToken());
+
             machine1index++;
 
             if (machine1index >= 5) {
@@ -159,19 +166,25 @@ public class SampleChangeFeedPullModel {
         FeedRange range2 = feedRangeList.get(1);
         options = CosmosChangeFeedRequestOptions
                 .createForProcessingFromBeginning(range2);
-        Map<Integer, String> machine2continuations = new HashMap<>();
+
+        responseIterator = container
+            .queryChangeFeed(options, JsonNode.class)
+            .byPage()
+            .toIterable()
+            .iterator();
+
         int machine2index = 0;
-        while (true) {
-            List<JsonNode> results;
-            final Integer index = machine2index;
-            results = container
-                    .queryChangeFeed(options, JsonNode.class)
-                    .handle((r) -> machine2continuations.put(index, r.getContinuationToken()))
-                    .collectList()
-                    .block();
-            logger.info("Got " + results.size() + " items(s)");
+
+        while (responseIterator.hasNext()) {
+            FeedResponse<JsonNode> response = responseIterator.next();
+            results = response.getResults();
+            logger.info("Got " + results.size() + " items(s) retrieved");
+
+            // applying teh continuation token
+            // only after processing all events
             options = CosmosChangeFeedRequestOptions
-                    .createForProcessingFromContinuation(machine2continuations.get(machine2index));
+                .createForProcessingFromContinuation(response.getContinuationToken());
+
             machine2index++;
             if (machine2index >= 5) {
                 // artificially breaking out of loop
@@ -205,19 +218,24 @@ public class SampleChangeFeedPullModel {
         // <PartitionKeyProcessing>
         options = CosmosChangeFeedRequestOptions
                 .createForProcessingFromBeginning(FeedRange.forLogicalPartition(new PartitionKey(partitionKey)));
-        Map<Integer, String> continuationsPk = new HashMap<>();
+
+        responseIterator = container
+            .queryChangeFeed(options, JsonNode.class)
+            .byPage()
+            .toIterable()
+            .iterator();
+
         int pkIndex = 0;
-        while (true) {
-            List<JsonNode> results;
-            final Integer index = i;
-            results = container
-                    .queryChangeFeed(options, JsonNode.class)
-                    .handle((r) -> continuationsPk.put(index, r.getContinuationToken()))
-                    .collectList()
-                    .block();
-            logger.info("Got " + results.size() + " items(s)");
+
+        while (responseIterator.hasNext()) {
+            FeedResponse<JsonNode> response = responseIterator.next();
+            results = response.getResults();
+            logger.info("Got " + results.size() + " items(s) retrieved");
+
+            // applying teh continuation token
+            // only after processing all events
             options = CosmosChangeFeedRequestOptions
-                    .createForProcessingFromContinuation(continuationsPk.get(i));
+                .createForProcessingFromContinuation(response.getContinuationToken());
             pkIndex++;
             if (pkIndex >= 5) {
                 // artificially breaking out of loop
