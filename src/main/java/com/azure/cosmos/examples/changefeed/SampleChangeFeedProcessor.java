@@ -74,14 +74,18 @@ public class SampleChangeFeedProcessor {
             //The next line causes the worker to create and start an instance of the Change Feed Processor. See the implementation of getChangeFeedProcessor() for guidance
             //on creating a handler for Change Feed events. In this stream, we also trigger the insertion of 10 documents on a separate
             //thread.
+
+            // <StartChangeFeedProcessor>
             logger.info("-->START Change Feed Processor on worker (handles changes asynchronously)");
             changeFeedProcessorInstance = getChangeFeedProcessor("SampleHost_1", feedContainer, leaseContainer);
             changeFeedProcessorInstance.start()
                     .subscribeOn(Schedulers.elastic())
                     .doOnSuccess(aVoid -> {
                         //pass
+                        
                     })
                     .subscribe();
+            // </StartChangeFeedProcessor>
 
             //These two lines model an application which is inserting ten documents into the feed container
             logger.info("-->START application that inserts documents into feed container");
@@ -121,6 +125,7 @@ public class SampleChangeFeedProcessor {
         logger.info("END Sample");
     }
 
+    // <Delegate>
     public static ChangeFeedProcessor getChangeFeedProcessor(String hostName, CosmosAsyncContainer feedContainer, CosmosAsyncContainer leaseContainer) {
         return new ChangeFeedProcessorBuilder()
                 .hostName(hostName)
@@ -152,6 +157,7 @@ public class SampleChangeFeedProcessor {
                 })
                 .buildChangeFeedProcessor();
     }
+    // </Delegate>
 
     public static CosmosAsyncClient getCosmosClient() {
 
