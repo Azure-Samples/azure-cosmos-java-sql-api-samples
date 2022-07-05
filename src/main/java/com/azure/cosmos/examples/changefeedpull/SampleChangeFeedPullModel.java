@@ -65,10 +65,9 @@ public class SampleChangeFeedPullModel {
         logger.info("*************************************************************");
 
         
+        // <FeedResponseIterator>
         CosmosChangeFeedRequestOptions options = CosmosChangeFeedRequestOptions
                 .createForProcessingFromBeginning(FeedRange.forFullRange());
-        
-        // <FeedResponseIterator>
         Iterator<FeedResponse<JsonNode>> responseIterator = container
             .queryChangeFeed(options, JsonNode.class)
             .byPage()
