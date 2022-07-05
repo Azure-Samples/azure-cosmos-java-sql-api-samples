@@ -64,29 +64,33 @@ public class SampleChangeFeedPullModel {
         logger.info("*************************************************************");
         logger.info("*************************************************************");
 
-        // <AllFeedRanges>
+        
         CosmosChangeFeedRequestOptions options = CosmosChangeFeedRequestOptions
                 .createForProcessingFromBeginning(FeedRange.forFullRange());
-        int i = 0;
-        List<JsonNode> results;
+        
+        // <FeedResponseIterator>
         Iterator<FeedResponse<JsonNode>> responseIterator = container
             .queryChangeFeed(options, JsonNode.class)
             .byPage()
             .toIterable()
             .iterator();
+        // </FeedResponseIterator>
 
+        // <AllFeedRanges>
+        int i = 0;
+        List<JsonNode> results;
         while (responseIterator.hasNext()) {
             FeedResponse<JsonNode> response = responseIterator.next();
             results = response.getResults();
             logger.info("Got " + results.size() + " items(s)");
 
-            // applying teh continuation token
+            // applying the continuation token
             // only after processing all events
             options = CosmosChangeFeedRequestOptions
                     .createForProcessingFromContinuation(response.getContinuationToken());
             i++;
             if (i >= 5) {
-                // artificially breaking out of loop
+                // artificially breaking out of loop - not required in a real app
                 System.out.println("breaking....");
                 break;
             }
@@ -132,7 +136,7 @@ public class SampleChangeFeedPullModel {
             results = response.getResults();
             logger.info("Got " + results.size() + " items(s) retrieved");
 
-            // applying teh continuation token
+            // applying the continuation token
             // only after processing all events
             options = CosmosChangeFeedRequestOptions
                 .createForProcessingFromContinuation(response.getContinuationToken());
@@ -140,7 +144,7 @@ public class SampleChangeFeedPullModel {
             machine1index++;
 
             if (machine1index >= 5) {
-                // artificially breaking out of loop
+                // artificially breaking out of loop - not required in a real app
                 System.out.println("breaking....");
                 break;
             }
@@ -180,14 +184,14 @@ public class SampleChangeFeedPullModel {
             results = response.getResults();
             logger.info("Got " + results.size() + " items(s) retrieved");
 
-            // applying teh continuation token
+            // applying the continuation token
             // only after processing all events
             options = CosmosChangeFeedRequestOptions
                 .createForProcessingFromContinuation(response.getContinuationToken());
 
             machine2index++;
             if (machine2index >= 5) {
-                // artificially breaking out of loop
+                // artificially breaking out of loop - not required in a real app
                 System.out.println("breaking....");
                 break;
             }
@@ -232,7 +236,7 @@ public class SampleChangeFeedPullModel {
             results = response.getResults();
             logger.info("Got " + results.size() + " items(s) retrieved");
 
-            // applying teh continuation token
+            // applying the continuation token
             // only after processing all events
             options = CosmosChangeFeedRequestOptions
                 .createForProcessingFromContinuation(response.getContinuationToken());
