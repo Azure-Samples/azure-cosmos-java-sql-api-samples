@@ -13,6 +13,7 @@ import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.common.CustomPOJO2;
 import com.azure.cosmos.implementation.Utils;
 import com.azure.cosmos.implementation.apachecommons.lang.RandomStringUtils;
+import com.azure.cosmos.models.ChangeFeedProcessorOptions;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
@@ -21,6 +22,8 @@ import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.afterburner.asm.Opcodes;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.scheduler.Schedulers;
@@ -49,10 +52,19 @@ public class SampleChangeFeedProcessor {
     private static ChangeFeedProcessor changeFeedProcessorInstance;
     private static boolean isWorkCompleted = false;
 
+    private static ChangeFeedProcessorOptions options;
+
+
+
     public static void main(String[] args) {
         logger.info("BEGIN Sample");
 
         try {
+
+            // <ChangeFeedProcessorOptions>
+            options = new ChangeFeedProcessorOptions();            
+            options.setStartFromBeginning(false);
+            // </ChangeFeedProcessorOptions>
 
             //Summary of the next four commands:
             //-Create an asynchronous Azure Cosmos DB client and database so that we can issue async requests to the DB
@@ -129,6 +141,7 @@ public class SampleChangeFeedProcessor {
     public static ChangeFeedProcessor getChangeFeedProcessor(String hostName, CosmosAsyncContainer feedContainer, CosmosAsyncContainer leaseContainer) {
         return new ChangeFeedProcessorBuilder()
                 .hostName(hostName)
+                .options(options)
                 .feedContainer(feedContainer)
                 .leaseContainer(leaseContainer)
                 .handleChanges((List<JsonNode> docs) -> {
