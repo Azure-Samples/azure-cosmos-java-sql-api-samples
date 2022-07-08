@@ -63,6 +63,7 @@ public class SampleChangeFeedProcessor {
             // <ChangeFeedProcessorOptions>
             options = new ChangeFeedProcessorOptions();            
             options.setStartFromBeginning(false);
+            options.setLeasePrefix("myChangeFeedDeploymentUnit");
             // </ChangeFeedProcessorOptions>
 
             //Summary of the next four commands:
@@ -125,7 +126,7 @@ public class SampleChangeFeedProcessor {
             }
 
             logger.info("-->DELETE sample's database: " + DATABASE_NAME);
-            deleteDatabase(cosmosDatabase);
+            //deleteDatabase(cosmosDatabase);
 
             Thread.sleep(500);
 
