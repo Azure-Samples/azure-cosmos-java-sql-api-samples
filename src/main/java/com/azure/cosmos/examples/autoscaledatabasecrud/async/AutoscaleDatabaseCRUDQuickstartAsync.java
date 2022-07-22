@@ -84,9 +84,11 @@ public class AutoscaleDatabaseCRUDQuickstartAsync {
         // Autoscale throughput settings
         ThroughputProperties autoscaleThroughputProperties = ThroughputProperties.createAutoscaledThroughput(4000); //Set autoscale max RU/s
 
-        //Create the database with autoscale enabled
-        Mono<CosmosDatabaseResponse> databaseResponse = client.createDatabaseIfNotExists(databaseName, autoscaleThroughputProperties);
-        database = client.getDatabase(databaseResponse.block().getProperties().getId());
+        //Create the database with autoscale enabled - this is async but we block to make sure
+        // database and containers are created before sample runs the CRUD operations on
+        // them
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName, autoscaleThroughputProperties).block();
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }

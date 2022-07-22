@@ -116,7 +116,7 @@ public class ContainerCRUDQuickstartAsync {
 
         // Specify new throughput value
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(800);
-        container.replaceThroughput(throughputProperties);
+        container.replaceThroughput(throughputProperties).block();
 
         logger.info("Done.");
     }
