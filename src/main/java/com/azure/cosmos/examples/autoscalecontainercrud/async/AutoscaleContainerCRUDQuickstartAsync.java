@@ -33,7 +33,7 @@ public class AutoscaleContainerCRUDQuickstartAsync {
     private CosmosAsyncDatabase database;
     private CosmosAsyncContainer container;
 
-    protected static Logger logger = LoggerFactory.getLogger(AutoscaleContainerCRUDQuickstartAsync.class);
+    private static final Logger logger = LoggerFactory.getLogger(AutoscaleContainerCRUDQuickstartAsync.class);
 
     public void close() {
         client.close();
