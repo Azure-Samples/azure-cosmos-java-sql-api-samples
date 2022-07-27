@@ -3,11 +3,7 @@
 
 package com.azure.cosmos.examples.documentcrud.async;
 
-import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosAsyncClient;
-import com.azure.cosmos.CosmosAsyncContainer;
-import com.azure.cosmos.CosmosAsyncDatabase;
-import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.*;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
@@ -16,7 +12,6 @@ import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
-import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
@@ -27,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -67,11 +61,12 @@ public class DocumentCRUDQuickstartAsync {
     private AtomicBoolean updateEtagDone = new AtomicBoolean(false);
     private AtomicBoolean secondUpdateDone = new AtomicBoolean(false);
 
-    Family family = null;
-    Family family2 = null;
+    private AtomicBoolean reReadDone = new AtomicBoolean(false);
+
+    Family family = new Family();
+    Family family2 = new Family();
 
     private AtomicBoolean isFamily2Updated = new AtomicBoolean(false);
-
 
 
     protected static Logger logger = LoggerFactory.getLogger(DocumentCRUDQuickstartAsync.class);
@@ -94,7 +89,6 @@ public class DocumentCRUDQuickstartAsync {
      */
     public static void main(String[] args) {
         DocumentCRUDQuickstartAsync p = new DocumentCRUDQuickstartAsync();
-
         try {
             logger.info("Starting ASYNC main");
             p.documentCRUDDemo();
@@ -142,8 +136,8 @@ public class DocumentCRUDQuickstartAsync {
 
         while (!(createDocDone.get() && createDocsDone.get())) {
             //waiting for async createDoc and createDocs to complete...
-            //logger.info("waiting for async createDoc and createDocs to complete...");
-            //Thread.sleep(1);
+            logger.info("waiting for async createDoc and createDocs to complete...");
+            Thread.sleep(100);
         }
 
         //done async
@@ -157,7 +151,7 @@ public class DocumentCRUDQuickstartAsync {
         while (this.jsonList == null) {
             //wait for jsonList to be set
             logger.info("waiting in while (this.jsonList == null) {");
-            Thread.sleep(1);
+            Thread.sleep(100);
         }
         //convert jsonList to ArrayNode
         ArrayNode jsonArray = new ArrayNode(JsonNodeFactory.instance, this.jsonList);
@@ -166,7 +160,7 @@ public class DocumentCRUDQuickstartAsync {
         upsertDocument();
         while (!(upsertDone.get() && replaceDone.get())) {
             logger.info("waiting for async upsert and replace to complete...");
-            Thread.sleep(1);
+            Thread.sleep(100);
         }
         logger.info("replace and upsert done now...");
         replaceDocumentWithConditionalEtagCheck();
@@ -399,21 +393,21 @@ public class DocumentCRUDQuickstartAsync {
 
         // Obtained current document ETag
         container.readItem(documentId, new PartitionKey(documentLastName), Family.class)
-                        .doOnSuccess(itemResponse -> {
-                            logger.info("Request charge of readItem operation: {} RU", itemResponse.getRequestCharge());
-                            this.family = itemResponse.getItem();
-                            this.etag1 = itemResponse.getETag();
-                        })
-                        .doOnError((exception) -> {
-                            logger.error(
-                                    "Exception. e: {}",
-                                    exception.getLocalizedMessage(),
-                                    exception);
-                        }).subscribe();
+                .doOnSuccess(itemResponse -> {
+                    logger.info("Request charge of readItem operation: {} RU", itemResponse.getRequestCharge());
+                    this.family = itemResponse.getItem();
+                    this.etag1 = itemResponse.getETag();
+                })
+                .doOnError((exception) -> {
+                    logger.error(
+                            "Exception 1. e: {}",
+                            exception.getLocalizedMessage(),
+                            exception);
+                }).subscribe();
 
         while (this.etag1 == null) {
             logger.info("waiting until we got the etag1 from the first read....");
-            Thread.sleep(1);
+            Thread.sleep(100);
         }
         String etag = this.etag1;
         logger.info("Read document " + documentId + " to obtain current ETag: " + etag);
@@ -425,20 +419,19 @@ public class DocumentCRUDQuickstartAsync {
         // Persist the change back to the server, updating the ETag in the process
         // This models a concurrent change made to the document
         container.replaceItem(family, family.getId(), new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
-                        .doOnSuccess(itemResponse -> {
-                            logger.info("'Concurrent' update to document " + documentId + " so ETag is now " + itemResponse.getResponseHeaders().get("etag"));
-                            updateEtagDone.set(true);
-                        })
-                        .doOnError((exception) -> {
-                            logger.error(
-                                    "Exception. e: {}",
-                                    exception.getLocalizedMessage(),
-                                    exception);
-                        }).subscribe();
+                .doOnSuccess(itemResponse -> {
+                    logger.info("'Concurrent' update to document " + documentId + " so ETag is now " + itemResponse.getResponseHeaders().get("etag"));
+                    updateEtagDone.set(true);
+                })
+                .doOnError((exception) -> {
+                    logger.error(
+                            "Exception 2. e: {}",
+                            exception.getLocalizedMessage(),
+                            exception);
+                }).subscribe();
 
 
-        while (updateEtagDone.get() == false){
-            //logger.info("waiting in while (updateEtagDone.get() == false)");
+        while (updateEtagDone.get() == false) {
             //wait until update done
         }
         // Now update the document and call replace with the AccessCondition requiring that ETag has not changed.
@@ -454,26 +447,23 @@ public class DocumentCRUDQuickstartAsync {
                     logger.info("Request charge of replace operation: {} RU", itemResponse.getRequestCharge());
                 })
                 .doOnError((exception) -> {
-                    logger.error(
-                            "Exception. e: {}",
-                            exception.getLocalizedMessage(),
-                            exception);
-                    // will execute in the background
-                }).subscribe();
-
-        logger.info("final replace with conditional etag check done asynchronously...");
+                    logger.info("As expected, we have a pre-condition failure exception\n");
+                })
+                .onErrorResume(exception -> Mono.empty())
+                .subscribe();
     }
 
     private void readDocumentOnlyIfChanged() throws Exception {
         logger.info("Read document " + documentId + " only if it has been changed, utilizing an ETag check.");
 
-        // Read document (we'll make this one async)
+        // Read document
         container.readItem(documentId, new PartitionKey(documentLastName), Family.class)
                 .doOnSuccess(itemResponse -> {
                     logger.info("Read doc with status code of {}", itemResponse.getStatusCode());
                     //assign etag to the instance variable asynchronously
+                    this.family2 = itemResponse.getItem();
+                    this.isFamily2Updated.set(true);
                     this.etag2 = itemResponse.getResponseHeaders().get("etag");
-                    ;
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -484,8 +474,14 @@ public class DocumentCRUDQuickstartAsync {
 
         while (this.etag2 == null) {
             logger.info("waiting until we got the etag2 from the first read....");
-            Thread.sleep(1);
+            Thread.sleep(100);
         }
+        while (this.isFamily2Updated.get() == false) {
+            //wait for family to be upadted...
+            logger.info("waiting until family2 got updated....");
+            Thread.sleep(100);
+        }
+        ;
         //etag retrieved from first read so we can safely assign to instance variable
         String etag = this.etag2;
 
@@ -497,24 +493,19 @@ public class DocumentCRUDQuickstartAsync {
         container
                 .readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class)
                 .doOnSuccess(itemResponse -> {
-                    logger.info(
-                            "Re-read doc with status code of {} (we anticipate failure due to ETag not having changed.)",
-                            itemResponse.getStatusCode());
-                            this.family2 = itemResponse.getItem();
-                            this.isFamily2Updated.set(true);
+                    reReadDone.set(true);
+                    logger.info("Re-read doc with status code of {} (we anticipate failure due to ETag not having changed.)", itemResponse.getStatusCode());
                 })
                 .doOnError((exception) -> {
-                    logger.error(
-                            "Exception. e: {}",
-                            exception.getLocalizedMessage(),
-                            exception);
-                }).subscribe();
+                    logger.info("As expected, we have a second pre-condition failure exception\n");
+                })
+                .onErrorResume(exception -> Mono.empty())
+                .subscribe();
 
-        while(this.isFamily2Updated.get() == false){
-            //wait for family to be upadted...
-            //logger.info("waiting in while(this.family2 == null){");
-        };
-
+        while (reReadDone.get() == false) {
+            //wait for reRead
+            Thread.sleep(100);
+        }
         // Replace the doc with a modified version, which will update ETag
         Family family = this.family2;
         family.setRegistered(!family.isRegistered());
@@ -531,12 +522,11 @@ public class DocumentCRUDQuickstartAsync {
                             exception);
                 }).subscribe();
 
-        while (secondUpdateDone.get() == false){
+        while (secondUpdateDone.get() == false) {
             //wait for second update before re-reading the doc...
-            //logger.info("waiting in while (secondUpdateDone.get() == false){");
         }
 
-        // Re-read doc again, with conditional acccess requirements.
+        // Re-read doc again, with conditional access requirements.
         // This should succeed since ETag has been updated.
         container.readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class)
                 .doOnSuccess(itemResponse -> {
@@ -548,7 +538,6 @@ public class DocumentCRUDQuickstartAsync {
                             exception.getLocalizedMessage(),
                             exception);
                 }).subscribe();
-
 
         logger.info("final etag check will be done async...");
     }
