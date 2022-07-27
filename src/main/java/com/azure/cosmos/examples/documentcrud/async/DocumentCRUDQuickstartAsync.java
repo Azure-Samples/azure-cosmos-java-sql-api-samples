@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -36,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class DocumentCRUDQuickstartAsync {
@@ -50,9 +52,27 @@ public class DocumentCRUDQuickstartAsync {
     private CosmosAsyncDatabase database;
     private CosmosAsyncContainer container;
 
-    private boolean replaceDone;
-    private boolean upsertDone;
-    private String etag;
+    private AtomicBoolean replaceDone = new AtomicBoolean(false);
+    private AtomicBoolean upsertDone = new AtomicBoolean(false);
+
+    private AtomicBoolean createDocDone = new AtomicBoolean(false);
+    private AtomicBoolean createDocsDone = new AtomicBoolean(false);
+
+    private AtomicBoolean readDocDone = new AtomicBoolean(false);
+
+    private List<JsonNode> jsonList;
+    private String etag1;
+    private String etag2;
+
+    private AtomicBoolean updateEtagDone = new AtomicBoolean(false);
+    private AtomicBoolean secondUpdateDone = new AtomicBoolean(false);
+
+    Family family = null;
+    Family family2 = null;
+
+    private AtomicBoolean isFamily2Updated = new AtomicBoolean(false);
+
+
 
     protected static Logger logger = LoggerFactory.getLogger(DocumentCRUDQuickstartAsync.class);
 
@@ -103,7 +123,7 @@ public class DocumentCRUDQuickstartAsync {
 
         createDatabaseIfNotExists();
         createContainerIfNotExists();
-        
+
         //add docs to array
         List<Family> families = new ArrayList<>();
         families.add(Families.getAndersenFamilyItem());
@@ -120,14 +140,32 @@ public class DocumentCRUDQuickstartAsync {
         //this will insert the docs in the reactive stream
         createDocuments(familiesToCreate);
 
+        while (!(createDocDone.get() && createDocsDone.get())) {
+            //waiting for async createDoc and createDocs to complete...
+            //logger.info("waiting for async createDoc and createDocs to complete...");
+            //Thread.sleep(1);
+        }
+
+        //done async
         readDocumentById();
         //readAllDocumentsInContainer(); <Deprecated>
+
+        //done async
         queryDocuments();
+
         getDocumentsAsJsonArray();
+        while (this.jsonList == null) {
+            //wait for jsonList to be set
+            logger.info("waiting in while (this.jsonList == null) {");
+            Thread.sleep(1);
+        }
+        //convert jsonList to ArrayNode
+        ArrayNode jsonArray = new ArrayNode(JsonNodeFactory.instance, this.jsonList);
+        logger.info("docs as json array: " + jsonArray.toString());
         replaceDocument();
         upsertDocument();
-        while(!(upsertDone && replaceDone)){
-            logger.info("checking for async upsert and replace to complete...");
+        while (!(upsertDone.get() && replaceDone.get())) {
+            logger.info("waiting for async upsert and replace to complete...");
             Thread.sleep(1);
         }
         logger.info("replace and upsert done now...");
@@ -142,8 +180,8 @@ public class DocumentCRUDQuickstartAsync {
         logger.info("Create database " + databaseName + " if not exists...");
 
         //  Create database if not exists
-        Mono<CosmosDatabaseResponse> databaseResponse = client.createDatabaseIfNotExists(databaseName);
-        database = client.getDatabase(databaseResponse.block().getProperties().getId());
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -183,7 +221,8 @@ public class DocumentCRUDQuickstartAsync {
         // add subscribe() to make this async
         container.createItem(family, new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
                 .doOnSuccess((response) -> {
-                    logger.info("inserted doc with id: "+response.getItem().getId());
+                    logger.info("inserted doc with id: " + response.getItem().getId());
+                    createDocDone.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -201,21 +240,24 @@ public class DocumentCRUDQuickstartAsync {
         // is converted to JSON via custom serialization)
         // Combine multiple item inserts, associated success println's, and a final
         // aggregate stats println into one Reactive stream.
-        double charge = families.flatMap(family -> {
-            return container.createItem(family);
-        }) // Flux of item request responses
+        families.flatMap(family -> {
+                    return container.createItem(family);
+                }) // Flux of item request responses
                 .flatMap(itemResponse -> {
                     logger.info(String.format("Created item with request charge of %.2f within" +
-                            " duration %s",
+                                    " duration %s",
                             itemResponse.getRequestCharge(), itemResponse.getDuration()));
                     logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
                     return Mono.just(itemResponse.getRequestCharge());
                 }) // Flux of request charges
                 .reduce(0.0,
                         (charge_n, charge_nplus1) -> charge_n + charge_nplus1) // Mono of total charge - there will be
-                                                                               // only one item in this stream
+                // only one item in this stream
                 .doOnSuccess(itemResponse -> {
-                    logger.info("Aggregated charge (all decimals): "+itemResponse);
+                    logger.info("Aggregated charge (all decimals): " + itemResponse);
+                    // Preserve the total charge and print aggregate charge/item count stats.
+                    logger.info(String.format("Created items with total request charge of %.2f\n", itemResponse));
+                    createDocsDone.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -223,34 +265,33 @@ public class DocumentCRUDQuickstartAsync {
                             exception.getLocalizedMessage(),
                             exception);
                 })
-                .block(); // Preserve the total charge and print aggregate charge/item count stats.
-
-        logger.info(String.format("Created items with total request charge of %.2f\n", charge));
-    }   
+                .subscribe();
+    }
 
     // Document read
     private void readDocumentById() throws Exception {
         logger.info("Read document " + documentId + " by ID.");
 
         //  Read document by ID
-        CosmosItemResponse<Family> family = container.readItem(documentId,new PartitionKey(documentLastName),Family.class)
-        .doOnSuccess((response) -> {
-            try {
-                logger.info("item converted to json: "+new ObjectMapper().writeValueAsString(response.getItem()));
-            } catch (JsonProcessingException e) {
-                logger.error("Exception processing json: "+e);
-            }  
-        })      
-        .doOnError(Exception.class, exception -> {
-            logger.error(
-                    "Exception. e: {}",
-                    exception.getLocalizedMessage(),
-                    exception);
-        }).block();
+        container.readItem(documentId, new PartitionKey(documentLastName), Family.class)
+                .doOnSuccess((response) -> {
+                    try {
+                        logger.info("item converted to json: " + new ObjectMapper().writeValueAsString(response.getItem()));
+                        logger.info("Finished reading family " + response.getItem().getId() + " with partition key " + response.getItem().getLastName());
 
-        // Check result
-        logger.info("Finished reading family " + family.getItem().getId() + " with partition key " + family.getItem().getLastName());
-        logger.info("Done.");
+
+                    } catch (JsonProcessingException e) {
+                        logger.error("Exception processing json: " + e);
+                    }
+                })
+                .doOnError(Exception.class, exception -> {
+                    logger.error(
+                            "Exception. e: {}",
+                            exception.getLocalizedMessage(),
+                            exception);
+                }).subscribe();
+
+        logger.info("readDocumentById done asynchronously...");
     }
 
     private void queryDocuments() throws Exception {
@@ -263,14 +304,15 @@ public class DocumentCRUDQuickstartAsync {
         // Print
         filteredFamilies.byPage(100).flatMap(filteredFamiliesFeedResponse -> {
             logger.info("Got a page of query result with " +
-            filteredFamiliesFeedResponse.getResults().size() + " items(s)"
+                    filteredFamiliesFeedResponse.getResults().size() + " items(s)"
                     + " and request charge of " + filteredFamiliesFeedResponse.getRequestCharge());
             for (Family family : filteredFamiliesFeedResponse.getResults()) {
-                logger.info("First query result: Family with (/id, partition key) = (%s,%s)",family.getId(),family.getLastName());
-            }            
+                logger.info("First query result: Family with (/id, partition key) = (%s,%s)", family.getId(), family.getLastName());
+            }
+
             return Flux.empty();
-        }).blockLast();        
-        logger.info("Done.");
+        }).subscribe();
+        logger.info("queryDocuments done asynchronously.");
     }
 
     private void getDocumentsAsJsonArray() throws Exception {
@@ -281,22 +323,25 @@ public class DocumentCRUDQuickstartAsync {
         queryOptions.setQueryMetricsEnabled(true);
         CosmosPagedFlux<JsonNode> pagedFlux = container.queryItems(sql, queryOptions,
                 JsonNode.class);
-        List<JsonNode> jsonList = pagedFlux.byPage(preferredPageSize)
+        pagedFlux.byPage(preferredPageSize)
                 .flatMap(pagedFluxResponse -> {
                     // collect all documents in reactive stream to a list of JsonNodes
                     return Flux.just(pagedFluxResponse
                             .getResults()
                             .stream()
                             .collect(Collectors.toList()));
-                }).onErrorResume((exception) -> {
+                })
+                .onErrorResume((exception) -> {
                     logger.error(
                             "Exception. e: {}",
                             exception.getLocalizedMessage(),
                             exception);
                     return Mono.empty();
-                }).blockLast();
-        //convert to ArrayNode
-        logger.info("docs as json array: " + new ArrayNode(JsonNodeFactory.instance, jsonList).toString());
+                }).subscribe(listJsonNode -> {
+                    //pass the List<JsonNode> to the instance variable
+                    this.jsonList = listJsonNode;
+                });
+
     }
 
     private void replaceDocument() throws Exception {
@@ -309,11 +354,11 @@ public class DocumentCRUDQuickstartAsync {
         family.setDistrict("Columbia"); // Document modification
 
         container.replaceItem(family, family.getId(),
-                new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
+                        new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
                 .doOnSuccess(itemResponse -> {
                     logger.info("Request charge of replace operation: {} RU", itemResponse.getRequestCharge());
                     //set flag so calling method can know when done
-                    replaceDone = true;
+                    replaceDone.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -338,7 +383,7 @@ public class DocumentCRUDQuickstartAsync {
                 .doOnSuccess(itemResponse -> {
                     logger.info("Request charge of upsert operation: {} RU", itemResponse.getRequestCharge());
                     // set flag so calling method can know when done
-                    upsertDone = true;
+                    upsertDone.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -353,43 +398,52 @@ public class DocumentCRUDQuickstartAsync {
         logger.info("Replace document " + documentId + ", employing optimistic concurrency using ETag.");
 
         // Obtained current document ETag
-        CosmosItemResponse<Family> famResp =
-                container.readItem(documentId, new PartitionKey(documentLastName), Family.class)                
-                .doOnSuccess(itemResponse -> {
-                    logger.info("Request charge of readItem operation: {} RU", itemResponse.getRequestCharge());                  
-                })
-                .doOnError((exception) -> {
-                    logger.error(
-                            "Exception. e: {}",
-                            exception.getLocalizedMessage(),
-                            exception);
-                }).block(); 
-               
-        String etag = famResp.getResponseHeaders().get("etag");
+        container.readItem(documentId, new PartitionKey(documentLastName), Family.class)
+                        .doOnSuccess(itemResponse -> {
+                            logger.info("Request charge of readItem operation: {} RU", itemResponse.getRequestCharge());
+                            this.family = itemResponse.getItem();
+                            this.etag1 = itemResponse.getETag();
+                        })
+                        .doOnError((exception) -> {
+                            logger.error(
+                                    "Exception. e: {}",
+                                    exception.getLocalizedMessage(),
+                                    exception);
+                        }).subscribe();
+
+        while (this.etag1 == null) {
+            logger.info("waiting until we got the etag1 from the first read....");
+            Thread.sleep(1);
+        }
+        String etag = this.etag1;
         logger.info("Read document " + documentId + " to obtain current ETag: " + etag);
 
         // Modify document
-        Family family = famResp.getItem();
+        Family family = this.family;
         family.setRegistered(!family.isRegistered());
 
         // Persist the change back to the server, updating the ETag in the process
         // This models a concurrent change made to the document
-        CosmosItemResponse<Family> updatedFamResp =
-                container.replaceItem(family,family.getId(),new PartitionKey(family.getLastName()),new CosmosItemRequestOptions())                
-                .doOnSuccess(itemResponse -> {
-                    logger.info("'Concurrent' update to document " + documentId + " so ETag is now " + itemResponse.getResponseHeaders().get("etag"));
-                })
-                .doOnError((exception) -> {
-                    logger.error(
-                            "Exception. e: {}",
-                            exception.getLocalizedMessage(),
-                            exception);
-                }).block(); 
-        
+        container.replaceItem(family, family.getId(), new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
+                        .doOnSuccess(itemResponse -> {
+                            logger.info("'Concurrent' update to document " + documentId + " so ETag is now " + itemResponse.getResponseHeaders().get("etag"));
+                            updateEtagDone.set(true);
+                        })
+                        .doOnError((exception) -> {
+                            logger.error(
+                                    "Exception. e: {}",
+                                    exception.getLocalizedMessage(),
+                                    exception);
+                        }).subscribe();
 
+
+        while (updateEtagDone.get() == false){
+            //logger.info("waiting in while (updateEtagDone.get() == false)");
+            //wait until update done
+        }
         // Now update the document and call replace with the AccessCondition requiring that ETag has not changed.
         // This should fail because the "concurrent" document change updated the ETag.
-      
+
         CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
         requestOptions.setIfMatchETag(etag);
 
@@ -404,7 +458,7 @@ public class DocumentCRUDQuickstartAsync {
                             "Exception. e: {}",
                             exception.getLocalizedMessage(),
                             exception);
-                            // no need to block here so will execute in the background
+                    // will execute in the background
                 }).subscribe();
 
         logger.info("final replace with conditional etag check done asynchronously...");
@@ -418,7 +472,8 @@ public class DocumentCRUDQuickstartAsync {
                 .doOnSuccess(itemResponse -> {
                     logger.info("Read doc with status code of {}", itemResponse.getStatusCode());
                     //assign etag to the instance variable asynchronously
-                    etag = itemResponse.getResponseHeaders().get("etag");;
+                    this.etag2 = itemResponse.getResponseHeaders().get("etag");
+                    ;
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -427,54 +482,63 @@ public class DocumentCRUDQuickstartAsync {
                             exception);
                 }).subscribe();
 
-        while (this.etag == null) {
-            logger.info("waiting until we got the etag from the first read....");
+        while (this.etag2 == null) {
+            logger.info("waiting until we got the etag2 from the first read....");
             Thread.sleep(1);
         }
         //etag retrieved from first read so we can safely assign to instance variable
-        String etag = this.etag;
+        String etag = this.etag2;
 
         // Re-read doc but with conditional access requirement that ETag has changed.
         // This should fail.
         CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
         requestOptions.setIfNoneMatchETag(etag);
 
-        //blocking on this call
-        CosmosItemResponse<Family> famResp = container
+        container
                 .readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class)
                 .doOnSuccess(itemResponse -> {
                     logger.info(
                             "Re-read doc with status code of {} (we anticipate failure due to ETag not having changed.)",
                             itemResponse.getStatusCode());
+                            this.family2 = itemResponse.getItem();
+                            this.isFamily2Updated.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
                             "Exception. e: {}",
                             exception.getLocalizedMessage(),
                             exception);
-                }).block();
+                }).subscribe();
 
+        while(this.isFamily2Updated.get() == false){
+            //wait for family to be upadted...
+            //logger.info("waiting in while(this.family2 == null){");
+        };
 
-        // Replace the doc with a modified version, which will update ETag (blocking on this call)
-        Family family = famResp.getItem();
+        // Replace the doc with a modified version, which will update ETag
+        Family family = this.family2;
         family.setRegistered(!family.isRegistered());
-        container.replaceItem(family,family.getId(),new PartitionKey(family.getLastName()),new CosmosItemRequestOptions())                
+        container.replaceItem(family, family.getId(), new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
                 .doOnSuccess(itemResponse -> {
+                    secondUpdateDone.set(true);
                     logger.info("Request charge of replace operation: {} RU", itemResponse.getRequestCharge());
+                    logger.info("Modified and replaced the doc (updates ETag.)");
                 })
                 .doOnError((exception) -> {
                     logger.error(
                             "Exception. e: {}",
                             exception.getLocalizedMessage(),
                             exception);
-                }).block();
-                
-                logger.info("Modified and replaced the doc (updates ETag.)");
+                }).subscribe();
+
+        while (secondUpdateDone.get() == false){
+            //wait for second update before re-reading the doc...
+            //logger.info("waiting in while (secondUpdateDone.get() == false){");
+        }
 
         // Re-read doc again, with conditional acccess requirements.
         // This should succeed since ETag has been updated.
-        // no need to block here, so we'll fire and forget (subscribe)
-        container.readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class)                
+        container.readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class)
                 .doOnSuccess(itemResponse -> {
                     logger.info("Re-read doc with status code of {} (we anticipate success due to ETag modification.)", itemResponse.getStatusCode());
                 })
@@ -484,7 +548,7 @@ public class DocumentCRUDQuickstartAsync {
                             exception.getLocalizedMessage(),
                             exception);
                 }).subscribe();
-        
+
 
         logger.info("final etag check will be done async...");
     }
@@ -494,16 +558,16 @@ public class DocumentCRUDQuickstartAsync {
         logger.info("Delete document " + documentId + " by ID.");
 
         // Delete document
-        container.deleteItem(documentId, new PartitionKey(documentLastName), new CosmosItemRequestOptions())                
-        .doOnSuccess(itemResponse -> {
-            logger.info("Request charge of delete document operation: {} RU", itemResponse.getRequestCharge());
-        })
-        .doOnError((exception) -> {
-            logger.error(
-                    "Exception. e: {}",
-                    exception.getLocalizedMessage(),
-                    exception);
-        }).block();
+        container.deleteItem(documentId, new PartitionKey(documentLastName), new CosmosItemRequestOptions())
+                .doOnSuccess(itemResponse -> {
+                    logger.info("Request charge of delete document operation: {} RU", itemResponse.getRequestCharge());
+                })
+                .doOnError((exception) -> {
+                    logger.error(
+                            "Exception. e: {}",
+                            exception.getLocalizedMessage(),
+                            exception);
+                }).block();
 
         logger.info("Done.");
     }
@@ -513,16 +577,16 @@ public class DocumentCRUDQuickstartAsync {
         logger.info("Last step: delete database " + databaseName + " by ID.");
 
         // Delete database
-        client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions())        .doOnSuccess(itemResponse -> {
-            logger.info("Request charge of delete database operation: {} RU", itemResponse.getRequestCharge());
-            logger.info("Status code for database delete: {}",itemResponse.getStatusCode());
-        })
-        .doOnError((exception) -> {
-            logger.error(
-                    "Exception. e: {}",
-                    exception.getLocalizedMessage(),
-                    exception);
-        }).block();
+        client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).doOnSuccess(itemResponse -> {
+                    logger.info("Request charge of delete database operation: {} RU", itemResponse.getRequestCharge());
+                    logger.info("Status code for database delete: {}", itemResponse.getStatusCode());
+                })
+                .doOnError((exception) -> {
+                    logger.error(
+                            "Exception. e: {}",
+                            exception.getLocalizedMessage(),
+                            exception);
+                }).block();
 
         logger.info("Done.");
     }

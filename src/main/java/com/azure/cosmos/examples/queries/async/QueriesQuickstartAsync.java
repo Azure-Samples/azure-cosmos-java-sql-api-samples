@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class QueriesQuickstartAsync {
 
@@ -46,6 +48,12 @@ public class QueriesQuickstartAsync {
     private CosmosAsyncContainer container;
 
     private static final Logger logger = LoggerFactory.getLogger(QueriesQuickstartAsync.class);
+
+    private AtomicInteger executeQueryPrintSingleResultNumber = new AtomicInteger(0);
+    private AtomicInteger executeCountQueryPrintSingleResultNumber = new AtomicInteger(0);
+    private AtomicInteger executeQueryWithQuerySpecPrintSingleResultNumber = new AtomicInteger(0);
+
+    private AtomicBoolean creatDocComplete = new AtomicBoolean(false);
 
     public void close() {
         client.close();
@@ -102,6 +110,12 @@ public class QueriesQuickstartAsync {
 
         createDocument();
 
+        while (creatDocComplete.get() == false){
+            //waiting for async create doc...
+        }
+        logger.info("Async doc create done.");
+
+        //execute all the below query examples asynchronously and waiting until all done
         queryAllDocuments();
         queryWithPagingAndContinuationTokenAndPrintQueryCharge(new CosmosQueryRequestOptions());
         queryEquality();
@@ -115,6 +129,18 @@ public class QueriesQuickstartAsync {
         queryStringMathAndArrayOperators();
         queryWithQuerySpec();
         parallelQueryWithPagingAndContinuationTokenAndPrintQueryCharge();
+
+        //waiting for executeQueryPrintSingleResult to finish
+        while (executeQueryPrintSingleResultNumber.get()<15){
+            // can do some other processing here if required
+        }
+        while (executeCountQueryPrintSingleResultNumber.get()<2){
+            // can do some other processing here if required
+        }
+        while (executeQueryWithQuerySpecPrintSingleResultNumber.get()<2){
+            // can do some other processing here if required
+        }
+        logger.info("*********Finished waiting - all async queries complete.");
 
         // deleteDocument() is called at shutdown()
 
@@ -130,9 +156,10 @@ public class QueriesQuickstartAsync {
             for (Family family : filteredFamiliesResponse.getResults()) {
                 logger.info(String.format("First query result: Family with (/id, partition key) = (%s,%s)",family.getId(),family.getLastName()));            
             }
+            executeQueryPrintSingleResultNumber.incrementAndGet();
             return Flux.empty();
-        }).blockLast();
-        logger.info("Done.");
+        }).subscribe();
+        logger.info("The query: \""+sql+ "\" executed async and is done.");
     }
 
     private void executeCountQueryPrintSingleResult(String sql) {
@@ -143,10 +170,11 @@ public class QueriesQuickstartAsync {
             for (JsonNode jsonnode : filteredFamiliesResponse.getResults()) {
                 logger.info("Count: " + jsonnode.toString());            
             }
+            executeCountQueryPrintSingleResultNumber.incrementAndGet();
             return Flux.empty();
-        }).blockLast();        
+        }).subscribe();
 
-        logger.info("Done.");
+        logger.info("The query: \""+sql+ "\" executed async and is done.");
     }
 
     private void executeQueryWithQuerySpecPrintSingleResult(SqlQuerySpec querySpec) {
@@ -159,10 +187,11 @@ public class QueriesQuickstartAsync {
             for (Family family : filteredFamiliesResponse.getResults()) {
                 logger.info(String.format("First query result: Family with (/id, partition key) = (%s,%s)",family.getId(),family.getLastName()));
             }
+            executeQueryWithQuerySpecPrintSingleResultNumber.incrementAndGet();
             return Flux.empty();
-        }).blockLast();
+        }).subscribe();
 
-        logger.info("Done.");
+        logger.info("The query: \""+querySpec.getQueryText()+ "\" executed async and is done.");
     }
 
     // Database Create
@@ -170,10 +199,10 @@ public class QueriesQuickstartAsync {
         logger.info("Create database " + databaseName + " if not exists...");
 
         //  Create database if not exists
-        Mono<CosmosDatabaseResponse> databaseResponse = client.createDatabaseIfNotExists(databaseName);
-        database = client.getDatabase(databaseResponse.block().getProperties().getId());
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
-        logger.info("Done.");
+        logger.info("createDatabaseIfNotExists done synchronously.");
     }
 
     // Container create
@@ -188,10 +217,10 @@ public class QueriesQuickstartAsync {
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         //  Create container with 200 RU/s
-        Mono<CosmosContainerResponse> containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
-        container = database.getContainer(containerResponse.block().getProperties().getId());
+        CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties, throughputProperties).block();
+        container = database.getContainer(containerResponse.getProperties().getId());
 
-        logger.info("Done.");
+        logger.info("createContainerIfNotExists done synchronously.");
     }
 
     private void createDocument() throws Exception {
@@ -205,14 +234,21 @@ public class QueriesQuickstartAsync {
 
         // Insert this item as a document
         // Explicitly specifying the /pk value improves performance.
-        container.createItem(family,new PartitionKey(family.getLastName()),new CosmosItemRequestOptions());
-
-        logger.info("Done.");
+        container.createItem(family, new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
+                .doOnSuccess((response) -> {
+                    logger.info("created doc with id: " + response.getItem().getId());
+                    this.creatDocComplete.set(true);
+                })
+                .doOnError((exception) -> {
+                    logger.error(
+                            "Exception. e: {}",
+                            exception.getLocalizedMessage(),
+                            exception);
+                }).subscribe();
     }
 
     private void queryAllDocuments() throws Exception {
         logger.info("Query all documents.");
-
         executeQueryPrintSingleResult("SELECT * FROM c");
     }
 
@@ -439,8 +475,8 @@ public class QueriesQuickstartAsync {
         logger.info("Last step: delete database " + databaseName + " by ID.");
 
         // Delete database
-        Mono<CosmosDatabaseResponse> dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
-        logger.info("Status code for database delete: {}",dbResp.block().getStatusCode());
+        CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).block();
+        logger.info("Status code for database delete: {}",dbResp.getStatusCode());
 
         logger.info("Done.");
     }
