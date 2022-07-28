@@ -133,8 +133,8 @@ public class AutoscaleDatabaseCRUDQuickstartAsync {
         logger.info("Last step: delete database " + databaseName + " by ID.");
 
         // Delete database
-        Mono<CosmosDatabaseResponse> dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
-        logger.info("Status code for database delete: {}",dbResp.block().getStatusCode());
+        CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).block();
+        logger.info("Status code for database delete: {}",dbResp.getStatusCode());
 
         logger.info("Done.");
     }

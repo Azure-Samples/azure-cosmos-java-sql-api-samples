@@ -91,8 +91,8 @@ public class AutoscaleContainerCRUDQuickstartAsync {
         logger.info("Create database " + databaseName + " if not exists...");
 
         //  Create database if not exists
-        Mono<CosmosDatabaseResponse> databaseResponse = client.createDatabaseIfNotExists(databaseName);
-        database = client.getDatabase(databaseResponse.block().getProperties().getId());
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -106,9 +106,9 @@ public class AutoscaleContainerCRUDQuickstartAsync {
         ThroughputProperties autoscaleThroughputProperties = ThroughputProperties.createAutoscaledThroughput(4000); //Set autoscale max RU/s
 
         // Create the container with autoscale enabled
-        Mono<CosmosContainerResponse> databaseResponse = database.createContainer(autoscaleContainerProperties, autoscaleThroughputProperties,
-                new CosmosContainerRequestOptions());
-        container = database.getContainer(databaseResponse.block().getProperties().getId());
+        CosmosContainerResponse databaseResponse = database.createContainer(autoscaleContainerProperties, autoscaleThroughputProperties,
+                new CosmosContainerRequestOptions()).block();
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -118,7 +118,7 @@ public class AutoscaleContainerCRUDQuickstartAsync {
         logger.info("Update autoscale max throughput for container " + containerName + ".");
 
         // Change the autoscale max throughput (RU/s)
-        container.replaceThroughput(ThroughputProperties.createAutoscaledThroughput(8000));
+        container.replaceThroughput(ThroughputProperties.createAutoscaledThroughput(8000)).block();
 
         logger.info("Done.");
     }
@@ -176,8 +176,8 @@ public class AutoscaleContainerCRUDQuickstartAsync {
         logger.info("Delete container " + containerName + " by ID.");
 
         // Delete container
-        Mono<CosmosContainerResponse> containerResp = database.getContainer(containerName).delete(new CosmosContainerRequestOptions());
-        logger.info("Status code for container delete: {}",containerResp.block().getStatusCode());
+        CosmosContainerResponse containerResp = database.getContainer(containerName).delete(new CosmosContainerRequestOptions()).block();
+        logger.info("Status code for container delete: {}",containerResp.getStatusCode());
 
         logger.info("Done.");
     }
@@ -187,8 +187,8 @@ public class AutoscaleContainerCRUDQuickstartAsync {
         logger.info("Last step: delete database " + databaseName + " by ID.");
 
         // Delete database
-        Mono<CosmosDatabaseResponse> dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
-        logger.info("Status code for database delete: {}",dbResp.block().getStatusCode());
+        CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).block();
+        logger.info("Status code for database delete: {}",dbResp.getStatusCode());
 
         logger.info("Done.");
     }

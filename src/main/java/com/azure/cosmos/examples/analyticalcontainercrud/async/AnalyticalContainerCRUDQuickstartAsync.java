@@ -164,7 +164,6 @@ public class AnalyticalContainerCRUDQuickstartAsync {
         // msg += String.format("-Container ID: %s\n",containerProps.getId());
         // }
         logger.info(msg + "\n");
-
         logger.info("Done.");
     }
 
@@ -174,14 +173,13 @@ public class AnalyticalContainerCRUDQuickstartAsync {
 
         // Delete container
         CosmosContainerResponse containerResp = database.getContainer(containerName)
-                .delete().doOnError(throwable -> {
+                .delete()
+                .doOnError(throwable -> {
                     logger.warn("Delete container {} failed ", containerName, throwable);                    
                 }).doOnSuccess(response -> {
                     logger.info("Delete container {} succeeded: {}", containerName);
                 }).block();
         logger.info("Status code for container delete: {}", containerResp.getStatusCode());
-
-        logger.info("Done.");
     }
 
     // Database delete
@@ -189,11 +187,14 @@ public class AnalyticalContainerCRUDQuickstartAsync {
         logger.info("Last step: delete database " + databaseName + " by ID.");
 
         // Delete database
-        Mono<CosmosDatabaseResponse> dbResp = client.getDatabase(databaseName)
-                .delete(new CosmosDatabaseRequestOptions());
-        logger.info("Status code for database delete: {}", dbResp.block().getStatusCode());
-
-        logger.info("Done.");
+        CosmosDatabaseResponse dbResp = client.getDatabase(databaseName)
+                .delete(new CosmosDatabaseRequestOptions())
+                .doOnError(throwable -> {
+                    logger.warn("Delete database {} failed ", containerName, throwable);
+                }).doOnSuccess(response -> {
+                    logger.info("Delete database {} succeeded: {}", containerName);
+                }).block();
+        logger.info("Status code for database delete: {}", dbResp.getStatusCode());
     }
 
     // Cleanup before close

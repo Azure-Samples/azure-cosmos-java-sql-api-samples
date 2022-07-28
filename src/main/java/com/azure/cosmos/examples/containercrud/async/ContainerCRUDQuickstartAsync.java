@@ -86,8 +86,8 @@ public class ContainerCRUDQuickstartAsync {
         logger.info("Create database " + databaseName + " if not exists...");
 
         //  Create database if not exists
-        Mono<CosmosDatabaseResponse> databaseResponse = client.createDatabaseIfNotExists(databaseName);
-        database = client.getDatabase(databaseResponse.block().getProperties().getId());
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
+        database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -104,8 +104,8 @@ public class ContainerCRUDQuickstartAsync {
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         //  Create container with 400 RU/s
-        Mono<CosmosContainerResponse> databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
-        container = database.getContainer(databaseResponse.block().getProperties().getId());
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties).block();
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -164,8 +164,8 @@ public class ContainerCRUDQuickstartAsync {
         logger.info("Delete container " + containerName + " by ID.");
 
         // Delete container
-        Mono<CosmosContainerResponse> containerResp = database.getContainer(containerName).delete(new CosmosContainerRequestOptions());
-        logger.info("Status code for container delete: {}",containerResp.block().getStatusCode());
+        CosmosContainerResponse containerResp = database.getContainer(containerName).delete(new CosmosContainerRequestOptions()).block();
+        logger.info("Status code for container delete: {}",containerResp.getStatusCode());
 
         logger.info("Done.");
     }
@@ -175,8 +175,8 @@ public class ContainerCRUDQuickstartAsync {
         logger.info("Last step: delete database " + databaseName + " by ID.");
 
         // Delete database
-        Mono<CosmosDatabaseResponse> dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
-        logger.info("Status code for database delete: {}",dbResp.block().getStatusCode());
+        CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).block();
+        logger.info("Status code for database delete: {}",dbResp.getStatusCode());
 
         logger.info("Done.");
     }
@@ -198,8 +198,8 @@ public class ContainerCRUDQuickstartAsync {
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         //  Create container with 400 RU/s
-        Mono<CosmosContainerResponse> databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
-        container = database.getContainer(databaseResponse.block().getProperties().getId());
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties).block();
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -221,8 +221,8 @@ public class ContainerCRUDQuickstartAsync {
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         //  Create container with 400 RU/s
-        Mono<CosmosContainerResponse> databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
-        container = database.getContainer(databaseResponse.block().getProperties().getId());
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties).block();
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -247,8 +247,8 @@ public class ContainerCRUDQuickstartAsync {
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         //  Create container with 400 RU/s
-        Mono<CosmosContainerResponse> databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
-        container = database.getContainer(databaseResponse.block().getProperties().getId());
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties).block();
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -273,8 +273,8 @@ public class ContainerCRUDQuickstartAsync {
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 
         //  Create container with 400 RU/s
-        Mono<CosmosContainerResponse> databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties);
-        container = database.getContainer(databaseResponse.block().getProperties().getId());
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties, throughputProperties).block();
+        container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
