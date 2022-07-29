@@ -104,7 +104,7 @@ public class DocumentCRUDQuickstartAsync {
 
     private void documentCRUDDemo() throws Exception {
 
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
         //  Create sync client
         client = new CosmosClientBuilder()
@@ -155,7 +155,7 @@ public class DocumentCRUDQuickstartAsync {
         }
         //convert jsonList to ArrayNode
         ArrayNode jsonArray = new ArrayNode(JsonNodeFactory.instance, this.jsonList);
-        logger.info("docs as json array: " + jsonArray.toString());
+        logger.info("docs as json array: {}", jsonArray.toString());
         replaceDocument();
         upsertDocument();
         while (!(upsertDone.get() && replaceDone.get())) {
@@ -171,7 +171,7 @@ public class DocumentCRUDQuickstartAsync {
 
     // Database Create
     private void createDatabaseIfNotExists() throws Exception {
-        logger.info("Create database " + databaseName + " if not exists...");
+        logger.info("Create database {} if not exists...", databaseName);
 
         //  Create database if not exists
         CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
@@ -182,7 +182,7 @@ public class DocumentCRUDQuickstartAsync {
 
     // Container create
     private void createContainerIfNotExists() throws Exception {
-        logger.info("Create container " + containerName + " if not exists.");
+        logger.info("Create container {} if not exists.", containerName);
 
         // Create container if not exists - this is async but we block to make sure
         // database and containers are created before sample runs the CRUD operations on
@@ -201,7 +201,7 @@ public class DocumentCRUDQuickstartAsync {
     }
 
     private void createDocument() throws Exception {
-        logger.info("Create document " + documentId);
+        logger.info("Create document {}", documentId);
 
         // Define a document as a POJO (internally this
         // is converted to JSON via custom serialization)
@@ -215,7 +215,7 @@ public class DocumentCRUDQuickstartAsync {
         // add subscribe() to make this async
         container.createItem(family, new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
                 .doOnSuccess((response) -> {
-                    logger.info("inserted doc with id: " + response.getItem().getId());
+                    logger.info("inserted doc with id: {}", response.getItem().getId());
                     createDocDone.set(true);
                 })
                 .doOnError((exception) -> {
@@ -228,7 +228,7 @@ public class DocumentCRUDQuickstartAsync {
     }
 
     private void createDocuments(Flux<Family> families) throws Exception {
-        logger.info("Create documents " + documentId);
+        logger.info("Create documents {}", documentId);
 
         // Define a document as a POJO (internally this
         // is converted to JSON via custom serialization)
@@ -248,7 +248,7 @@ public class DocumentCRUDQuickstartAsync {
                         (charge_n, charge_nplus1) -> charge_n + charge_nplus1) // Mono of total charge - there will be
                 // only one item in this stream
                 .doOnSuccess(itemResponse -> {
-                    logger.info("Aggregated charge (all decimals): " + itemResponse);
+                    logger.info("Aggregated charge (all decimals): {}", itemResponse);
                     // Preserve the total charge and print aggregate charge/item count stats.
                     logger.info(String.format("Created items with total request charge of %.2f\n", itemResponse));
                     createDocsDone.set(true);
@@ -264,18 +264,18 @@ public class DocumentCRUDQuickstartAsync {
 
     // Document read
     private void readDocumentById() throws Exception {
-        logger.info("Read document " + documentId + " by ID.");
+        logger.info("Read document {} by ID.", documentId);
 
         //  Read document by ID
         container.readItem(documentId, new PartitionKey(documentLastName), Family.class)
                 .doOnSuccess((response) -> {
                     try {
-                        logger.info("item converted to json: " + new ObjectMapper().writeValueAsString(response.getItem()));
-                        logger.info("Finished reading family " + response.getItem().getId() + " with partition key " + response.getItem().getLastName());
+                        logger.info("item converted to json: {}", new ObjectMapper().writeValueAsString(response.getItem()));
+                        logger.info("Finished reading family {} with partition key {}", response.getItem().getId(), response.getItem().getLastName());
 
 
                     } catch (JsonProcessingException e) {
-                        logger.error("Exception processing json: " + e);
+                        logger.error("Exception processing json: {}", e);
                     }
                 })
                 .doOnError(Exception.class, exception -> {
@@ -289,7 +289,7 @@ public class DocumentCRUDQuickstartAsync {
     }
 
     private void queryDocuments() throws Exception {
-        logger.info("Query documents in the container " + containerName + ".");
+        logger.info("Query documents in the container {}.", containerName);
 
         String sql = "SELECT * FROM c WHERE c.lastName = 'Witherspoon'";
 
@@ -297,11 +297,9 @@ public class DocumentCRUDQuickstartAsync {
 
         // Print
         filteredFamilies.byPage(100).flatMap(filteredFamiliesFeedResponse -> {
-            logger.info("Got a page of query result with " +
-                    filteredFamiliesFeedResponse.getResults().size() + " items(s)"
-                    + " and request charge of " + filteredFamiliesFeedResponse.getRequestCharge());
+            logger.info("Got a page of query result with {} items(s) and request charge of {}", filteredFamiliesFeedResponse.getResults().size(), filteredFamiliesFeedResponse.getRequestCharge());
             for (Family family : filteredFamiliesFeedResponse.getResults()) {
-                logger.info("First query result: Family with (/id, partition key) = (%s,%s)", family.getId(), family.getLastName());
+                logger.info("First query result: Family with (/id, partition key) = ({},{})", family.getId(), family.getLastName());
             }
 
             return Flux.empty();
@@ -310,7 +308,7 @@ public class DocumentCRUDQuickstartAsync {
     }
 
     private void getDocumentsAsJsonArray() throws Exception {
-        logger.info("Query documents in the container " + containerName + ".");
+        logger.info("Query documents in the container {}.", containerName);
         int preferredPageSize = 10;
         String sql = "SELECT * FROM c WHERE c.lastName = 'Witherspoon'";
         CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
@@ -339,7 +337,7 @@ public class DocumentCRUDQuickstartAsync {
     }
 
     private void replaceDocument() throws Exception {
-        logger.info("Replace document " + documentId);
+        logger.info("Replace document {}", documentId);
 
         // Replace existing document with new modified document
         Family family = new Family();
@@ -364,7 +362,7 @@ public class DocumentCRUDQuickstartAsync {
     }
 
     private void upsertDocument() throws Exception {
-        logger.info("Replace document " + documentId);
+        logger.info("Replace document {}", documentId);
 
         // Replace existing document with new modified document (contingent on
         // modification).
@@ -389,7 +387,7 @@ public class DocumentCRUDQuickstartAsync {
     }
 
     private void replaceDocumentWithConditionalEtagCheck() throws Exception {
-        logger.info("Replace document " + documentId + ", employing optimistic concurrency using ETag.");
+        logger.info("Replace document {}, employing optimistic concurrency using ETag.", documentId);
 
         // Obtained current document ETag
         container.readItem(documentId, new PartitionKey(documentLastName), Family.class)
@@ -410,7 +408,7 @@ public class DocumentCRUDQuickstartAsync {
             Thread.sleep(100);
         }
         String etag = this.etag1;
-        logger.info("Read document " + documentId + " to obtain current ETag: " + etag);
+        logger.info("Read document {} to obtain current ETag: {}", documentId, etag);
 
         // Modify document
         Family family = this.family;
@@ -420,7 +418,7 @@ public class DocumentCRUDQuickstartAsync {
         // This models a concurrent change made to the document
         container.replaceItem(family, family.getId(), new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
                 .doOnSuccess(itemResponse -> {
-                    logger.info("'Concurrent' update to document " + documentId + " so ETag is now " + itemResponse.getResponseHeaders().get("etag"));
+                    logger.info("'Concurrent' update to document {} so ETag is now {}",documentId, itemResponse.getResponseHeaders().get("etag"));
                     updateEtagDone.set(true);
                 })
                 .doOnError((exception) -> {
@@ -454,7 +452,7 @@ public class DocumentCRUDQuickstartAsync {
     }
 
     private void readDocumentOnlyIfChanged() throws Exception {
-        logger.info("Read document " + documentId + " only if it has been changed, utilizing an ETag check.");
+        logger.info("Read document {} only if it has been changed, utilizing an ETag check.", documentId);
 
         // Read document
         container.readItem(documentId, new PartitionKey(documentLastName), Family.class)
@@ -544,7 +542,7 @@ public class DocumentCRUDQuickstartAsync {
 
     // Document delete
     private void deleteADocument() throws Exception {
-        logger.info("Delete document " + documentId + " by ID.");
+        logger.info("Delete document {} by ID.", documentId);
 
         // Delete document
         container.deleteItem(documentId, new PartitionKey(documentLastName), new CosmosItemRequestOptions())
@@ -563,7 +561,7 @@ public class DocumentCRUDQuickstartAsync {
 
     // Database delete
     private void deleteADatabase() throws Exception {
-        logger.info("Last step: delete database " + databaseName + " by ID.");
+        logger.info("Last step: delete database {} by ID.", databaseName);
 
         // Delete database
         client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).doOnSuccess(itemResponse -> {

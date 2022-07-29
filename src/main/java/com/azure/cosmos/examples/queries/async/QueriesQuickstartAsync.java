@@ -94,7 +94,7 @@ public class QueriesQuickstartAsync {
 
     private void queriesDemo() throws Exception {
 
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
         //  Create sync client
         client = new CosmosClientBuilder()
@@ -159,7 +159,7 @@ public class QueriesQuickstartAsync {
             executeQueryPrintSingleResultNumber.incrementAndGet();
             return Flux.empty();
         }).subscribe();
-        logger.info("The query: \""+sql+ "\" executed async and is done.");
+        logger.info("The query: \"{}\" executed async and is done.", sql);
     }
 
     private void executeCountQueryPrintSingleResult(String sql) {
@@ -168,13 +168,13 @@ public class QueriesQuickstartAsync {
         // Print
         filteredFamilies1.byPage(100).flatMap(filteredFamiliesResponse -> {
             for (JsonNode jsonnode : filteredFamiliesResponse.getResults()) {
-                logger.info("Count: " + jsonnode.toString());            
+                logger.info("Count: {}", jsonnode.toString());            
             }
             executeCountQueryPrintSingleResultNumber.incrementAndGet();
             return Flux.empty();
         }).subscribe();
 
-        logger.info("The query: \""+sql+ "\" executed async and is done.");
+        logger.info("The query: \"{}\" executed async and is done.", sql);
     }
 
     private void executeQueryWithQuerySpecPrintSingleResult(SqlQuerySpec querySpec) {
@@ -191,12 +191,12 @@ public class QueriesQuickstartAsync {
             return Flux.empty();
         }).subscribe();
 
-        logger.info("The query: \""+querySpec.getQueryText()+ "\" executed async and is done.");
+        logger.info("The query: \"{}\" executed async and is done.",querySpec.getQueryText());
     }
 
     // Database Create
     private void createDatabaseIfNotExists() throws Exception {
-        logger.info("Create database " + databaseName + " if not exists...");
+        logger.info("Create database {} if not exists...", databaseName);
 
         //  Create database if not exists
         CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
@@ -207,7 +207,7 @@ public class QueriesQuickstartAsync {
 
     // Container create
     private void createContainerIfNotExists() throws Exception {
-        logger.info("Create container " + containerName + " if not exists.");
+        logger.info("Create container {} if not exists.", containerName);
 
         //  Create container if not exists
         CosmosContainerProperties containerProperties =
@@ -224,7 +224,7 @@ public class QueriesQuickstartAsync {
     }
 
     private void createDocument() throws Exception {
-        logger.info("Create document " + documentId);
+        logger.info("Create document {}", documentId);
 
         // Define a document as a POJO (internally this
         // is converted to JSON via custom serialization)
@@ -236,7 +236,7 @@ public class QueriesQuickstartAsync {
         // Explicitly specifying the /pk value improves performance.
         container.createItem(family, new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
                 .doOnSuccess((response) -> {
-                    logger.info("created doc with id: " + response.getItem().getId());
+                    logger.info("created doc with id: {}", response.getItem().getId());
                     this.creatDocComplete.set(true);
                 })
                 .doOnError((exception) -> {
@@ -269,7 +269,7 @@ public class QueriesQuickstartAsync {
         // Subsequent iterations (continuationToken != null): Receive subsequent batch of query response pages, with continuationToken indicating where the previous iteration left off
         do {
             logger.info("Receiving a set of query response pages.");
-            logger.info("Continuation Token: " + continuationToken + "\n");
+            logger.info("Continuation Token: {}\n", continuationToken);
 
             CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
 
@@ -277,7 +277,7 @@ public class QueriesQuickstartAsync {
                     container.queryItems(query, queryOptions, Family.class).byPage(continuationToken,pageSize).toIterable();
 
             for (FeedResponse<Family> page : feedResponseIterator) {
-                logger.info(String.format("Current page number: %d", currentPageNumber));
+                logger.info(String.format("Current page number: {}", currentPageNumber));
                  // Access all of the documents in this result page
                 for (Family docProps : page.getResults()) {
                     documentNumber++;
@@ -462,7 +462,7 @@ public class QueriesQuickstartAsync {
 
     // Document delete
     private void deleteADocument() throws Exception {
-        logger.info("Delete document " + documentId + " by ID.");
+        logger.info("Delete document {} by ID.", documentId);
 
         // Delete document
         container.deleteItem(documentId, new PartitionKey(documentLastName), new CosmosItemRequestOptions());
@@ -472,7 +472,7 @@ public class QueriesQuickstartAsync {
 
     // Database delete
     private void deleteADatabase() throws Exception {
-        logger.info("Last step: delete database " + databaseName + " by ID.");
+        logger.info("Last step: delete database {} by ID.", databaseName);
 
         // Delete database
         CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).block();
