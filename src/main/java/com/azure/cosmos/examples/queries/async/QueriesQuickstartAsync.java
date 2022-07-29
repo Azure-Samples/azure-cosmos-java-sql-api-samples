@@ -277,7 +277,7 @@ public class QueriesQuickstartAsync {
                     container.queryItems(query, queryOptions, Family.class).byPage(continuationToken,pageSize).toIterable();
 
             for (FeedResponse<Family> page : feedResponseIterator) {
-                logger.info(String.format("Current page number: {}", currentPageNumber));
+                logger.info(String.format("Current page number: %d", currentPageNumber));
                  // Access all of the documents in this result page
                 for (Family docProps : page.getResults()) {
                     documentNumber++;
