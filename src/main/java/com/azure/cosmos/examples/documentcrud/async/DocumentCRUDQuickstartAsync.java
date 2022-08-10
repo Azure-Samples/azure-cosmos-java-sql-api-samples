@@ -106,7 +106,7 @@ public class DocumentCRUDQuickstartAsync {
 
         logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
-        //  Create sync client
+        //  Create async client
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
