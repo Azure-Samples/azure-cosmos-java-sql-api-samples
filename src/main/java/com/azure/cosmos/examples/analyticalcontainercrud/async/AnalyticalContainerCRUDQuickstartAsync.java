@@ -179,7 +179,6 @@ public class AnalyticalContainerCRUDQuickstartAsync {
                 }).doOnSuccess(response -> {
                     logger.info("Delete container {} succeeded: {}", containerName);
                 }).block();
-        logger.info("Status code for container delete: {}", containerResp.getStatusCode());
     }
 
     // Database delete
