@@ -111,7 +111,9 @@ public class QueriesQuickstartAsync {
         createDocument();
 
         while (creatDocComplete.get() == false){
-            //waiting for async create doc...
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
+            Thread.sleep(100);
         }
         logger.info("Async doc create done.");
 
@@ -130,15 +132,20 @@ public class QueriesQuickstartAsync {
         queryWithQuerySpec();
         parallelQueryWithPagingAndContinuationTokenAndPrintQueryCharge();
 
-        //waiting for executeQueryPrintSingleResult to finish
         while (executeQueryPrintSingleResultNumber.get()<15){
-            // can do some other processing here if required
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
+            Thread.sleep(100);
         }
         while (executeCountQueryPrintSingleResultNumber.get()<2){
-            // can do some other processing here if required
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
+            Thread.sleep(100);
         }
         while (executeQueryWithQuerySpecPrintSingleResultNumber.get()<2){
-            // can do some other processing here if required
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
+            Thread.sleep(100);
         }
         logger.info("*********Finished waiting - all async queries complete.");
 

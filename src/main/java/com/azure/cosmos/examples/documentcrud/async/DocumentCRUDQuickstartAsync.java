@@ -52,8 +52,6 @@ public class DocumentCRUDQuickstartAsync {
     private AtomicBoolean createDocDone = new AtomicBoolean(false);
     private AtomicBoolean createDocsDone = new AtomicBoolean(false);
 
-    private AtomicBoolean readDocDone = new AtomicBoolean(false);
-
     private List<JsonNode> jsonList;
     private String etag1;
     private String etag2;
@@ -135,8 +133,8 @@ public class DocumentCRUDQuickstartAsync {
         createDocuments(familiesToCreate);
 
         while (!(createDocDone.get() && createDocsDone.get())) {
-            //waiting for async createDoc and createDocs to complete...
-            logger.info("waiting for async createDoc and createDocs to complete...");
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
             Thread.sleep(100);
         }
 
@@ -149,8 +147,8 @@ public class DocumentCRUDQuickstartAsync {
 
         getDocumentsAsJsonArray();
         while (this.jsonList == null) {
-            //wait for jsonList to be set
-            logger.info("waiting in while (this.jsonList == null) {");
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
             Thread.sleep(100);
         }
         //convert jsonList to ArrayNode
@@ -159,7 +157,8 @@ public class DocumentCRUDQuickstartAsync {
         replaceDocument();
         upsertDocument();
         while (!(upsertDone.get() && replaceDone.get())) {
-            logger.info("waiting for async upsert and replace to complete...");
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
             Thread.sleep(100);
         }
         logger.info("replace and upsert done now...");
@@ -404,7 +403,8 @@ public class DocumentCRUDQuickstartAsync {
                 }).subscribe();
 
         while (this.etag1 == null) {
-            logger.info("waiting until we got the etag1 from the first read....");
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
             Thread.sleep(100);
         }
         String etag = this.etag1;
@@ -430,7 +430,9 @@ public class DocumentCRUDQuickstartAsync {
 
 
         while (updateEtagDone.get() == false) {
-            //wait until update done
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
+            Thread.sleep(100);
         }
         // Now update the document and call replace with the AccessCondition requiring that ETag has not changed.
         // This should fail because the "concurrent" document change updated the ETag.
@@ -471,12 +473,13 @@ public class DocumentCRUDQuickstartAsync {
                 }).subscribe();
 
         while (this.etag2 == null) {
-            logger.info("waiting until we got the etag2 from the first read....");
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
             Thread.sleep(100);
         }
         while (this.isFamily2Updated.get() == false) {
-            //wait for family to be upadted...
-            logger.info("waiting until family2 got updated....");
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
             Thread.sleep(100);
         }
         ;
@@ -501,7 +504,8 @@ public class DocumentCRUDQuickstartAsync {
                 .subscribe();
 
         while (reReadDone.get() == false) {
-            //wait for reRead
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
             Thread.sleep(100);
         }
         // Replace the doc with a modified version, which will update ETag
@@ -521,7 +525,9 @@ public class DocumentCRUDQuickstartAsync {
                 }).subscribe();
 
         while (secondUpdateDone.get() == false) {
-            //wait for second update before re-reading the doc...
+            // We are adding Thread.sleep to mimic the some business computation that can
+            // happen while waiting for earlier processes to finish.
+            Thread.sleep(100);
         }
 
         // Re-read doc again, with conditional access requirements.
