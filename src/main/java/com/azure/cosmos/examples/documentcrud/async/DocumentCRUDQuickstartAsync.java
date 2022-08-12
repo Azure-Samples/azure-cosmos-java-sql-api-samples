@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class DocumentCRUDQuickstartAsync {
@@ -46,26 +45,13 @@ public class DocumentCRUDQuickstartAsync {
     private CosmosAsyncDatabase database;
     private CosmosAsyncContainer container;
 
-    private AtomicBoolean replaceDone = new AtomicBoolean(false);
-    private AtomicBoolean upsertDone = new AtomicBoolean(false);
-
-    private AtomicBoolean createDocDone = new AtomicBoolean(false);
-    private AtomicBoolean createDocsDone = new AtomicBoolean(false);
-
     private List<JsonNode> jsonList;
     private String etag1;
     private String etag2;
 
-    private AtomicBoolean updateEtagDone = new AtomicBoolean(false);
-    private AtomicBoolean secondUpdateDone = new AtomicBoolean(false);
-
-    private AtomicBoolean reReadDone = new AtomicBoolean(false);
 
     Family family = new Family();
     Family family2 = new Family();
-
-    private AtomicBoolean isFamily2Updated = new AtomicBoolean(false);
-
 
     protected static Logger logger = LoggerFactory.getLogger(DocumentCRUDQuickstartAsync.class);
 
@@ -132,11 +118,9 @@ public class DocumentCRUDQuickstartAsync {
         //this will insert the docs in the reactive stream
         createDocuments(familiesToCreate);
 
-        while (!(createDocDone.get() && createDocsDone.get())) {
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(1000);
 
         //done async
         readDocumentById();
@@ -146,21 +130,21 @@ public class DocumentCRUDQuickstartAsync {
         queryDocuments();
 
         getDocumentsAsJsonArray();
-        while (this.jsonList == null) {
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
+
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(1000);
+
         //convert jsonList to ArrayNode
         ArrayNode jsonArray = new ArrayNode(JsonNodeFactory.instance, this.jsonList);
         logger.info("docs as json array: {}", jsonArray.toString());
         replaceDocument();
         upsertDocument();
-        while (!(upsertDone.get() && replaceDone.get())) {
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
+
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(1000);
+
         logger.info("replace and upsert done now...");
         replaceDocumentWithConditionalEtagCheck();
         readDocumentOnlyIfChanged();
@@ -215,7 +199,6 @@ public class DocumentCRUDQuickstartAsync {
         container.createItem(family, new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
                 .doOnSuccess((response) -> {
                     logger.info("inserted doc with id: {}", response.getItem().getId());
-                    createDocDone.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -250,7 +233,6 @@ public class DocumentCRUDQuickstartAsync {
                     logger.info("Aggregated charge (all decimals): {}", itemResponse);
                     // Preserve the total charge and print aggregate charge/item count stats.
                     logger.info(String.format("Created items with total request charge of %.2f\n", itemResponse));
-                    createDocsDone.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -271,8 +253,6 @@ public class DocumentCRUDQuickstartAsync {
                     try {
                         logger.info("item converted to json: {}", new ObjectMapper().writeValueAsString(response.getItem()));
                         logger.info("Finished reading family {} with partition key {}", response.getItem().getId(), response.getItem().getLastName());
-
-
                     } catch (JsonProcessingException e) {
                         logger.error("Exception processing json: {}", e);
                     }
@@ -349,7 +329,6 @@ public class DocumentCRUDQuickstartAsync {
                 .doOnSuccess(itemResponse -> {
                     logger.info("Request charge of replace operation: {} RU", itemResponse.getRequestCharge());
                     //set flag so calling method can know when done
-                    replaceDone.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -374,7 +353,6 @@ public class DocumentCRUDQuickstartAsync {
                 .doOnSuccess(itemResponse -> {
                     logger.info("Request charge of upsert operation: {} RU", itemResponse.getRequestCharge());
                     // set flag so calling method can know when done
-                    upsertDone.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -402,11 +380,10 @@ public class DocumentCRUDQuickstartAsync {
                             exception);
                 }).subscribe();
 
-        while (this.etag1 == null) {
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(1000);
+
         String etag = this.etag1;
         logger.info("Read document {} to obtain current ETag: {}", documentId, etag);
 
@@ -419,7 +396,6 @@ public class DocumentCRUDQuickstartAsync {
         container.replaceItem(family, family.getId(), new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
                 .doOnSuccess(itemResponse -> {
                     logger.info("'Concurrent' update to document {} so ETag is now {}",documentId, itemResponse.getResponseHeaders().get("etag"));
-                    updateEtagDone.set(true);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -429,11 +405,10 @@ public class DocumentCRUDQuickstartAsync {
                 }).subscribe();
 
 
-        while (updateEtagDone.get() == false) {
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(1000);
+
         // Now update the document and call replace with the AccessCondition requiring that ETag has not changed.
         // This should fail because the "concurrent" document change updated the ETag.
 
@@ -462,7 +437,6 @@ public class DocumentCRUDQuickstartAsync {
                     logger.info("Read doc with status code of {}", itemResponse.getStatusCode());
                     //assign etag to the instance variable asynchronously
                     this.family2 = itemResponse.getItem();
-                    this.isFamily2Updated.set(true);
                     this.etag2 = itemResponse.getResponseHeaders().get("etag");
                 })
                 .doOnError((exception) -> {
@@ -472,17 +446,10 @@ public class DocumentCRUDQuickstartAsync {
                             exception);
                 }).subscribe();
 
-        while (this.etag2 == null) {
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
-        while (this.isFamily2Updated.get() == false) {
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
-        ;
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(1000);
+
         //etag retrieved from first read so we can safely assign to instance variable
         String etag = this.etag2;
 
@@ -494,26 +461,23 @@ public class DocumentCRUDQuickstartAsync {
         container
                 .readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class)
                 .doOnSuccess(itemResponse -> {
-                    reReadDone.set(true);
                     logger.info("Re-read doc with status code of {} (we anticipate failure due to ETag not having changed.)", itemResponse.getStatusCode());
                 })
                 .doOnError((exception) -> {
-                    logger.info("As expected, we have a second pre-condition failure exception\n");
+                    logger.info("Exception. e: {}");
                 })
                 .onErrorResume(exception -> Mono.empty())
                 .subscribe();
 
-        while (reReadDone.get() == false) {
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(1000);
+
         // Replace the doc with a modified version, which will update ETag
         Family family = this.family2;
         family.setRegistered(!family.isRegistered());
         container.replaceItem(family, family.getId(), new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
                 .doOnSuccess(itemResponse -> {
-                    secondUpdateDone.set(true);
                     logger.info("Request charge of replace operation: {} RU", itemResponse.getRequestCharge());
                     logger.info("Modified and replaced the doc (updates ETag.)");
                 })
@@ -524,11 +488,9 @@ public class DocumentCRUDQuickstartAsync {
                             exception);
                 }).subscribe();
 
-        while (secondUpdateDone.get() == false) {
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(1000);
 
         // Re-read doc again, with conditional access requirements.
         // This should succeed since ETag has been updated.

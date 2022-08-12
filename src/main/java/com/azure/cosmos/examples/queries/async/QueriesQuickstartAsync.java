@@ -25,7 +25,6 @@ import com.azure.cosmos.util.CosmosPagedFlux;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,11 +109,10 @@ public class QueriesQuickstartAsync {
 
         createDocument();
 
-        while (creatDocComplete.get() == false){
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(1000);
+
         logger.info("Async doc create done.");
 
         //execute all the below query examples asynchronously and waiting until all done
@@ -132,21 +130,10 @@ public class QueriesQuickstartAsync {
         queryWithQuerySpec();
         parallelQueryWithPagingAndContinuationTokenAndPrintQueryCharge();
 
-        while (executeQueryPrintSingleResultNumber.get()<15){
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
-        while (executeCountQueryPrintSingleResultNumber.get()<2){
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
-        while (executeQueryWithQuerySpecPrintSingleResultNumber.get()<2){
-            // We are adding Thread.sleep to mimic the some business computation that can
-            // happen while waiting for earlier processes to finish.
-            Thread.sleep(100);
-        }
+
+        // We are adding Thread.sleep to mimic the some business computation that can
+        // happen while waiting for earlier processes to finish.
+        Thread.sleep(2000);
         logger.info("*********Finished waiting - all async queries complete.");
 
         // deleteDocument() is called at shutdown()
