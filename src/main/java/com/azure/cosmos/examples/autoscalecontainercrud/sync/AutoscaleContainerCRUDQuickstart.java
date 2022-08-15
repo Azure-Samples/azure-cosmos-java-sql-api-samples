@@ -61,9 +61,9 @@ public class AutoscaleContainerCRUDQuickstart {
 
     private void autoscaleContainerCRUDDemo() throws Exception {
 
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
-        //  Create sync client
+        //  Create async client
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
@@ -84,7 +84,7 @@ public class AutoscaleContainerCRUDQuickstart {
 
     // Database Create
     private void createDatabaseIfNotExists() throws Exception {
-        logger.info("Create database " + databaseName + " if not exists...");
+        logger.info("Create database {} if not exists...", databaseName);
 
         //  Create database if not exists
         CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
@@ -95,7 +95,7 @@ public class AutoscaleContainerCRUDQuickstart {
 
     // Container create
     private void createContainerIfNotExists() throws Exception {
-        logger.info("Create autoscale container " + containerName + " if not exists.");
+        logger.info("Create autoscale container {} if not exists.", containerName);
 
         // Container and autoscale throughput settings
         CosmosContainerProperties autoscaleContainerProperties = new CosmosContainerProperties(containerName, "/lastName");
@@ -111,7 +111,7 @@ public class AutoscaleContainerCRUDQuickstart {
 
     // Update container throughput
     private void updateContainerThroughput() throws Exception {
-        logger.info("Update autoscale max throughput for container " + containerName + ".");
+        logger.info("Update autoscale max throughput for container {}.", containerName);
 
         // Change the autoscale max throughput (RU/s)
         container.replaceThroughput(ThroughputProperties.createAutoscaledThroughput(8000));
@@ -134,7 +134,7 @@ public class AutoscaleContainerCRUDQuickstart {
 
     // Container read
     private void readContainerById() throws Exception {
-        logger.info("Read container " + containerName + " by ID.");
+        logger.info("Read container {} by ID.", containerName);
 
         //  Read container by ID
         container = database.getContainer(containerName);
@@ -144,7 +144,7 @@ public class AutoscaleContainerCRUDQuickstart {
 
     // Container read all
     private void readAllContainers() throws Exception {
-        logger.info("Read all containers in database " + databaseName + ".");
+        logger.info("Read all containers in database {}.", databaseName);
 
         //  Read all containers in the account
         CosmosPagedIterable<CosmosContainerProperties> containers = database.readAllContainers();
@@ -172,7 +172,7 @@ public class AutoscaleContainerCRUDQuickstart {
 
     // Database delete
     private void deleteADatabase() throws Exception {
-        logger.info("Last step: delete database " + databaseName + " by ID.");
+        logger.info("Last step: delete database {} by ID.", databaseName);
 
         // Delete database
         CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
