@@ -63,7 +63,7 @@ public class AutoscaleContainerCRUDQuickstart {
 
         logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
-        //  Create async client
+        //  Create sync client
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
