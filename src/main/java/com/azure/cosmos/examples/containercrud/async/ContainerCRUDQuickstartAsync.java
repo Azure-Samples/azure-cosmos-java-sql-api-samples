@@ -51,7 +51,7 @@ public class ContainerCRUDQuickstartAsync {
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error(String.format("Cosmos getStarted failed with %s", e));
+            logger.error("Cosmos getStarted failed with {}", e);
         } finally {
             logger.info("Closing the client");
             p.shutdown();

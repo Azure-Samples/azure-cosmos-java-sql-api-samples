@@ -65,7 +65,7 @@ public class AutoscaleContainerCRUDQuickstartAsync {
 
     private void autoscaleContainerCRUDDemo() throws Exception {
 
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
         //  Create async client
         client = new CosmosClientBuilder()
@@ -159,7 +159,7 @@ public class AutoscaleContainerCRUDQuickstartAsync {
             logger.info("read {} containers(s) with request charge of {}", readAllContainersResponse.getResults().size(),readAllContainersResponse.getRequestCharge());
 
             for (CosmosContainerProperties response : readAllContainersResponse.getResults()) {
-                logger.info("container id: "+response.getId());
+                logger.info("container id: {}",response.getId());
                 //Got a page of query result with
             }
             return Flux.empty();
