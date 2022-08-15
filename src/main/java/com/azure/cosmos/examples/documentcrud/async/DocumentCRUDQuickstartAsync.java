@@ -53,6 +53,8 @@ public class DocumentCRUDQuickstartAsync {
     Family family = new Family();
     Family family2 = new Family();
 
+    List<Family> families = new ArrayList<>();
+
     protected static Logger logger = LoggerFactory.getLogger(DocumentCRUDQuickstartAsync.class);
 
     public void close() {
@@ -79,7 +81,7 @@ public class DocumentCRUDQuickstartAsync {
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error(String.format("Cosmos getStarted failed with %s", e));
+            logger.error("Cosmos getStarted failed with {}", e);
         } finally {
             logger.info("Closing the client");
             p.shutdown();
@@ -103,7 +105,7 @@ public class DocumentCRUDQuickstartAsync {
         createContainerIfNotExists();
 
         //add docs to array
-        List<Family> families = new ArrayList<>();
+        
         families.add(Families.getAndersenFamilyItem());
         families.add(Families.getWakefieldFamilyItem());
         families.add(Families.getJohnsonFamilyItem());
@@ -210,7 +212,7 @@ public class DocumentCRUDQuickstartAsync {
     }
 
     private void createDocuments(Flux<Family> families) throws Exception {
-        logger.info("Create documents {}", documentId);
+        logger.info("Create documents {}", this.families.stream().map(x -> x.getId()).collect(Collectors.toList()));
 
         // Define a document as a POJO (internally this
         // is converted to JSON via custom serialization)
@@ -220,10 +222,8 @@ public class DocumentCRUDQuickstartAsync {
                     return container.createItem(family);
                 }) // Flux of item request responses
                 .flatMap(itemResponse -> {
-                    logger.info(String.format("Created item with request charge of %.2f within" +
-                                    " duration %s",
-                            itemResponse.getRequestCharge(), itemResponse.getDuration()));
-                    logger.info(String.format("Item ID: %s\n", itemResponse.getItem().getId()));
+                    logger.info("Created item with request charge of {} within duration {}", itemResponse.getRequestCharge(), itemResponse.getDuration());
+                    logger.info("Item ID: {}\n", itemResponse.getItem().getId());
                     return Mono.just(itemResponse.getRequestCharge());
                 }) // Flux of request charges
                 .reduce(0.0,
@@ -232,7 +232,7 @@ public class DocumentCRUDQuickstartAsync {
                 .doOnSuccess(itemResponse -> {
                     logger.info("Aggregated charge (all decimals): {}", itemResponse);
                     // Preserve the total charge and print aggregate charge/item count stats.
-                    logger.info(String.format("Created items with total request charge of %.2f\n", itemResponse));
+                    logger.info("Created items with total request charge of {}\n", itemResponse);
                 })
                 .doOnError((exception) -> {
                     logger.error(
@@ -366,44 +366,32 @@ public class DocumentCRUDQuickstartAsync {
     private void replaceDocumentWithConditionalEtagCheck() throws Exception {
         logger.info("Replace document {}, employing optimistic concurrency using ETag.", documentId);
 
-        // Obtained current document ETag
+        //chain reading and replacing of item together in reactive stream
         container.readItem(documentId, new PartitionKey(documentLastName), Family.class)
-                .doOnSuccess(itemResponse -> {
-                    logger.info("Request charge of readItem operation: {} RU", itemResponse.getRequestCharge());
-                    this.family = itemResponse.getItem();
-                    this.etag1 = itemResponse.getETag();
-                })
-                .doOnError((exception) -> {
-                    logger.error(
-                            "Exception 1. e: {}",
-                            exception.getLocalizedMessage(),
-                            exception);
+                .flatMap(response -> { 
+                    logger.info("Read document {} to obtain current ETag: {}", documentId, response.getETag());
+                    //set instance variables for family nd etag1 to use later
+                    this.family = response.getItem();
+                    this.etag1 = response.getETag();
+                    logger.info("Request charge of readItem operation: {} RU", response.getRequestCharge());       
+                    Family family = this.family;
+                    family.setRegistered(!family.isRegistered());
+                    // Persist the change back to the server, updating the ETag in the process
+                    // This models a concurrent change made to the document
+                    return container
+                            .replaceItem(family, family.getId(), new PartitionKey(family.getLastName()),
+                                    new CosmosItemRequestOptions())
+                            .doOnSuccess(itemResponse -> {
+                                logger.info("'Concurrent' update to document {} so ETag is now {}", documentId,
+                                        itemResponse.getResponseHeaders().get("etag"));
+                            })
+                            .doOnError((exception) -> {
+                                logger.error(
+                                        "Exception e: {}",
+                                        exception.getLocalizedMessage(),
+                                        exception);
+                            });
                 }).subscribe();
-
-        // We are adding Thread.sleep to mimic the some business computation that can
-        // happen while waiting for earlier processes to finish.
-        Thread.sleep(1000);
-
-        String etag = this.etag1;
-        logger.info("Read document {} to obtain current ETag: {}", documentId, etag);
-
-        // Modify document
-        Family family = this.family;
-        family.setRegistered(!family.isRegistered());
-
-        // Persist the change back to the server, updating the ETag in the process
-        // This models a concurrent change made to the document
-        container.replaceItem(family, family.getId(), new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
-                .doOnSuccess(itemResponse -> {
-                    logger.info("'Concurrent' update to document {} so ETag is now {}",documentId, itemResponse.getResponseHeaders().get("etag"));
-                })
-                .doOnError((exception) -> {
-                    logger.error(
-                            "Exception 2. e: {}",
-                            exception.getLocalizedMessage(),
-                            exception);
-                }).subscribe();
-
 
         // We are adding Thread.sleep to mimic the some business computation that can
         // happen while waiting for earlier processes to finish.
@@ -413,7 +401,8 @@ public class DocumentCRUDQuickstartAsync {
         // This should fail because the "concurrent" document change updated the ETag.
 
         CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
-        requestOptions.setIfMatchETag(etag);
+        //using etag1 instance variable saved from earlier update to etag
+        requestOptions.setIfMatchETag(this.etag1.toString());
 
         family.setDistrict("Seafood");
 
@@ -454,39 +443,32 @@ public class DocumentCRUDQuickstartAsync {
         String etag = this.etag2;
 
         // Re-read doc but with conditional access requirement that ETag has changed.
-        // This should fail.
+        // This should fail (304).
         CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
         requestOptions.setIfNoneMatchETag(etag);
 
-        container
-                .readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class)
-                .doOnSuccess(itemResponse -> {
-                    logger.info("Re-read doc with status code of {} (we anticipate failure due to ETag not having changed.)", itemResponse.getStatusCode());
-                })
-                .doOnError((exception) -> {
-                    logger.info("Exception. e: {}");
-                })
-                .onErrorResume(exception -> Mono.empty())
-                .subscribe();
-
-        // We are adding Thread.sleep to mimic the some business computation that can
-        // happen while waiting for earlier processes to finish.
-        Thread.sleep(1000);
-
-        // Replace the doc with a modified version, which will update ETag
-        Family family = this.family2;
-        family.setRegistered(!family.isRegistered());
-        container.replaceItem(family, family.getId(), new PartitionKey(family.getLastName()), new CosmosItemRequestOptions())
-                .doOnSuccess(itemResponse -> {
-                    logger.info("Request charge of replace operation: {} RU", itemResponse.getRequestCharge());
-                    logger.info("Modified and replaced the doc (updates ETag.)");
-                })
-                .doOnError((exception) -> {
-                    logger.error(
-                            "Exception. e: {}",
-                            exception.getLocalizedMessage(),
-                            exception);
-                }).subscribe();
+        //chain reading and replacing of item together in reactive stream
+        container.readItem(documentId, new PartitionKey(documentLastName), requestOptions, Family.class)
+        .flatMap(response -> { 
+            logger.info("Re-read doc with status code of {} (we anticipate 304 failure due to ETag not having changed.)", response.getStatusCode());
+            logger.info("Request charge of readItem operation: {} RU", response.getRequestCharge());       
+            Family family = this.family2;
+            family.setRegistered(!family.isRegistered());
+            // Replace the doc with a modified version, which will update ETag
+            return container
+                    .replaceItem(family, family.getId(), new PartitionKey(family.getLastName()),
+                            new CosmosItemRequestOptions())
+                    .doOnSuccess(itemResponse -> {
+                        logger.info("'Concurrent' update to document {} so ETag is now {}", documentId,
+                                itemResponse.getResponseHeaders().get("etag"));
+                    })
+                    .doOnError((exception) -> {
+                        logger.error(
+                                "Exception e: {}",
+                                exception.getLocalizedMessage(),
+                                exception);
+                    });
+        }).subscribe();
 
         // We are adding Thread.sleep to mimic the some business computation that can
         // happen while waiting for earlier processes to finish.

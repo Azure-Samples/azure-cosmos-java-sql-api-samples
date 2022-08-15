@@ -95,7 +95,7 @@ public class QueriesQuickstartAsync {
 
         logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
-        //  Create sync client
+        //  Create async client
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
@@ -459,7 +459,7 @@ public class QueriesQuickstartAsync {
         logger.info("Delete document {} by ID.", documentId);
 
         // Delete document
-        container.deleteItem(documentId, new PartitionKey(documentLastName), new CosmosItemRequestOptions());
+        container.deleteItem(documentId, new PartitionKey(documentLastName), new CosmosItemRequestOptions()).block();
 
         logger.info("Done.");
     }

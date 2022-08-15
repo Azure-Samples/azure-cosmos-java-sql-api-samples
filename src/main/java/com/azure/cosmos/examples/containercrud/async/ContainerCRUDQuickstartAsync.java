@@ -60,9 +60,9 @@ public class ContainerCRUDQuickstartAsync {
 
     private void containerCRUDDemo() throws Exception {
 
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
-        //  Create sync client
+        //  Create async client
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
@@ -83,7 +83,7 @@ public class ContainerCRUDQuickstartAsync {
 
     // Database Create
     private void createDatabaseIfNotExists() throws Exception {
-        logger.info("Create database " + databaseName + " if not exists...");
+        logger.info("Create database {} if not exists...", databaseName);
 
         //  Create database if not exists
         CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
@@ -94,7 +94,7 @@ public class ContainerCRUDQuickstartAsync {
 
     // Container create
     private void createContainerIfNotExists() throws Exception {
-        logger.info("Create container " + containerName + " if not exists.");
+        logger.info("Create container {} if not exists.", containerName);
 
         //  Create container if not exists
         CosmosContainerProperties containerProperties =
@@ -112,7 +112,7 @@ public class ContainerCRUDQuickstartAsync {
 
     // Update container throughput
     private void updateContainerThroughput() throws Exception {
-        logger.info("Update throughput for container " + containerName + ".");
+        logger.info("Update throughput for container {}.", containerName);
 
         // Specify new throughput value
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(800);
@@ -123,7 +123,7 @@ public class ContainerCRUDQuickstartAsync {
 
     // Container read
     private void readContainerById() throws Exception {
-        logger.info("Read container " + containerName + " by ID.");
+        logger.info("Read container {} by ID.", containerName);
 
         //  Read container by ID
         container = database.getContainer(containerName);
@@ -133,7 +133,7 @@ public class ContainerCRUDQuickstartAsync {
 
     // Container read all
     private void readAllContainers() throws Exception {
-        logger.info("Read all containers in database " + databaseName + ".");
+        logger.info("Read all containers in database {}.", databaseName);
 
         //  Read all containers in the account
         CosmosPagedFlux<CosmosContainerProperties> containers = database.readAllContainers();
@@ -146,7 +146,7 @@ public class ContainerCRUDQuickstartAsync {
             + " with request charge of " + readAllContainersResponse.getRequestCharge());
 
             for (CosmosContainerProperties response : readAllContainersResponse.getResults()) {
-                logger.info("container id: "+response.getId());
+                logger.info("container id: {}", response.getId());
                 //Got a page of query result with
             }
             return Flux.empty();
@@ -161,7 +161,7 @@ public class ContainerCRUDQuickstartAsync {
 
     // Container delete
     private void deleteAContainer() throws Exception {
-        logger.info("Delete container " + containerName + " by ID.");
+        logger.info("Delete container {} by ID.", containerName);
 
         // Delete container
         CosmosContainerResponse containerResp = database.getContainer(containerName).delete(new CosmosContainerRequestOptions()).block();
@@ -172,7 +172,7 @@ public class ContainerCRUDQuickstartAsync {
 
     // Database delete
     private void deleteADatabase() throws Exception {
-        logger.info("Last step: delete database " + databaseName + " by ID.");
+        logger.info("Last step: delete database {} by ID.", databaseName);
 
         // Delete database
         CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).block();
@@ -184,7 +184,7 @@ public class ContainerCRUDQuickstartAsync {
     // Multi-master only: Container create: last-writer-wins conflict resolution
     // Favor the newest write based on default (internal) timestamp
     private void createContainerIfNotExistsLWWDefaultTimestamp() throws Exception {
-        logger.info("Create container " + containerName + " if not exists.");
+        logger.info("Create container {} if not exists.", containerName);
 
         //  Create container properties structure
         CosmosContainerProperties containerProperties =
@@ -233,7 +233,7 @@ public class ContainerCRUDQuickstartAsync {
     // You will need to upload this stored procedure to the back-end using either
     // the stored procedure sample in this repo, or the Azure portal.
     private void createContainerIfNotExistsCustomSproc() throws Exception {
-        logger.info("Create container " + containerName + " if not exists.");
+        logger.info("Create container {} if not exists.", containerName);
 
         //  Create container properties structure
         CosmosContainerProperties containerProperties =
@@ -259,7 +259,7 @@ public class ContainerCRUDQuickstartAsync {
     // This method will register the container as using conflict feed;
     // a separate method is needed to actually monitor the conflict feed.
     private void createContainerIfNotExistsCustomConflictFeed() throws Exception {
-        logger.info("Create container " + containerName + " if not exists.");
+        logger.info("Create container {} if not exists.", containerName);
 
         //  Create container properties structure
         CosmosContainerProperties containerProperties =
