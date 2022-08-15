@@ -141,9 +141,7 @@ public class ContainerCRUDQuickstartAsync {
         // Print
         String msg="Listing containers in database:\n";
         containers.byPage(100).flatMap(readAllContainersResponse -> {
-            logger.info("read " +
-            readAllContainersResponse.getResults().size() + " containers(s)"
-            + " with request charge of " + readAllContainersResponse.getRequestCharge());
+            logger.info("read {} containers(s) with request charge of {}", readAllContainersResponse.getResults().size(),readAllContainersResponse.getRequestCharge());
 
             for (CosmosContainerProperties response : readAllContainersResponse.getResults()) {
                 logger.info("container id: {}", response.getId());
@@ -207,7 +205,7 @@ public class ContainerCRUDQuickstartAsync {
     // Multi-master only: Container create: last-writer-wins conflict resolution
     // Favor the newest write, using one of the document fields as a custom timestamp
     private void createContainerIfNotExistsLWWCustomTimestamp() throws Exception {
-        logger.info("Create container " + containerName + " if not exists.");
+        logger.info("Create container {} if not exists.", containerName);
 
         //  Create container properties structure
         CosmosContainerProperties containerProperties =

@@ -59,7 +59,7 @@ public class DatabaseCRUDQuickstartAsync {
 
     private void databaseCRUDDemo() throws Exception {
 
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
         //  Create async client
         client = new CosmosClientBuilder()
@@ -112,7 +112,7 @@ public class DatabaseCRUDQuickstartAsync {
             logger.info("read {} database(s) with request charge of {}", readAllDatabasesResponse.getResults().size(),readAllDatabasesResponse.getRequestCharge());
 
             for (CosmosDatabaseProperties response : readAllDatabasesResponse.getResults()) {
-                logger.info("database id: "+response.getId());
+                logger.info("database id: {}", response.getId());
                 //Got a page of query result with
             }
             return Flux.empty();
