@@ -50,7 +50,7 @@ public class AutoscaleDatabaseCRUDQuickstartAsync {
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error(String.format("Cosmos getStarted failed with %s", e));
+            logger.error("Cosmos getStarted failed with {}", e);
         } finally {
             logger.info("Closing the client");
             p.shutdown();
@@ -59,9 +59,9 @@ public class AutoscaleDatabaseCRUDQuickstartAsync {
 
     private void autoscaleDatabaseCRUDDemo() throws Exception {
 
-        logger.info("Using Azure Cosmos DB endpoint: " + AccountSettings.HOST);
+        logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
-        //  Create sync client
+        //  Create async client
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
@@ -79,7 +79,7 @@ public class AutoscaleDatabaseCRUDQuickstartAsync {
 
     // Database Create
     private void createDatabaseIfNotExists() throws Exception {
-        logger.info("Create database " + databaseName + " if not exists...");
+        logger.info("Create database {} if not exists...", databaseName);
 
         // Autoscale throughput settings
         ThroughputProperties autoscaleThroughputProperties = ThroughputProperties.createAutoscaledThroughput(4000); //Set autoscale max RU/s
@@ -95,7 +95,7 @@ public class AutoscaleDatabaseCRUDQuickstartAsync {
 
     // Database read
     private void readDatabaseById() throws Exception {
-        logger.info("Read database " + databaseName + " by ID.");
+        logger.info("Read database {} by ID.", databaseName);
 
         //  Read database by ID
         database = client.getDatabase(databaseName);
@@ -113,12 +113,10 @@ public class AutoscaleDatabaseCRUDQuickstartAsync {
         // Print
         String msg="Listing databases in account:\n";
         databases.byPage(100).flatMap(readAllDatabasesResponse -> {
-            logger.info("read " +
-            readAllDatabasesResponse.getResults().size() + " database(s)"
-            + " with request charge of " + readAllDatabasesResponse.getRequestCharge());
+            logger.info("read {} database(s) with request charge of {}", readAllDatabasesResponse.getResults().size(), readAllDatabasesResponse.getRequestCharge());
 
             for (CosmosDatabaseProperties response : readAllDatabasesResponse.getResults()) {
-                logger.info("database id: "+response.getId());
+                logger.info("database id: {}",response.getId());
                 //Got a page of query result with
             }
             return Flux.empty();
@@ -130,7 +128,7 @@ public class AutoscaleDatabaseCRUDQuickstartAsync {
 
     // Database delete
     private void deleteADatabase() throws Exception {
-        logger.info("Last step: delete database " + databaseName + " by ID.");
+        logger.info("Last step: delete database {} by ID.", databaseName);
 
         // Delete database
         CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).block();
@@ -148,8 +146,9 @@ public class AutoscaleDatabaseCRUDQuickstartAsync {
             logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
             err.printStackTrace();
         }
-        client.close();
-        logger.info("Done with sample.");
+        finally{
+            client.close();
+            logger.info("Done with sample.");
+        }
     }
-
 }
