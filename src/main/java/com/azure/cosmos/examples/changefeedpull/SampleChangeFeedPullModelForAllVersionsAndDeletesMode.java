@@ -22,23 +22,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-public class SampleChangeFeedPullModel {
+public class SampleChangeFeedPullModelForAllVersionsAndDeletesMode {
 
     public static CosmosAsyncClient clientAsync;
     private CosmosAsyncContainer container;
     private CosmosAsyncDatabase database;
 
     public static final String DATABASE_NAME = "db";
-    public static final String COLLECTION_NAME = "ChangeFeedPull";
+    public static final String COLLECTION_NAME = "ChangeFeedPullForAllVersionsAndDeletes";
     public static final String PARTITION_KEY_FIELD_NAME = "pk";
-    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedPullModel.class);
+    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedPullModelForAllVersionsAndDeletesMode.class);
 
     public static void main(String[] args) {
-        SampleChangeFeedPullModel p = new SampleChangeFeedPullModel();
+        SampleChangeFeedPullModelForAllVersionsAndDeletesMode p = new SampleChangeFeedPullModelForAllVersionsAndDeletesMode();
 
         try {
             logger.info("Starting ASYNC main");
-            p.ChangeFeedPullDemo();
+            p.changeFeedAllVersionsAndDeletesPullDemo();
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
@@ -49,14 +49,14 @@ public class SampleChangeFeedPullModel {
         }
     }
 
-    public void ChangeFeedPullDemo() {
+    public void changeFeedAllVersionsAndDeletesPullDemo() {
 
         clientAsync = this.getCosmosAsyncClient();
         Resources resources = new Resources(PARTITION_KEY_FIELD_NAME, clientAsync, DATABASE_NAME, COLLECTION_NAME);
         this.container = resources.container;
         this.database = resources.database;
 
-        resources.insertDocuments(10, 20);
+        resources.insertDocuments(5, 10);
 
         logger.info("*************************************************************");
         logger.info("*************************************************************");
@@ -64,10 +64,12 @@ public class SampleChangeFeedPullModel {
         logger.info("*************************************************************");
         logger.info("*************************************************************");
 
-        
+
         // <FeedResponseIterator>
         CosmosChangeFeedRequestOptions options = CosmosChangeFeedRequestOptions
-                .createForProcessingFromBeginning(FeedRange.forFullRange());
+            .createForProcessingFromNow(FeedRange.forFullRange())
+            .allVersionsAndDeletes();
+
         Iterator<FeedResponse<JsonNode>> responseIterator = container
             .queryChangeFeed(options, JsonNode.class)
             .byPage()
@@ -86,9 +88,21 @@ public class SampleChangeFeedPullModel {
             // applying the continuation token
             // only after processing all events
             options = CosmosChangeFeedRequestOptions
-                    .createForProcessingFromContinuation(response.getContinuationToken());
+                .createForProcessingFromContinuation(response.getContinuationToken())
+                .allVersionsAndDeletes();
+
+            //  Insert, update and delete documents to get them in AllVersionsAndDeletes Change feed
+            resources.insertDocuments(5, 10);
+            resources.updateDocuments(5, 10);
+            resources.deleteDocuments(5, 10);
+
+            responseIterator = container
+                .queryChangeFeed(options, JsonNode.class)
+                .byPage()
+                .toIterable()
+                .iterator();
             i++;
-            if (i >= 5) {
+            if (i > 2) {
                 // artificially breaking out of loop - not required in a real app
                 System.out.println("breaking....");
                 break;
@@ -121,7 +135,8 @@ public class SampleChangeFeedPullModel {
         // <Machine1>
         FeedRange range1 = feedRangeList.get(0);
         options = CosmosChangeFeedRequestOptions
-                .createForProcessingFromBeginning(range1);
+            .createForProcessingFromNow(range1)
+            .allVersionsAndDeletes();
 
         int machine1index = 0;
         responseIterator = container
@@ -138,11 +153,23 @@ public class SampleChangeFeedPullModel {
             // applying the continuation token
             // only after processing all events
             options = CosmosChangeFeedRequestOptions
-                .createForProcessingFromContinuation(response.getContinuationToken());
+                .createForProcessingFromContinuation(response.getContinuationToken())
+                .allVersionsAndDeletes();
+
+            //  Insert, update and delete documents to get them in AllVersionsAndDeletes Change feed
+            resources.insertDocuments(5, 10);
+            resources.updateDocuments(5, 10);
+            resources.deleteDocuments(5, 10);
+
+            responseIterator = container
+                .queryChangeFeed(options, JsonNode.class)
+                .byPage()
+                .toIterable()
+                .iterator();
 
             machine1index++;
 
-            if (machine1index >= 5) {
+            if (machine1index > 2) {
                 // artificially breaking out of loop - not required in a real app
                 System.out.println("breaking....");
                 break;
@@ -168,7 +195,8 @@ public class SampleChangeFeedPullModel {
         // <Machine2>
         FeedRange range2 = feedRangeList.get(1);
         options = CosmosChangeFeedRequestOptions
-                .createForProcessingFromBeginning(range2);
+            .createForProcessingFromNow(range2)
+            .allVersionsAndDeletes();
 
         responseIterator = container
             .queryChangeFeed(options, JsonNode.class)
@@ -186,10 +214,22 @@ public class SampleChangeFeedPullModel {
             // applying the continuation token
             // only after processing all events
             options = CosmosChangeFeedRequestOptions
-                .createForProcessingFromContinuation(response.getContinuationToken());
+                .createForProcessingFromContinuation(response.getContinuationToken())
+                .allVersionsAndDeletes();
+
+            //  Insert, update and delete documents to get them in AllVersionsAndDeletes Change feed
+            resources.insertDocuments(5, 10);
+            resources.updateDocuments(5, 10);
+            resources.deleteDocuments(5, 10);
+
+            responseIterator = container
+                .queryChangeFeed(options, JsonNode.class)
+                .byPage()
+                .toIterable()
+                .iterator();
 
             machine2index++;
-            if (machine2index >= 5) {
+            if (machine2index > 2) {
                 // artificially breaking out of loop - not required in a real app
                 System.out.println("breaking....");
                 break;
@@ -203,7 +243,7 @@ public class SampleChangeFeedPullModel {
         logger.info("*************************************************************");
         logger.info("*************************************************************");
 
-        
+
         //grab first pk in keySet()
         Set<String> keySet = resources.partitionKeyToDocuments.keySet();
         String partitionKey="";
@@ -220,7 +260,8 @@ public class SampleChangeFeedPullModel {
 
         // <PartitionKeyProcessing>
         options = CosmosChangeFeedRequestOptions
-                .createForProcessingFromBeginning(FeedRange.forLogicalPartition(new PartitionKey(partitionKey)));
+            .createForProcessingFromNow(FeedRange.forLogicalPartition(new PartitionKey(partitionKey)))
+            .allVersionsAndDeletes();
 
         responseIterator = container
             .queryChangeFeed(options, JsonNode.class)
@@ -238,15 +279,28 @@ public class SampleChangeFeedPullModel {
             // applying the continuation token
             // only after processing all events
             options = CosmosChangeFeedRequestOptions
-                .createForProcessingFromContinuation(response.getContinuationToken());
+                .createForProcessingFromContinuation(response.getContinuationToken())
+                .allVersionsAndDeletes();
+
+            //  Insert, update and delete documents to get them in AllVersionsAndDeletes Change feed
+            resources.insertDocuments(5, 10);
+            resources.updateDocuments(5, 10);
+            resources.deleteDocuments(5, 10);
+
+            responseIterator = container
+                .queryChangeFeed(options, JsonNode.class)
+                .byPage()
+                .toIterable()
+                .iterator();
+
             pkIndex++;
-            if (pkIndex >= 5) {
+            if (pkIndex > 5) {
                 // artificially breaking out of loop
                 System.out.println("breaking....");
                 break;
             }
         }
-        // </PartitionKeyProcessing>        
+        // </PartitionKeyProcessing>
 
         logger.info("*************************************************************");
         logger.info("*************************************************************");
@@ -259,11 +313,11 @@ public class SampleChangeFeedPullModel {
     public CosmosAsyncClient getCosmosAsyncClient() {
 
         return new CosmosClientBuilder()
-                .endpoint(AccountSettings.HOST)
-                .key(AccountSettings.MASTER_KEY)
-                .contentResponseOnWriteEnabled(true)
-                .consistencyLevel(ConsistencyLevel.SESSION)
-                .buildAsyncClient();
+            .endpoint(AccountSettings.HOST)
+            .key(AccountSettings.MASTER_KEY)
+            .contentResponseOnWriteEnabled(true)
+            .consistencyLevel(ConsistencyLevel.SESSION)
+            .buildAsyncClient();
     }
 
     public void close() {
@@ -287,7 +341,7 @@ public class SampleChangeFeedPullModel {
             err.printStackTrace();
         } catch (Exception err) {
             logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack "
-                    + "trace below.");
+                + "trace below.");
             err.printStackTrace();
         }
         clientAsync.close();
