@@ -103,6 +103,7 @@ public class Resources {
                 docs.remove(docToBeDeleted);
             }
         }
+        logger.info("FINISHED DELETE");
     }
 
     void updateDocuments(
@@ -130,6 +131,7 @@ public class Resources {
                         null).block();
             }
         }
+        logger.info("FINISHED UPSERT");
     }
 
     private static ObjectNode getDocumentDefinition(String partitionKey) {
