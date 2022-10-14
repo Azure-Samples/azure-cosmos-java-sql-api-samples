@@ -93,8 +93,8 @@ public class SampleDocumentationSnippetsAsync {
         DirectConnectionConfig directConnectionConfig = DirectConnectionConfig.getDefaultConfig();
 
         // Example config, do not use these settings as defaults
-        directConnectionConfig.setMaxConnectionsPerEndpoint(120);
-        directConnectionConfig.setIdleConnectionTimeout(Duration.ofMillis(100));
+        directConnectionConfig.setMaxConnectionsPerEndpoint(130);
+        directConnectionConfig.setIdleConnectionTimeout(Duration.ZERO);
 
         CosmosAsyncClient clientDirectCustom = new CosmosClientBuilder()
                 .endpoint(HOSTNAME)
@@ -116,7 +116,7 @@ public class SampleDocumentationSnippetsAsync {
 
         // Example config, do not use these settings as defaults
         gatewayConnectionConfig.setProxy(new ProxyOptions(ProxyOptions.Type.HTTP, InetSocketAddress.createUnresolved("your.proxy.addr",80)));
-        gatewayConnectionConfig.setMaxConnectionPoolSize(150);
+        gatewayConnectionConfig.setMaxConnectionPoolSize(1000);
 
         CosmosAsyncClient clientGatewayCustom = new CosmosClientBuilder()
                 .endpoint(HOSTNAME)
@@ -153,14 +153,14 @@ public class SampleDocumentationSnippetsAsync {
         DirectConnectionConfig directConnectionConfig = DirectConnectionConfig.getDefaultConfig();
 
         // Example config, do not use these settings as defaults
-        directConnectionConfig.setMaxConnectionsPerEndpoint(120);
-        directConnectionConfig.setIdleConnectionTimeout(Duration.ofMillis(100));
+        directConnectionConfig.setMaxConnectionsPerEndpoint(130);
+        directConnectionConfig.setIdleConnectionTimeout(Duration.ZERO);
 
         GatewayConnectionConfig gatewayConnectionConfig = GatewayConnectionConfig.getDefaultConfig();
 
         // Example config, do not use these settings as defaults
         gatewayConnectionConfig.setProxy(new ProxyOptions(ProxyOptions.Type.HTTP, InetSocketAddress.createUnresolved("your.proxy.addr",80)));
-        gatewayConnectionConfig.setMaxConnectionPoolSize(150);
+        gatewayConnectionConfig.setMaxConnectionPoolSize(1000);
 
         CosmosAsyncClient clientDirectCustom = new CosmosClientBuilder()
                 .endpoint(HOSTNAME)
