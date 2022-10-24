@@ -7,7 +7,9 @@ import com.azure.cosmos.*;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
+//  <CosmosBulkOperationsImport>
 import com.azure.cosmos.models.*;
+//  </CosmosBulkOperationsImport>
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
