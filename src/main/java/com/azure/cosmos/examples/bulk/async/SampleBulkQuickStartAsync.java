@@ -268,6 +268,8 @@ public class SampleBulkQuickStartAsync {
         CosmosBulkExecutionOptions bulkExecutionOptions = new CosmosBulkExecutionOptions();
 
         // The default value for maxMicroBatchConcurrency is 1.
+        // By increasing it, it means more concurrent requests will be allowed to be sent to the server, which leads to increased RU usage.
+        //
         // Before you increase the value, please examine the RU usage of your container - whether it has been saturated or not.
         // When the RU has already been under saturation, increasing the concurrency will not help the situation,
         // rather it may cause more 429 and request timeout.
