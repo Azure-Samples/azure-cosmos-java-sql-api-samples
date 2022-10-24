@@ -7,10 +7,7 @@ import com.azure.cosmos.*;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.implementation.ImplementationBridgeHelpers;
-//  <CosmosBulkOperationsImport>
 import com.azure.cosmos.models.*;
-//  </CosmosBulkOperationsImport>
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -269,7 +266,12 @@ public class SampleBulkQuickStartAsync {
 
     private void bulkCreateItemsWithExecutionOptions(Flux<Family> families) {
         CosmosBulkExecutionOptions bulkExecutionOptions = new CosmosBulkExecutionOptions();
-        ImplementationBridgeHelpers.CosmosBulkExecutionOptionsHelper.getCosmosBulkExecutionOptionsAccessor().setMaxMicroBatchSize(bulkExecutionOptions, 10);
+
+        // The default value for maxMicroBatchConcurrency is 1.
+        // Before you increase the value, please examine the RU usage of your container - whether it has been saturated or not.
+        // When the RU has already been under saturation, increasing the concurrency will not help the situation,
+        // rather it may cause more 429 and request timeout.
+        bulkExecutionOptions.setMaxMicroBatchConcurrency(2);
         Flux<CosmosItemOperation> cosmosItemOperations = families.map(family -> CosmosBulkOperations.getCreateItemOperation(family, new PartitionKey(family.getLastName())));
         container.executeBulkOperations(cosmosItemOperations, bulkExecutionOptions).blockLast();
     }
