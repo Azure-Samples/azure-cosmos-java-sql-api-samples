@@ -6,7 +6,6 @@ package com.azure.cosmos.examples.changefeedpull;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
-import com.azure.cosmos.models.ChangeFeedPolicy;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
@@ -46,8 +45,7 @@ public class Resources {
         this.COLLECTION_NAME = COLLECTION_NAME;
         this.DATABASE_NAME = DATABASE_NAME;
         Resources.PARTITION_KEY_FIELD_NAME = PARTITION_KEY_FIELD_NAME;
-        this.container = this.createContainer(
-                (cp) -> cp.setChangeFeedPolicy(ChangeFeedPolicy.createIncrementalPolicy()));
+        this.container = this.createContainer();
     }
 
     void insertDocuments(
@@ -159,30 +157,24 @@ public class Resources {
         createdDatabase2.delete().block();
     }
 
-    public CosmosContainerProperties createNewCollection(CosmosAsyncClient clientAsync2, String databaseName,
+    public void createNewCollection(CosmosAsyncClient clientAsync2, String databaseName,
             String collectionName) {
         Mono<CosmosDatabaseResponse> databaseResponse = clientAsync2.createDatabaseIfNotExists(databaseName);
         CosmosAsyncDatabase database = clientAsync2.getDatabase(databaseResponse.block().getProperties().getId());
         CosmosContainerProperties containerSettings = new CosmosContainerProperties(collectionName,
                 "/" + PARTITION_KEY_FIELD_NAME);
-        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(10000);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
         Mono<CosmosContainerResponse> containerResponse = database.createContainerIfNotExists(containerSettings,
                 throughputProperties);
         this.database = clientAsync.getDatabase(database.getId());
         this.container = clientAsync.getDatabase(DATABASE_NAME).getContainer(COLLECTION_NAME);
-        return containerResponse.block().getProperties();
+        containerResponse.block();
     }
 
-    private CosmosAsyncContainer createContainer(
-            Function<CosmosContainerProperties, CosmosContainerProperties> onInitialization) {
-
-        CosmosContainerProperties containerProperties = createNewCollection(clientAsync, DATABASE_NAME,
+    private CosmosAsyncContainer createContainer() {
+        createNewCollection(clientAsync, DATABASE_NAME,
                 COLLECTION_NAME);
-
-        if (onInitialization != null) {
-            containerProperties = onInitialization.apply(containerProperties);
-        }
-        // this.container = database.getContainer(COLLECTION_NAME);
+        
         return database.getContainer(COLLECTION_NAME);
     }
 
