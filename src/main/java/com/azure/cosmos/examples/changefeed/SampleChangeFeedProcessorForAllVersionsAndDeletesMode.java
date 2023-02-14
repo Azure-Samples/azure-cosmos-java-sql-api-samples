@@ -304,15 +304,12 @@ public class SampleChangeFeedProcessorForAllVersionsAndDeletesMode {
     }
 
     public static void upsertDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count, Duration delay) {
-        String suffix = RandomStringUtils.randomAlphabetic(10);
-        for (int i = 0; i <= count; i++) {
-            CustomPOJO2 document = new CustomPOJO2();
-            document.setId(String.format("0%d-%s", i, suffix));
+        for (CustomPOJO2 document : documentList){
+            document.setId(document.getId());
             document.setPk(document.getId()); // This is a very simple example, so we'll just have a partition key (/pk) field that we set equal to id
 
             containerClient.upsertItem(document).subscribe(doc -> {
                 logger.info("---->DOCUMENT UPSERT: " + doc);
-                documentList.add(document);
             });
 
             long remainingWork = delay.toMillis();
