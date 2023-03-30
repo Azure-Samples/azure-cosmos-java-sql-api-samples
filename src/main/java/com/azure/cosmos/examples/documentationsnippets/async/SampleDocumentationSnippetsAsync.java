@@ -235,7 +235,7 @@ public class SampleDocumentationSnippetsAsync {
      */
 
     /** Performance tips - add scheduler */
-    public static void PerformanceTipsJavaSDKv4AddSchedulerSync() {
+    public static void PerformanceTipsJavaSDKv4AddSchedulerAsync() {
 
         CosmosAsyncContainer asyncContainer = null;
         CustomPOJO item = null;
@@ -244,13 +244,11 @@ public class SampleDocumentationSnippetsAsync {
 
         Mono<CosmosItemResponse<CustomPOJO>> createItemPub = asyncContainer.createItem(item);
         createItemPub
-                .subscribeOn(Schedulers.elastic())
+                .publishOn(Schedulers.parallel())
                 .subscribe(
                         itemResponse -> {
-                            //this is executed on eventloop IO netty thread.
-                            //the eventloop thread is shared and is meant to return back quickly.
-                            //
-                            // DON'T do this on eventloop IO netty thread.
+                            //this is now executed on reactor scheduler's parallel thread.
+                            //reactor scheduler's parallel thread is meant for CPU intensive work.
                             veryCpuIntensiveWork();
                         });
 
