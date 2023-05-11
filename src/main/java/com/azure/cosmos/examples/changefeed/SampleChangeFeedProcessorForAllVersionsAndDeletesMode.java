@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+
 package com.azure.cosmos.examples.changefeed;
 
 import com.azure.cosmos.ChangeFeedProcessor;
@@ -13,23 +14,24 @@ import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO2;
 import com.azure.cosmos.implementation.Utils;
+import com.azure.cosmos.implementation.apachecommons.lang.RandomStringUtils;
+import com.azure.cosmos.models.ChangeFeedProcessorItem;
 import com.azure.cosmos.models.ChangeFeedProcessorOptions;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * Sample for Change Feed Processor.
@@ -40,26 +42,29 @@ import java.util.function.Consumer;
  * handles leasing automatically for you, however you must create a separate "lease container" where the Change Feed
  * Processor Library can store and track leases container partitions.
  */
-public class SampleChangeFeedProcessor {
+public class SampleChangeFeedProcessorForAllVersionsAndDeletesMode {
 
     public static int WAIT_FOR_WORK = 60000;
-    public static final String DATABASE_NAME = "db_" + UUID.randomUUID();
-    public static final String COLLECTION_NAME = "coll_" + UUID.randomUUID();
+    public static final String DATABASE_NAME = "db_" + RandomStringUtils.randomAlphabetic(7);
+    public static final String COLLECTION_NAME = "coll_" + RandomStringUtils.randomAlphabetic(7);
     private static final ObjectMapper OBJECT_MAPPER = Utils.getSimpleObjectMapper();
-    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessor.class);
+    protected static Logger logger = LoggerFactory.getLogger(SampleChangeFeedProcessorForAllVersionsAndDeletesMode.class);
 
+
+    private static ChangeFeedProcessor changeFeedProcessorInstance;
     private static boolean isWorkCompleted = false;
 
     private static ChangeFeedProcessorOptions options;
-
+    private static List<CustomPOJO2> documentList = new ArrayList<>();
 
 
     public static void main(String[] args) {
-        logger.info("Begin Sample");
+        logger.info("BEGIN Sample");
+
         try {
 
             // <ChangeFeedProcessorOptions>
-            options = new ChangeFeedProcessorOptions();
+            options = new ChangeFeedProcessorOptions();            
             options.setStartFromBeginning(false);
             options.setLeasePrefix("myChangeFeedDeploymentUnit");
             // </ChangeFeedProcessorOptions>
@@ -67,39 +72,42 @@ public class SampleChangeFeedProcessor {
             //Summary of the next four commands:
             //-Create an asynchronous Azure Cosmos DB client and database so that we can issue async requests to the DB
             //-Create a "feed container" and a "lease container" in the DB
-            logger.info("Create CosmosClient");
+            logger.info("-->CREATE DocumentClient");
             CosmosAsyncClient client = getCosmosClient();
 
-            logger.info("Create sample's database: " + DATABASE_NAME);
+            logger.info("-->CREATE sample's database: " + DATABASE_NAME);
             CosmosAsyncDatabase cosmosDatabase = createNewDatabase(client, DATABASE_NAME);
 
-            logger.info("Create container for documents: " + COLLECTION_NAME);
+            logger.info("-->CREATE container for documents: " + COLLECTION_NAME);
             CosmosAsyncContainer feedContainer = createNewCollection(client, DATABASE_NAME, COLLECTION_NAME);
 
-            logger.info("Create container for lease: " + COLLECTION_NAME + "-leases");
+            logger.info("-->CREATE container for lease: " + COLLECTION_NAME + "-leases");
             CosmosAsyncContainer leaseContainer = createNewLeaseCollection(client, DATABASE_NAME, COLLECTION_NAME + "-leases");
 
             //Model of a worker thread or application which leases access to monitor one or more feed container
             //partitions via the Change Feed. In a real-world application you might deploy this code in an Azure function.
-            //The next line causes the worker to create and start an instance of the Change Feed Processor. See the implementation of getChangeFeedProcessor() for guidance
+            //The next line causes the worker to create and start an instance of the Change Feed Processor. See the implementation of getChangeFeedProcessorForAllVersionsAndDeletesMode() for guidance
             //on creating a handler for Change Feed events. In this stream, we also trigger the insertion of 10 documents on a separate
             //thread.
-            // <DefineProcessor>
-            logger.info("Start Change Feed Processor on worker (handles changes asynchronously)");
-            ChangeFeedProcessor changeFeedProcessorInstance = new ChangeFeedProcessorBuilder()
-                .hostName("SampleHost_1")
-                .feedContainer(feedContainer)
-                .leaseContainer(leaseContainer)
-                .handleChanges(handleChanges())
-                .buildChangeFeedProcessor();
+
+            // <StartChangeFeedProcessor>
+            logger.info("-->START Change Feed Processor on worker (handles changes asynchronously)");
+            changeFeedProcessorInstance = getChangeFeedProcessorForAllVersionsAndDeletesMode("SampleHost_1", feedContainer, leaseContainer);
             changeFeedProcessorInstance.start()
-                                       .subscribeOn(Schedulers.boundedElastic())
-                                       .subscribe();
-            // </DefineProcessor>
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .doOnSuccess(aVoid -> {
+                        //pass
+                        
+                    })
+                    .subscribe();
+            // </StartChangeFeedProcessor>
 
             //These two lines model an application which is inserting ten documents into the feed container
-            logger.info("Start application that inserts documents into feed container");
+            logger.info("-->START application that inserts documents into feed container");
             createNewDocumentsCustomPOJO(feedContainer, 10, Duration.ofSeconds(3));
+            upsertDocumentsCustomPOJO(feedContainer, 10, Duration.ofSeconds(3));
+            deleteDocumentsCustomPOJO(feedContainer, 10, Duration.ofSeconds(3));
+            isWorkCompleted = true;
 
             //This loop models the Worker main loop, which spins while its Change Feed Processor instance asynchronously
             //handles incoming Change Feed events from the feed container. Of course in this sample, polling
@@ -115,50 +123,61 @@ public class SampleChangeFeedProcessor {
 
             //When all documents have been processed, clean up
             if (isWorkCompleted) {
-                changeFeedProcessorInstance.stop().subscribe();
+                if (changeFeedProcessorInstance != null) {
+                    changeFeedProcessorInstance.stop().subscribe();
+                }
             } else {
                 throw new RuntimeException("The change feed processor initialization and automatic create document feeding process did not complete in the expected time");
             }
 
-            logger.info("Delete sample's database: " + DATABASE_NAME);
+            logger.info("-->DELETE sample's database: " + DATABASE_NAME);
             //deleteDatabase(cosmosDatabase);
 
             Thread.sleep(500);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        logger.info("End Sample");
+
+        logger.info("END Sample");
     }
 
-    // <HandleChanges>
-    private static Consumer<List<JsonNode>> handleChanges() {
-        return (List<JsonNode> docs) -> {
-            logger.info("Start handleChanges()");
+    // <Delegate>
+    public static ChangeFeedProcessor getChangeFeedProcessorForAllVersionsAndDeletesMode(String hostName, CosmosAsyncContainer feedContainer, CosmosAsyncContainer leaseContainer) {
+        return new ChangeFeedProcessorBuilder()
+                .hostName(hostName)
+                .options(options)
+                .feedContainer(feedContainer)
+                .leaseContainer(leaseContainer)
+                .handleAllVersionsAndDeletesChanges((List<ChangeFeedProcessorItem> changeFeedProcessorItems) -> {
+                    logger.info("--->handleAllVersionsAndDeletesChanges() START");
 
-            for (JsonNode document : docs) {
-                try {
-                    //Change Feed hands the document to you in the form of a JsonNode
-                    //As a developer you have two options for handling the JsonNode document provided to you by Change Feed
-                    //One option is to operate on the document in the form of a JsonNode, as shown below. This is great
-                    //especially if you do not have a single uniform data model for all documents.
-                    logger.info("Document received: " + OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
-                            .writeValueAsString(document));
+                    for (ChangeFeedProcessorItem item : changeFeedProcessorItems) {
+                        try {
+                            // AllVersionsAndDeletes Change Feed hands the document to you in the form of ChangeFeedProcessorItem
+                            // As a developer you have two options for handling the ChangeFeedProcessorItem provided to you by Change Feed
+                            // One option is to operate on the item as it is and call the different getters for different states, as shown below.
+                            logger.info("---->DOCUMENT RECEIVED: {}", OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
+                                    .writeValueAsString(item));
 
-                    //You can also transform the JsonNode to a POJO having the same structure as the JsonNode,
-                    //as shown below. Then you can operate on the POJO.
-                    CustomPOJO2 pojo_doc = OBJECT_MAPPER.treeToValue(document, CustomPOJO2.class);
-                    logger.info("id: " + pojo_doc.getId());
+                            logger.info("---->CURRENT RECEIVED: {}", item.getCurrent());
+                            logger.info("---->PREVIOUS RECEIVED: {}", item.getPrevious());
+                            logger.info("---->METADATA RECEIVED: {}", item.getChangeFeedMetaData());
 
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
-            }
-            isWorkCompleted = true;
-            logger.info("End handleChanges()");
+                            // You can also transform the ChangeFeedProcessorItem to JsonNode and work on the generic json structure.
+                            // This is great especially if you do not have a single uniform data model for all documents.
+                            logger.info("----=>JsonNode received: " + item.toJsonNode());
 
-        };
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    logger.info("--->handleAllVersionsAndDeletesChanges() END");
+
+                })
+                .buildChangeFeedProcessor();
     }
-    // </HandleChanges>
+    // </Delegate>
 
     public static CosmosAsyncClient getCosmosClient() {
 
@@ -260,14 +279,57 @@ public class SampleChangeFeedProcessor {
     }
 
     public static void createNewDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count, Duration delay) {
-        String suffix = UUID.randomUUID().toString();
+        String suffix = RandomStringUtils.randomAlphabetic(10);
         for (int i = 0; i <= count; i++) {
             CustomPOJO2 document = new CustomPOJO2();
             document.setId(String.format("0%d-%s", i, suffix));
             document.setPk(document.getId()); // This is a very simple example, so we'll just have a partition key (/pk) field that we set equal to id
 
             containerClient.createItem(document).subscribe(doc -> {
-                logger.info("Document write: " + doc);
+                logger.info("---->DOCUMENT INSERT: " + doc);
+                documentList.add(document);
+            });
+
+            long remainingWork = delay.toMillis();
+            try {
+                while (remainingWork > 0) {
+                    Thread.sleep(100);
+                    remainingWork -= 100;
+                }
+            } catch (InterruptedException iex) {
+                // exception caught
+                break;
+            }
+        }
+    }
+
+    public static void upsertDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count, Duration delay) {
+        for (CustomPOJO2 document : documentList){
+            document.setId(document.getId());
+            document.setPk(document.getId()); // This is a very simple example, so we'll just have a partition key (/pk) field that we set equal to id
+
+            containerClient.upsertItem(document).subscribe(doc -> {
+                logger.info("---->DOCUMENT UPSERT: " + doc);
+            });
+
+            long remainingWork = delay.toMillis();
+            try {
+                while (remainingWork > 0) {
+                    Thread.sleep(100);
+                    remainingWork -= 100;
+                }
+            } catch (InterruptedException iex) {
+                // exception caught
+                break;
+            }
+        }
+    }
+
+    public static void deleteDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count, Duration delay) {
+        for (int i = 0; i <= count; i++) {
+            CustomPOJO2 document = documentList.get(i);
+            containerClient.deleteItem(document.getId(), new PartitionKey(document.getPk())).subscribe(doc -> {
+                logger.info("---->DOCUMENT DELETE: " + doc);
             });
 
             long remainingWork = delay.toMillis();

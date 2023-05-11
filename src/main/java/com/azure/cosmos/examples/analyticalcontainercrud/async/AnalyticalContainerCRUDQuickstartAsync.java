@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package com.azure.cosmos.examples.analyticalcontainercrud.sync;
+package com.azure.cosmos.examples.analyticalcontainercrud.async;
 
 import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosAsyncClient;
+import com.azure.cosmos.CosmosAsyncContainer;
+import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerRequestOptions;
@@ -17,16 +17,16 @@ import com.azure.cosmos.models.CosmosDatabaseResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AnalyticalContainerCRUDQuickstart {
+public class AnalyticalContainerCRUDQuickstartAsync {
 
-    private CosmosClient client;
+    private CosmosAsyncClient client;
 
     private final String databaseName = "AzureSampleFamilyDB";
     private final String containerName = "FamilyContainer";
 
-    private CosmosDatabase database;
+    private CosmosAsyncDatabase database;
 
-    protected static Logger logger = LoggerFactory.getLogger(AnalyticalContainerCRUDQuickstart.class);
+    protected static Logger logger = LoggerFactory.getLogger(AnalyticalContainerCRUDQuickstartAsync.class);
 
     public void close() {
         client.close();
@@ -41,10 +41,10 @@ public class AnalyticalContainerCRUDQuickstart {
      * -Delete
      */
     public static void main(String[] args) {
-        AnalyticalContainerCRUDQuickstart p = new AnalyticalContainerCRUDQuickstart();
+        AnalyticalContainerCRUDQuickstartAsync p = new AnalyticalContainerCRUDQuickstartAsync();
 
         try {
-            logger.info("Starting SYNC main");
+            logger.info("Starting ASYNC main");
             p.containerCRUDDemo();
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
@@ -60,13 +60,13 @@ public class AnalyticalContainerCRUDQuickstart {
 
         logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
-        //  Create sync client
+        //  Create async client
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .contentResponseOnWriteEnabled(true)
-                .buildClient();
+                .buildAsyncClient();
 
 
         createDatabaseIfNotExists();
@@ -81,7 +81,7 @@ public class AnalyticalContainerCRUDQuickstart {
         logger.info("Create database {} if not exists...", databaseName);
 
         //  Create database if not exists
-        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
         database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
@@ -99,8 +99,8 @@ public class AnalyticalContainerCRUDQuickstart {
         containerProperties.setAnalyticalStoreTimeToLiveInSeconds(-1);
 
         //  Create container
-        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties);
-        CosmosContainer container = database.getContainer(databaseResponse.getProperties().getId());
+        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties).block();
+        CosmosAsyncContainer container = database.getContainer(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
@@ -110,7 +110,7 @@ public class AnalyticalContainerCRUDQuickstart {
         logger.info("Delete container {} by ID.", containerName);
 
         // Delete container
-        CosmosContainerResponse containerResp = database.getContainer(containerName).delete(new CosmosContainerRequestOptions());
+        CosmosContainerResponse containerResp = database.getContainer(containerName).delete(new CosmosContainerRequestOptions()).block();
         logger.info("Status code for container delete: {}",containerResp.getStatusCode());
 
         logger.info("Done.");
@@ -121,7 +121,7 @@ public class AnalyticalContainerCRUDQuickstart {
         logger.info("Last step: delete database {} by ID.", databaseName);
 
         // Delete database
-        CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
+        CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).block();
         logger.info("Status code for database delete: {}",dbResp.getStatusCode());
 
         logger.info("Done.");

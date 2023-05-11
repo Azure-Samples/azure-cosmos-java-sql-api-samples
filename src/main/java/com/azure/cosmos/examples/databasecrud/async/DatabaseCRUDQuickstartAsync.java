@@ -1,51 +1,52 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package com.azure.cosmos.examples.analyticalcontainercrud.sync;
+package com.azure.cosmos.examples.databasecrud.async;
 
 import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosAsyncClient;
+import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.examples.common.AccountSettings;
-import com.azure.cosmos.models.CosmosContainerProperties;
-import com.azure.cosmos.models.CosmosContainerRequestOptions;
-import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseProperties;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.util.CosmosPagedFlux;
+
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AnalyticalContainerCRUDQuickstart {
+public class DatabaseCRUDQuickstartAsync {
 
-    private CosmosClient client;
+    private CosmosAsyncClient client;
 
     private final String databaseName = "AzureSampleFamilyDB";
-    private final String containerName = "FamilyContainer";
 
-    private CosmosDatabase database;
+    private CosmosAsyncDatabase database;
 
-    protected static Logger logger = LoggerFactory.getLogger(AnalyticalContainerCRUDQuickstart.class);
+    protected static Logger logger = LoggerFactory.getLogger(DatabaseCRUDQuickstartAsync.class);
 
     public void close() {
         client.close();
     }
 
     /**
-     * Sample to demonstrate the following ANALYTICAL STORE container CRUD operations:
+     * Sample to demonstrate the following database CRUD operations:
      * -Create
-     * -Update throughput
      * -Read by ID
      * -Read all
      * -Delete
      */
     public static void main(String[] args) {
-        AnalyticalContainerCRUDQuickstart p = new AnalyticalContainerCRUDQuickstart();
+        DatabaseCRUDQuickstartAsync p = new DatabaseCRUDQuickstartAsync();
 
         try {
-            logger.info("Starting SYNC main");
-            p.containerCRUDDemo();
+            logger.info("Starting ASYNC main");
+            p.databaseCRUDDemo();
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
             e.printStackTrace();
@@ -56,23 +57,23 @@ public class AnalyticalContainerCRUDQuickstart {
         }
     }
 
-    private void containerCRUDDemo() throws Exception {
+    private void databaseCRUDDemo() throws Exception {
 
         logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
-        //  Create sync client
+        //  Create async client
         client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .contentResponseOnWriteEnabled(true)
-                .buildClient();
+                .buildAsyncClient();
 
 
         createDatabaseIfNotExists();
-        createContainerIfNotExists();
-
-        // deleteAContainer() is called at shutdown()
+        readDatabaseById();
+        readAllDatabases();
+        // deleteADatabase() is called at shutdown()
 
     }
 
@@ -81,37 +82,43 @@ public class AnalyticalContainerCRUDQuickstart {
         logger.info("Create database {} if not exists...", databaseName);
 
         //  Create database if not exists
-        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
+        CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName).block();
         database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
     }
 
-    // Container create
-    private void createContainerIfNotExists() throws Exception {
-        logger.info("Create container {} if not exists.", containerName);
+    // Database read
+    private void readDatabaseById() throws Exception {
+        logger.info("Read database {} by ID.", databaseName);
 
-        //  Create container if not exists
-        CosmosContainerProperties containerProperties =
-                new CosmosContainerProperties(containerName, "/lastName");
-
-        // Set analytical store properties
-        containerProperties.setAnalyticalStoreTimeToLiveInSeconds(-1);
-
-        //  Create container
-        CosmosContainerResponse databaseResponse = database.createContainerIfNotExists(containerProperties);
-        CosmosContainer container = database.getContainer(databaseResponse.getProperties().getId());
+        //  Read database by ID
+        database = client.getDatabase(databaseName);
 
         logger.info("Done.");
     }
 
-    // Container delete
-    private void deleteAContainer() throws Exception {
-        logger.info("Delete container {} by ID.", containerName);
+    // Database read all
+    private void readAllDatabases() throws Exception {
+        logger.info("Read all databases in the account.");
 
-        // Delete container
-        CosmosContainerResponse containerResp = database.getContainer(containerName).delete(new CosmosContainerRequestOptions());
-        logger.info("Status code for container delete: {}",containerResp.getStatusCode());
+        //  Read all databases in the account
+        CosmosPagedFlux<CosmosDatabaseProperties> databases = client.readAllDatabases();
+
+        // Print
+        String msg="Listing databases in account:\n";
+
+        databases.byPage(100).flatMap(readAllDatabasesResponse -> {
+            logger.info("read {} database(s) with request charge of {}", readAllDatabasesResponse.getResults().size(),readAllDatabasesResponse.getRequestCharge());
+
+            for (CosmosDatabaseProperties response : readAllDatabasesResponse.getResults()) {
+                logger.info("database id: {}", response.getId());
+                //Got a page of query result with
+            }
+            return Flux.empty();
+        }).blockLast();
+
+        logger.info(msg + "\n");
 
         logger.info("Done.");
     }
@@ -121,7 +128,7 @@ public class AnalyticalContainerCRUDQuickstart {
         logger.info("Last step: delete database {} by ID.", databaseName);
 
         // Delete database
-        CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
+        CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions()).block();
         logger.info("Status code for database delete: {}",dbResp.getStatusCode());
 
         logger.info("Done.");
@@ -131,7 +138,6 @@ public class AnalyticalContainerCRUDQuickstart {
     private void shutdown() {
         try {
             //Clean shutdown
-            deleteAContainer();
             deleteADatabase();
         } catch (Exception err) {
             logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client. See stack trace below.");
