@@ -17,6 +17,21 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
+/**
+ * Sample for configuring OpenTelemetry traces
+ * 
+ * OpenTelemetry data can be exported to the location of your choice. 
+ * For example, follow these steps to configure sending OpenTelemetry traces and logs to Azure Monitor.
+ * See the documentation for more information.
+ * https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-enable?tabs=java
+ * 
+ *  1. Download the jar file https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.4.12/applicationinsights-agent-3.4.12.jar.
+ *  2. Point the JVM to the jar file by adding -javaagent:"path/to/applicationinsights-agent-3.4.12.jar" to your application's JVM args.
+ *  3. Set an environment variable with your Application Insights connection string 
+ *      - APPLICATIONINSIGHTS_CONNECTION_STRING=<Your Connection String>
+ * 
+ * In a high-volume, production environment you may want to enable sampling to reduce the amount of data emitted.
+ */
 public class SampleOpenTelemetryQuickStartAsync {
 
     private CosmosAsyncClient client;
