@@ -251,9 +251,11 @@ public class ThroughputControlQuickstartAsync {
         ThroughputControlTestContainerObject2.enableLocalThroughputControlGroup(groupConfig2);
         try {
             createManyItemsWithTwoClients(NUMBER_OF_DOCS_PRIORITY_BASED_THROTTLING, "PRIORITY BASED THROTTLING TEST", options, Arrays.asList(priorityBasedThrottlingContainerObject1, priorityBasedThrottlingContainerObject2));
+            Thread.sleep(2000);
         } catch (Exception e) {
             logger.info("Exception in globalThroughputControlTest: " + e);
         }
+
     }
 
 
