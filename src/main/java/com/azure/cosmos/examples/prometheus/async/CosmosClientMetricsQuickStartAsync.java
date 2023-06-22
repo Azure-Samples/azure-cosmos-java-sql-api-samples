@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package com.azure.cosmos.examples.clientmetrics.async;
+package com.azure.cosmos.examples.prometheus.async;
 
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
@@ -9,7 +9,6 @@ import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosDiagnostics;
-import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.models.CosmosClientTelemetryConfig;
@@ -20,10 +19,14 @@ import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosMicrometerMetricsOptions;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
-import com.azure.cosmos.util.CosmosPagedFlux;
+import com.azure.cosmos.test.faultinjection.FaultInjectionConditionBuilder;
+import com.azure.cosmos.test.faultinjection.FaultInjectionOperationType;
+import com.azure.cosmos.test.faultinjection.FaultInjectionResultBuilders;
+import com.azure.cosmos.test.faultinjection.FaultInjectionRule;
+import com.azure.cosmos.test.faultinjection.FaultInjectionRuleBuilder;
+import com.azure.cosmos.test.faultinjection.FaultInjectionServerErrorType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpServer;
 import io.micrometer.prometheus.PrometheusConfig;
@@ -36,15 +39,19 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.azure.cosmos.examples.common.Profile.generateDocs;
 
 public class CosmosClientMetricsQuickStartAsync {
 
     private CosmosAsyncClient client;
 
-    private final String databaseName = "AzureSampleFamilyDB";
+    private final String databaseName = "ClientMetricsPrometheusTestDB";
     private final String containerName = "FamilyContainer";
     private final String documentId = UUID.randomUUID().toString();
     private final String documentLastName = "Witherspoon";
@@ -66,8 +73,13 @@ public class CosmosClientMetricsQuickStartAsync {
     public static void main(String[] args) {
         CosmosClientMetricsQuickStartAsync quickStart = new CosmosClientMetricsQuickStartAsync();
 
+
+
+
+
         try {
             logger.info("Starting ASYNC main");
+
             quickStart.clientMetricsDemo();
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
@@ -81,6 +93,24 @@ public class CosmosClientMetricsQuickStartAsync {
     private void clientMetricsDemo() throws Exception {
 
         logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
+
+        FaultInjectionRule serverConnectionDelayRule =
+                new FaultInjectionRuleBuilder("ServerError-ConnectionTimeout")
+                        .condition(
+                                new FaultInjectionConditionBuilder()
+                                        .operationType(FaultInjectionOperationType.CREATE_ITEM)
+                                        .build()
+                        )
+                        .result(
+                                FaultInjectionResultBuilders
+                                        .getResultBuilder(FaultInjectionServerErrorType.RESPONSE_DELAY)
+                                        .delay(Duration.ofSeconds(6)) // default connection timeout is 5s
+                                        .times(1)
+                                        .build()
+                        )
+                        .duration(Duration.ofMillis(10))
+                        .hitLimit(2)
+                        .build();
 
 
         PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
@@ -105,6 +135,7 @@ public class CosmosClientMetricsQuickStartAsync {
         }
 
 
+
         //  Create sync client
         client = new CosmosClientBuilder()
             .endpoint(AccountSettings.HOST)
@@ -118,12 +149,11 @@ public class CosmosClientMetricsQuickStartAsync {
         createDatabaseIfNotExists();
         createContainerIfNotExists();
 
-        createDocuments();
-        readDocumentById();
-        readDocumentDoesntExist();
-        queryDocuments();
-        replaceDocument();
-        upsertDocument();
+        //CosmosFaultInjectionHelper.configureFaultInjectionRules(container, Arrays.asList(serverConnectionDelayRule)).block();
+
+        docs = generateDocs(NUMBER_OF_DOCS);
+        createManyDocuments();
+        readManyDocuments();
         pressAnyKeyToContinue("Press any key to continue ...");
     }
 
@@ -137,50 +167,6 @@ public class CosmosClientMetricsQuickStartAsync {
         }
     }
 
-/*    private static MeterRegistry createConsoleLoggingMeterRegistry() {
-
-        final MetricRegistry dropwizardRegistry = new MetricRegistry();
-
-        final ConsoleReporter consoleReporter = ConsoleReporter
-                .forRegistry(dropwizardRegistry)
-                .convertRatesTo(TimeUnit.SECONDS)
-                .convertDurationsTo(TimeUnit.MILLISECONDS)
-                .build();
-
-        consoleReporter.start(1, TimeUnit.SECONDS);
-
-        DropwizardConfig dropwizardConfig = new DropwizardConfig() {
-
-            @Override
-            public String get(@Nullable String key) {
-                return null;
-            }
-
-            @Override
-            public String prefix() {
-                return "console";
-            }
-
-        };
-
-        final DropwizardMeterRegistry consoleLoggingRegistry = new DropwizardMeterRegistry(
-                dropwizardConfig, dropwizardRegistry, HierarchicalNameMapper.DEFAULT, Clock.SYSTEM) {
-            @Override
-            protected Double nullGaugeValue() {
-                return Double.NaN;
-            }
-
-            @Override
-            public void close() {
-                super.close();
-                consoleReporter.stop();
-                consoleReporter.close();
-            }
-        };
-
-        consoleLoggingRegistry.config().namingConvention(NamingConvention.dot);
-        return consoleLoggingRegistry;
-    }*/
 
     // Database Diagnostics
     private void createDatabaseIfNotExists() throws Exception {
@@ -204,10 +190,10 @@ public class CosmosClientMetricsQuickStartAsync {
 
         //  Create container if not exists
         CosmosContainerProperties containerProperties =
-            new CosmosContainerProperties(containerName, "/lastName");
+            new CosmosContainerProperties(containerName, "/id");
 
         // Provision throughput
-        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
+        ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(10000);
 
         //  Create container with 200 RU/s
         Mono<CosmosContainerResponse> containerResponseMono = database.createContainerIfNotExists(containerProperties,
@@ -242,9 +228,7 @@ public class CosmosClientMetricsQuickStartAsync {
         logger.info("Done.");
     }
 
-    private void createManyDocuments(ArrayList<JsonNode> docs) throws Exception {
-        docs = c
-        final long startTime = System.currentTimeMillis();
+    private void createManyDocuments() throws Exception {
         Flux.fromIterable(docs).flatMap(doc -> container.createItem(doc))
                 .flatMap(itemResponse -> {
                     if (itemResponse.getStatusCode() == 201) {
@@ -261,117 +245,28 @@ public class CosmosClientMetricsQuickStartAsync {
 
     }
 
-    // Document read
-    private void readDocumentById() throws Exception {
-        logger.info("Read document by ID : {}", documentId);
-
-        //  Read document by ID
-        Mono<CosmosItemResponse<Family>> itemResponseMono = container.readItem(documentId,
-            new PartitionKey(documentLastName), Family.class);
-
-        CosmosItemResponse<Family> familyCosmosItemResponse = itemResponseMono.block();
-        CosmosDiagnostics diagnostics = familyCosmosItemResponse.getDiagnostics();
-        logger.info("Read item diagnostics : {}", diagnostics);
-
-        Family family = familyCosmosItemResponse.getItem();
-
-        // Check result
-        logger.info("Finished reading family {} with partition key {}", family.getId(), family.getLastName());
-
-        logger.info("Done.");
-    }
-
-    // Document read doesn't exist
-    private void readDocumentDoesntExist() throws Exception {
-        logger.info("Read document by ID : bad-ID");
-
-        //  Read document by ID
-        try {
-            CosmosItemResponse<Family> familyCosmosItemResponse = container.readItem("bad-ID",
-                new PartitionKey("bad-lastName"), Family.class).block();
-        } catch (CosmosException cosmosException) {
-            CosmosDiagnostics diagnostics = cosmosException.getDiagnostics();
-            logger.info("Read item exception diagnostics : {}", diagnostics);
+    private void readManyDocuments() throws InterruptedException {
+        // collect the ids that were generated when writing the data.
+        List<String> list = new ArrayList<String>();
+        for (final JsonNode doc : docs) {
+            list.add(doc.get("id").asText());
         }
 
-        logger.info("Done.");
-    }
-
-    private void queryDocuments() throws Exception {
-        logger.info("Query documents in the container : {}", containerName);
-
-        String sql = "SELECT * FROM c WHERE c.lastName = 'Witherspoon'";
-
-        CosmosPagedFlux<Family> filteredFamilies = container.queryItems(sql, new CosmosQueryRequestOptions(),
-            Family.class);
-
-        //  Add handler to capture diagnostics
-        filteredFamilies = filteredFamilies.handle(familyFeedResponse -> {
-            logger.info("Query Item diagnostics through handler : {}", familyFeedResponse.getCosmosDiagnostics());
-        });
-
-        //  Or capture diagnostics through byPage() APIs.
-        filteredFamilies.byPage().toIterable().forEach(familyFeedResponse -> {
-            logger.info("Query item diagnostics through iterableByPage : {}",
-                familyFeedResponse.getCosmosDiagnostics());
-        });
-
-        logger.info("Done.");
-    }
-
-    private void replaceDocument() throws Exception {
-        logger.info("Replace document : {}", documentId);
-
-        // Replace existing document with new modified document
-        Family family = new Family();
-        family.setLastName(documentLastName);
-        family.setId(documentId);
-        family.setDistrict("Columbia"); // Document modification
-
-        Mono<CosmosItemResponse<Family>> itemResponseMono =
-            container.replaceItem(family, family.getId(), new PartitionKey(family.getLastName()),
-                new CosmosItemRequestOptions());
-
-        CosmosItemResponse<Family> itemResponse = itemResponseMono.block();
-        CosmosDiagnostics diagnostics = itemResponse.getDiagnostics();
-        logger.info("Replace item diagnostics : {}", diagnostics);
-        logger.info("Request charge of replace operation: {} RU", itemResponse.getRequestCharge());
-
-        logger.info("Done.");
-    }
-
-    private void upsertDocument() throws Exception {
-        logger.info("Replace document : {}", documentId);
-
-        // Replace existing document with new modified document (contingent on modification).
-        Family family = new Family();
-        family.setLastName(documentLastName);
-        family.setId(documentId);
-        family.setDistrict("Columbia"); // Document modification
-
-        Mono<CosmosItemResponse<Family>> itemResponseMono =
-            container.upsertItem(family, new CosmosItemRequestOptions());
-
-        CosmosItemResponse<Family> itemResponse = itemResponseMono.block();
-        CosmosDiagnostics diagnostics = itemResponse.getDiagnostics();
-        logger.info("Upsert item diagnostics : {}", diagnostics);
-
-        logger.info("Done.");
-    }
-
-    // Document delete
-    private void deleteDocument() throws Exception {
-        logger.info("Delete document by ID {}", documentId);
-
-        // Delete document
-        Mono<CosmosItemResponse<Object>> itemResponseMono = container.deleteItem(documentId,
-            new PartitionKey(documentLastName), new CosmosItemRequestOptions());
-
-        CosmosItemResponse<Object> itemResponse = itemResponseMono.block();
-        CosmosDiagnostics diagnostics = itemResponse.getDiagnostics();
-        logger.info("Delete item diagnostics : {}", diagnostics);
-
-        logger.info("Done.");
+        final long startTime = System.currentTimeMillis();
+        Flux.fromIterable(list)
+                .flatMap(id -> container.readItem(id, new PartitionKey(id), JsonNode.class))
+                .flatMap(itemResponse -> {
+                    if (itemResponse.getStatusCode() == 200) {
+                        logger.info("read item with id: " + itemResponse.getItem().get("id"));
+                    } else
+                        logger.info("WARNING insert status code {} != 200" + itemResponse.getStatusCode());
+                    request_count.getAndIncrement();
+                    return Mono.empty();
+                }).subscribe();
+        logger.info("Waiting while subscribed async operation completes all threads...");
+        while (request_count.get() < NUMBER_OF_DOCS) {
+            // looping while subscribed async operation completes all threads
+        }
     }
 
     // Database delete
@@ -390,7 +285,6 @@ public class CosmosClientMetricsQuickStartAsync {
     private void shutdown() {
         try {
             //Clean shutdown
-            deleteDocument();
             deleteDatabase();
         } catch (Exception err) {
             logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client", err);
