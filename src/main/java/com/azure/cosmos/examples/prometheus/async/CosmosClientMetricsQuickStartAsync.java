@@ -10,17 +10,16 @@ import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosDiagnostics;
 import com.azure.cosmos.examples.common.AccountSettings;
-import com.azure.cosmos.examples.common.Family;
 import com.azure.cosmos.models.CosmosClientTelemetryConfig;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
-import com.azure.cosmos.models.CosmosItemRequestOptions;
-import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.CosmosMetricTagName;
 import com.azure.cosmos.models.CosmosMicrometerMetricsOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.test.faultinjection.CosmosFaultInjectionHelper;
 import com.azure.cosmos.test.faultinjection.FaultInjectionConditionBuilder;
 import com.azure.cosmos.test.faultinjection.FaultInjectionOperationType;
 import com.azure.cosmos.test.faultinjection.FaultInjectionResultBuilders;
@@ -41,8 +40,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.azure.cosmos.examples.common.Profile.generateDocs;
@@ -51,16 +50,15 @@ public class CosmosClientMetricsQuickStartAsync {
 
     private CosmosAsyncClient client;
 
-    private final String databaseName = "ClientMetricsPrometheusTestDB";
-    private final String containerName = "FamilyContainer";
-    private final String documentId = UUID.randomUUID().toString();
-    private final String documentLastName = "Witherspoon";
+    private final String databaseName = "ClientMetricsPrometheusDB";
+    private final String containerName = "Container";
 
     private CosmosAsyncDatabase database;
     private CosmosAsyncContainer container;
 
     private static AtomicInteger number_docs_inserted = new AtomicInteger(0);
-    private static AtomicInteger request_count = new AtomicInteger(0);
+    private static AtomicInteger write_request_count = new AtomicInteger(0);
+    private static AtomicInteger read_request_count = new AtomicInteger(0);
     public static final int NUMBER_OF_DOCS = 1000;
 
     public ArrayList<JsonNode> docs;
@@ -70,27 +68,20 @@ public class CosmosClientMetricsQuickStartAsync {
         client.close();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)  {
         CosmosClientMetricsQuickStartAsync quickStart = new CosmosClientMetricsQuickStartAsync();
-
-
-
-
 
         try {
             logger.info("Starting ASYNC main");
-
             quickStart.clientMetricsDemo();
             logger.info("Demo complete, please hold while resources are released");
-        } catch (Exception e) {
-            logger.error("Cosmos getStarted failed with", e);
-        } finally {
+        }  finally {
             logger.info("Shutting down");
             quickStart.shutdown();
         }
     }
 
-    private void clientMetricsDemo() throws Exception {
+    private void clientMetricsDemo()  {
 
         logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
@@ -108,16 +99,54 @@ public class CosmosClientMetricsQuickStartAsync {
                                         .times(1)
                                         .build()
                         )
-                        .duration(Duration.ofMillis(10))
-                        .hitLimit(2)
+                        .duration(Duration.ofMillis(500))
+                        .hitLimit(10)
+                        .build();
+
+        FaultInjectionRule partitionSplitRule =
+                new FaultInjectionRuleBuilder("Partition-Split")
+                        .condition(
+                                new FaultInjectionConditionBuilder()
+                                        .operationType(FaultInjectionOperationType.CREATE_ITEM)
+                                        .build()
+                        )
+                        .result(
+                                FaultInjectionResultBuilders
+                                        .getResultBuilder(FaultInjectionServerErrorType.GONE)
+                                        .times(1)
+                                        .build()
+                        )
+                        .duration(Duration.ofMillis(2000))
+                        .hitLimit(50)
+                        .build();
+
+        FaultInjectionRule readTimeouts =
+                new FaultInjectionRuleBuilder("Read-Timeouts")
+                        .condition(
+                                new FaultInjectionConditionBuilder()
+                                        .operationType(FaultInjectionOperationType.READ_ITEM)
+                                        .build()
+                        )
+                        .result(
+                                FaultInjectionResultBuilders
+                                        .getResultBuilder(FaultInjectionServerErrorType.TIMEOUT)
+                                        .times(1)
+                                        .build()
+                        )
+                        .duration(Duration.ofMillis(2000))
+                        .hitLimit(50)
                         .build();
 
 
+        //prometheus meter registry
         PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        //provide the prometheus registry to the telemetry config
         CosmosClientTelemetryConfig telemetryConfig = new CosmosClientTelemetryConfig()
-                .metricsOptions(new CosmosMicrometerMetricsOptions().meterRegistry(prometheusRegistry));
+                .clientCorrelationId("samplePrometheusMetrics001")
+                .metricsOptions(new CosmosMicrometerMetricsOptions().meterRegistry(prometheusRegistry)
+                        .configureDefaultTagNames(CosmosMetricTagName.PARTITION_KEY_RANGE_ID));
 
-
+        //start local HttpServer server to expose the meter registry metrics to Prometheus
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
             server.createContext("/metrics", httpExchange -> {
@@ -128,28 +157,34 @@ public class CosmosClientMetricsQuickStartAsync {
                     os.write(response.getBytes());
                 }
             });
-
             new Thread(server::start).start();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-
 
         //  Create sync client
         client = new CosmosClientBuilder()
             .endpoint(AccountSettings.HOST)
             .key(AccountSettings.MASTER_KEY)
             .clientTelemetryConfig(telemetryConfig)
-            .consistencyLevel(ConsistencyLevel.EVENTUAL)
+            .consistencyLevel(ConsistencyLevel.SESSION) //make sure we can read our own writes
             .contentResponseOnWriteEnabled(true)
+
             .buildAsyncClient();
 
+        try {
+            createDatabaseIfNotExists();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            createContainerIfNotExists();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
-        createDatabaseIfNotExists();
-        createContainerIfNotExists();
-
-        //CosmosFaultInjectionHelper.configureFaultInjectionRules(container, Arrays.asList(serverConnectionDelayRule)).block();
+        // inject fault injection rules
+        CosmosFaultInjectionHelper.configureFaultInjectionRules(container, Arrays.asList(serverConnectionDelayRule)).block();
 
         docs = generateDocs(NUMBER_OF_DOCS);
         createManyDocuments();
@@ -168,7 +203,7 @@ public class CosmosClientMetricsQuickStartAsync {
     }
 
 
-    // Database Diagnostics
+    // Database create
     private void createDatabaseIfNotExists() throws Exception {
         logger.info("Creating database {} if not exists", databaseName);
 
@@ -206,46 +241,24 @@ public class CosmosClientMetricsQuickStartAsync {
         logger.info("Done.");
     }
 
-    private void createDocuments() throws Exception {
-        logger.info("Create document : {}", documentId);
-
-        // Define a document as a POJO (internally this
-        // is converted to JSON via custom serialization)
-        Family family = new Family();
-        family.setLastName(documentLastName);
-        family.setId(documentId);
-
-        // Insert this item as a document
-        // Explicitly specifying the /pk value improves performance.
-        Mono<CosmosItemResponse<Family>> itemResponseMono = container.createItem(family,
-            new PartitionKey(family.getLastName()),
-            new CosmosItemRequestOptions());
-
-        CosmosItemResponse<Family> itemResponse = itemResponseMono.block();
-        CosmosDiagnostics diagnostics = itemResponse.getDiagnostics();
-        logger.info("Create item diagnostics : {}", diagnostics);
-
-        logger.info("Done.");
-    }
-
-    private void createManyDocuments() throws Exception {
+    private void createManyDocuments()  {
         Flux.fromIterable(docs).flatMap(doc -> container.createItem(doc))
                 .flatMap(itemResponse -> {
                     if (itemResponse.getStatusCode() == 201) {
                         number_docs_inserted.getAndIncrement();
                     } else
                         logger.info("WARNING insert status code {} != 201" + itemResponse.getStatusCode());
-                    request_count.incrementAndGet();
+                    write_request_count.incrementAndGet();
                     return Mono.empty();
-                }).subscribe(); // ...Subscribing to the publisher triggers stream execution.
-
-        logger.info("Doing other things until async doc inserts complete...");
-        while (request_count.get() < NUMBER_OF_DOCS) {
-        }
-
+                })
+                .onErrorContinue((throwable, o) -> {
+                    logger.error(
+                            "Exception in create docs. e: {}", throwable.getMessage(), throwable
+                            );
+                }).blockLast();
     }
 
-    private void readManyDocuments() throws InterruptedException {
+    private void readManyDocuments()  {
         // collect the ids that were generated when writing the data.
         List<String> list = new ArrayList<String>();
         for (final JsonNode doc : docs) {
@@ -260,13 +273,14 @@ public class CosmosClientMetricsQuickStartAsync {
                         logger.info("read item with id: " + itemResponse.getItem().get("id"));
                     } else
                         logger.info("WARNING insert status code {} != 200" + itemResponse.getStatusCode());
-                    request_count.getAndIncrement();
+                    read_request_count.getAndIncrement();
                     return Mono.empty();
-                }).subscribe();
-        logger.info("Waiting while subscribed async operation completes all threads...");
-        while (request_count.get() < NUMBER_OF_DOCS) {
-            // looping while subscribed async operation completes all threads
-        }
+                })
+                .onErrorContinue((throwable, o) -> {
+                    logger.error(
+                            "Exception in create docs. e: {}", throwable.getMessage(), throwable
+                    );
+                }).blockLast();
     }
 
     // Database delete
@@ -285,7 +299,7 @@ public class CosmosClientMetricsQuickStartAsync {
     private void shutdown() {
         try {
             //Clean shutdown
-            deleteDatabase();
+            //deleteDatabase();
         } catch (Exception err) {
             logger.error("Deleting Cosmos DB resources failed, will still attempt to close the client", err);
         }
