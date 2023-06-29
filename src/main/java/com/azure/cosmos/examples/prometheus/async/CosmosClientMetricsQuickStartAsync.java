@@ -83,6 +83,7 @@ public class CosmosClientMetricsQuickStartAsync {
                                 .setNonPointOperationLatencyThreshold(Duration.ofDays(10))
                                 .setPointOperationLatencyThreshold(Duration.ofDays(10))
                 )
+                .sampleDiagnostics(0.25)
                 .clientCorrelationId("samplePrometheusMetrics001")
                 .metricsOptions(new CosmosMicrometerMetricsOptions().meterRegistry(prometheusRegistry)
                         //.configureDefaultTagNames(CosmosMetricTagName.PARTITION_KEY_RANGE_ID)
