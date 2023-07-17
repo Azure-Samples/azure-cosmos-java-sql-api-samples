@@ -70,6 +70,8 @@ public class SampleChangeFeedEstimator {
             //on creating a handler for Change Feed events. In this stream, we also trigger the insertion of 10 documents on a separate
             //thread.
             logger.info("Start Change Feed Processor on worker (handles changes asynchronously)");
+
+            // <ChangeFeedProcessorBuilder>
             ChangeFeedProcessor changeFeedProcessorMainInstance = new ChangeFeedProcessorBuilder()
                 .hostName("SampleHost_1")
                 .feedContainer(feedContainer)
@@ -93,6 +95,7 @@ public class SampleChangeFeedEstimator {
                 logger.error("Change feed processor did not start and stopped in the expected time", ex);
                 throw ex;
             }
+            // </ChangeFeedProcessorBuilder>
 
             //  Sleeping here because the CFP instance above requires some time to initialize the lease container
             //  with all the documents that will keep track of the ongoing work.
@@ -151,6 +154,7 @@ public class SampleChangeFeedEstimator {
             // Finally, totalLag should be greater or equal to the number of documents created
             logger.info("Finally total lag is : {}", totalLag.get());
 
+            // <FinalLag>
             totalLag.set(0);
             changeFeedProcessorSideCart.start().block();
             currentState = changeFeedProcessorSideCart.getCurrentState();
@@ -163,6 +167,7 @@ public class SampleChangeFeedEstimator {
 
             // Finally, totalLag should be greater or equal to the number of documents created
             logger.info("Finally total lag is : {}", totalLag.get());
+            // </FinalLag>
 
             Thread.sleep(Duration.ofSeconds(30).toMillis());
 
@@ -176,6 +181,7 @@ public class SampleChangeFeedEstimator {
         logger.info("End Sample");
     }
 
+    // <HandleChangesWithLag>
     private static Consumer<List<JsonNode>> handleChangesWithLag() {
         return (List<JsonNode> docs) -> {
             logger.info("Start handleChangesWithLag()");
@@ -207,6 +213,7 @@ public class SampleChangeFeedEstimator {
             logger.info("End handleChangesWithLag()");
         };
     }
+    // </HandleChangesWithLag>
 
     public static void createNewDocumentsCustomPOJO(CosmosAsyncContainer containerClient, int count) {
         String suffix = UUID.randomUUID().toString();
