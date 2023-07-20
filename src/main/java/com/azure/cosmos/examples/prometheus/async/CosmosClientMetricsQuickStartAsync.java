@@ -83,7 +83,10 @@ public class CosmosClientMetricsQuickStartAsync {
                                 .setNonPointOperationLatencyThreshold(Duration.ofDays(10))
                                 .setPointOperationLatencyThreshold(Duration.ofDays(10))
                 )
-                .sampleDiagnostics(0.25)
+                // Uncomment below to apply sampling to help further tune client-side resource consumption related to metrics.
+                // The sampling rate can be modified after Azure Cosmos DB Client initialization – so the sampling rate can be
+                // modified without any restarts being necessary.
+                //.sampleDiagnostics(0.25)
                 .clientCorrelationId("samplePrometheusMetrics001")
                 .metricsOptions(new CosmosMicrometerMetricsOptions().meterRegistry(prometheusRegistry)
                         //.configureDefaultTagNames(CosmosMetricTagName.PARTITION_KEY_RANGE_ID)
