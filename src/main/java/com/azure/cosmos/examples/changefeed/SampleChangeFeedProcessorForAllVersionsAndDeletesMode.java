@@ -67,7 +67,7 @@ public class SampleChangeFeedProcessorForAllVersionsAndDeletesMode {
             options = new ChangeFeedProcessorOptions();            
             options.setStartFromBeginning(false);
             options.setLeasePrefix("myChangeFeedDeploymentUnit");
-            options.setFeedPollDelay(Duration.ofSeconds(1));
+            options.setFeedPollDelay(Duration.ofSeconds(5));
             // </ChangeFeedProcessorOptions>
 
             //Summary of the next four commands:
