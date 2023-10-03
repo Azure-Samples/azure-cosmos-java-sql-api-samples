@@ -62,6 +62,7 @@ public class SampleChangeFeedProcessor {
             options = new ChangeFeedProcessorOptions();
             options.setStartFromBeginning(false);
             options.setLeasePrefix("myChangeFeedDeploymentUnit");
+            options.setFeedPollDelay(Duration.ofSeconds(5));
             // </ChangeFeedProcessorOptions>
 
             //Summary of the next four commands:
