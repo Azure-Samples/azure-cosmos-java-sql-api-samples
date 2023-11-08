@@ -306,6 +306,7 @@ public class SampleConflictFeedAsync {
 
         // --------------------
 
+        // <ReadConflictFeed>
         int requestPageSize = 3;
         CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
 
@@ -327,6 +328,7 @@ public class SampleConflictFeedAsync {
                 // response.
             }
         });
+        // </ReadConflictFeed>
     }
 
     private void shutdown() {
