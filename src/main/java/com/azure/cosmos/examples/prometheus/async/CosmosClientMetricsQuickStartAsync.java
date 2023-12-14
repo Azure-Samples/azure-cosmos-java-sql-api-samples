@@ -118,7 +118,7 @@ public class CosmosClientMetricsQuickStartAsync {
         // </PrometheusTargetServer>
 
         // <CosmosClient>
-        //  Create sync client
+        //  Create async client
         client = new CosmosClientBuilder()
             .endpoint(AccountSettings.HOST)
             .key(AccountSettings.MASTER_KEY)
