@@ -117,6 +117,7 @@ public class CosmosClientMetricsQuickStartAsync {
         }
         // </PrometheusTargetServer>
 
+        // <CosmosClient>
         //  Create sync client
         client = new CosmosClientBuilder()
             .endpoint(AccountSettings.HOST)
@@ -125,6 +126,7 @@ public class CosmosClientMetricsQuickStartAsync {
             .consistencyLevel(ConsistencyLevel.SESSION) //make sure we can read our own writes
             .contentResponseOnWriteEnabled(true)
             .buildAsyncClient();
+        // </CosmosClient>
 
         try {
             createDatabaseIfNotExists();
