@@ -9,9 +9,12 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.CosmosDiagnostics;
+import com.azure.cosmos.CosmosDiagnosticsHandler;
+import com.azure.cosmos.CosmosDiagnosticsThresholds;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
+import com.azure.cosmos.models.CosmosClientTelemetryConfig;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
@@ -25,6 +28,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.UUID;
 
 public class CosmosDiagnosticsQuickStart {
@@ -64,12 +68,32 @@ public class CosmosDiagnosticsQuickStart {
 
         logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
+        //  Create diagnostics threshold
+        CosmosDiagnosticsThresholds cosmosDiagnosticsThresholds = new CosmosDiagnosticsThresholds();
+        cosmosDiagnosticsThresholds.setPayloadSizeThreshold(10000);
+        //  For demo purposes, we will reduce the threshold so to log all diagnostics
+        //  NOTE: Do not use the same thresholds for production
+        cosmosDiagnosticsThresholds.setPointOperationLatencyThreshold(Duration.ofMillis(10));
+        cosmosDiagnosticsThresholds.setNonPointOperationLatencyThreshold(Duration.ofMillis(10));
+        cosmosDiagnosticsThresholds.setRequestChargeThreshold(5f);
+
+        CosmosDiagnosticsHandler cosmosDiagnosticsHandler = CosmosDiagnosticsHandler.DEFAULT_LOGGING_HANDLER;
+
+
+        //  Create Client Telemetry Config
+        CosmosClientTelemetryConfig cosmosClientTelemetryConfig =
+            new CosmosClientTelemetryConfig();
+        cosmosClientTelemetryConfig.diagnosticsHandler(cosmosDiagnosticsHandler);
+        cosmosClientTelemetryConfig.diagnosticsThresholds(cosmosDiagnosticsThresholds);
+
+
         //  Create sync client
         client = new CosmosClientBuilder()
             .endpoint(AccountSettings.HOST)
             .key(AccountSettings.MASTER_KEY)
             .consistencyLevel(ConsistencyLevel.EVENTUAL)
             .contentResponseOnWriteEnabled(true)
+            .clientTelemetryConfig(cosmosClientTelemetryConfig)
             .buildClient();
 
 
@@ -91,7 +115,7 @@ public class CosmosDiagnosticsQuickStart {
         //  Create database if not exists
         CosmosDatabaseResponse databaseResponse = client.createDatabaseIfNotExists(databaseName);
         CosmosDiagnostics diagnostics = databaseResponse.getDiagnostics();
-        logger.info("Create database diagnostics : {}", diagnostics);
+        //  logger.info("Create database diagnostics : {}", diagnostics);
         database = client.getDatabase(databaseResponse.getProperties().getId());
 
         logger.info("Done.");
@@ -112,7 +136,7 @@ public class CosmosDiagnosticsQuickStart {
         CosmosContainerResponse containerResponse = database.createContainerIfNotExists(containerProperties,
             throughputProperties);
         CosmosDiagnostics diagnostics = containerResponse.getDiagnostics();
-        logger.info("Create container diagnostics : {}", diagnostics);
+        //  logger.info("Create container diagnostics : {}", diagnostics);
         container = database.getContainer(containerResponse.getProperties().getId());
 
         logger.info("Done.");
@@ -133,7 +157,7 @@ public class CosmosDiagnosticsQuickStart {
             new CosmosItemRequestOptions());
 
         CosmosDiagnostics diagnostics = item.getDiagnostics();
-        logger.info("Create item diagnostics : {}", diagnostics);
+        //  logger.info("Create item diagnostics : {}", diagnostics);
 
         logger.info("Done.");
     }
@@ -147,7 +171,7 @@ public class CosmosDiagnosticsQuickStart {
             new PartitionKey(documentLastName), Family.class);
 
         CosmosDiagnostics diagnostics = familyCosmosItemResponse.getDiagnostics();
-        logger.info("Read item diagnostics : {}", diagnostics);
+        //  logger.info("Read item diagnostics : {}", diagnostics);
 
         Family family = familyCosmosItemResponse.getItem();
 
@@ -167,7 +191,7 @@ public class CosmosDiagnosticsQuickStart {
                 new PartitionKey("bad-lastName"), Family.class);
         } catch (CosmosException cosmosException) {
             CosmosDiagnostics diagnostics = cosmosException.getDiagnostics();
-            logger.info("Read item exception diagnostics : {}", diagnostics);
+            //  logger.info("Read item exception diagnostics : {}", diagnostics);
         }
 
         logger.info("Done.");
@@ -183,13 +207,13 @@ public class CosmosDiagnosticsQuickStart {
 
         //  Add handler to capture diagnostics
         filteredFamilies = filteredFamilies.handle(familyFeedResponse -> {
-            logger.info("Query Item diagnostics through handler : {}", familyFeedResponse.getCosmosDiagnostics());
+            //  logger.info("Query Item diagnostics through handler : {}", familyFeedResponse.getCosmosDiagnostics());
         });
 
         //  Or capture diagnostics through iterableByPage() APIs.
         filteredFamilies.iterableByPage().forEach(familyFeedResponse -> {
-            logger.info("Query item diagnostics through iterableByPage : {}",
-                familyFeedResponse.getCosmosDiagnostics());
+            //  logger.info("Query item diagnostics through iterableByPage : {}", familyFeedResponse
+            //  .getCosmosDiagnostics());
         });
 
         logger.info("Done.");
@@ -209,7 +233,7 @@ public class CosmosDiagnosticsQuickStart {
                 new CosmosItemRequestOptions());
 
         CosmosDiagnostics diagnostics = itemResponse.getDiagnostics();
-        logger.info("Replace item diagnostics : {}", diagnostics);
+        //  logger.info("Replace item diagnostics : {}", diagnostics);
 
         logger.info("Request charge of replace operation: {} RU", itemResponse.getRequestCharge());
 
@@ -229,7 +253,7 @@ public class CosmosDiagnosticsQuickStart {
             container.upsertItem(family, new CosmosItemRequestOptions());
 
         CosmosDiagnostics diagnostics = itemResponse.getDiagnostics();
-        logger.info("Upsert item diagnostics : {}", diagnostics);
+        //  logger.info("Upsert item diagnostics : {}", diagnostics);
 
         logger.info("Done.");
     }
@@ -243,7 +267,7 @@ public class CosmosDiagnosticsQuickStart {
             new PartitionKey(documentLastName), new CosmosItemRequestOptions());
 
         CosmosDiagnostics diagnostics = itemResponse.getDiagnostics();
-        logger.info("Delete item diagnostics : {}", diagnostics);
+        //  logger.info("Delete item diagnostics : {}", diagnostics);
 
         logger.info("Done.");
     }
@@ -254,7 +278,7 @@ public class CosmosDiagnosticsQuickStart {
 
         // Delete database
         CosmosDatabaseResponse dbResp = client.getDatabase(databaseName).delete(new CosmosDatabaseRequestOptions());
-        logger.info("Status code for database delete: {}", dbResp.getStatusCode());
+        //  logger.info("Status code for database delete: {}", dbResp.getStatusCode());
 
         logger.info("Done.");
     }
