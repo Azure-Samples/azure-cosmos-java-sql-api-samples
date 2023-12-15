@@ -70,9 +70,9 @@ public class CosmosDiagnosticsQuickStart {
 
         //  Create diagnostics threshold
         CosmosDiagnosticsThresholds cosmosDiagnosticsThresholds = new CosmosDiagnosticsThresholds();
-        cosmosDiagnosticsThresholds.setPayloadSizeThreshold(10000);
         //  For demo purposes, we will reduce the threshold so to log all diagnostics
         //  NOTE: Do not use the same thresholds for production
+        cosmosDiagnosticsThresholds.setPayloadSizeThreshold(10);
         cosmosDiagnosticsThresholds.setPointOperationLatencyThreshold(Duration.ofMillis(10));
         cosmosDiagnosticsThresholds.setNonPointOperationLatencyThreshold(Duration.ofMillis(10));
         cosmosDiagnosticsThresholds.setRequestChargeThreshold(5f);
