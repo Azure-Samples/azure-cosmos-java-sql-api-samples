@@ -73,12 +73,12 @@ public class CosmosDiagnosticsQuickStartAsync {
 
         //  Create diagnostics threshold
         CosmosDiagnosticsThresholds cosmosDiagnosticsThresholds = new CosmosDiagnosticsThresholds();
-        //  For demo purposes, we will reduce the threshold so to log all diagnostics
+        //  These thresholds are for demo purposes
         //  NOTE: Do not use the same thresholds for production
-        cosmosDiagnosticsThresholds.setPayloadSizeThreshold(10);
-        cosmosDiagnosticsThresholds.setPointOperationLatencyThreshold(Duration.ofMillis(10));
-        cosmosDiagnosticsThresholds.setNonPointOperationLatencyThreshold(Duration.ofMillis(10));
-        cosmosDiagnosticsThresholds.setRequestChargeThreshold(5f);
+        cosmosDiagnosticsThresholds.setPayloadSizeThreshold(100_00);
+        cosmosDiagnosticsThresholds.setPointOperationLatencyThreshold(Duration.ofSeconds(1));
+        cosmosDiagnosticsThresholds.setNonPointOperationLatencyThreshold(Duration.ofSeconds(5));
+        cosmosDiagnosticsThresholds.setRequestChargeThreshold(100f);
 
         //  By default, DEFAULT_LOGGING_HANDLER can be used
         CosmosDiagnosticsHandler cosmosDiagnosticsHandler = CosmosDiagnosticsHandler.DEFAULT_LOGGING_HANDLER;
