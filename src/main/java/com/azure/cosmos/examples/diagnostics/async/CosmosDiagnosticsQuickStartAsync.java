@@ -3,15 +3,20 @@
 
 package com.azure.cosmos.examples.diagnostics.async;
 
+import com.azure.core.util.Context;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosDiagnostics;
+import com.azure.cosmos.CosmosDiagnosticsContext;
+import com.azure.cosmos.CosmosDiagnosticsHandler;
+import com.azure.cosmos.CosmosDiagnosticsThresholds;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Family;
+import com.azure.cosmos.models.CosmosClientTelemetryConfig;
 import com.azure.cosmos.models.CosmosContainerProperties;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseRequestOptions;
@@ -26,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.UUID;
 
 public class CosmosDiagnosticsQuickStartAsync {
@@ -65,12 +71,40 @@ public class CosmosDiagnosticsQuickStartAsync {
 
         logger.info("Using Azure Cosmos DB endpoint: {}", AccountSettings.HOST);
 
-        //  Create sync client
+        //  Create diagnostics threshold
+        CosmosDiagnosticsThresholds cosmosDiagnosticsThresholds = new CosmosDiagnosticsThresholds();
+        //  These thresholds are for demo purposes
+        //  NOTE: Do not use the same thresholds for production
+        cosmosDiagnosticsThresholds.setPayloadSizeThreshold(100_00);
+        cosmosDiagnosticsThresholds.setPointOperationLatencyThreshold(Duration.ofSeconds(1));
+        cosmosDiagnosticsThresholds.setNonPointOperationLatencyThreshold(Duration.ofSeconds(5));
+        cosmosDiagnosticsThresholds.setRequestChargeThreshold(100f);
+
+        //  By default, DEFAULT_LOGGING_HANDLER can be used
+        CosmosDiagnosticsHandler cosmosDiagnosticsHandler = CosmosDiagnosticsHandler.DEFAULT_LOGGING_HANDLER;
+
+        //  App developers can also define their own diagnostics handler
+        cosmosDiagnosticsHandler = new CosmosDiagnosticsHandler() {
+            @Override
+            public void handleDiagnostics(CosmosDiagnosticsContext diagnosticsContext, Context traceContext) {
+                logger.info("This is custom diagnostics handler: {}", diagnosticsContext.toJson());
+            }
+        };
+
+
+        //  Create Client Telemetry Config
+        CosmosClientTelemetryConfig cosmosClientTelemetryConfig =
+            new CosmosClientTelemetryConfig();
+        cosmosClientTelemetryConfig.diagnosticsHandler(cosmosDiagnosticsHandler);
+        cosmosClientTelemetryConfig.diagnosticsThresholds(cosmosDiagnosticsThresholds);
+
+        //  Create async client
         client = new CosmosClientBuilder()
             .endpoint(AccountSettings.HOST)
             .key(AccountSettings.MASTER_KEY)
             .consistencyLevel(ConsistencyLevel.EVENTUAL)
             .contentResponseOnWriteEnabled(true)
+            .clientTelemetryConfig(cosmosClientTelemetryConfig)
             .buildAsyncClient();
 
 
