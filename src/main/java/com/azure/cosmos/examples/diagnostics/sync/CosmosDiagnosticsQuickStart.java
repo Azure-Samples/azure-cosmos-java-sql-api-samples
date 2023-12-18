@@ -202,7 +202,7 @@ public class CosmosDiagnosticsQuickStart {
                 new PartitionKey("bad-lastName"), Family.class);
         } catch (CosmosException cosmosException) {
             CosmosDiagnostics diagnostics = cosmosException.getDiagnostics();
-            //  logger.info("Read item exception diagnostics : {}", diagnostics);
+            logger.info("Read item exception diagnostics : {}", diagnostics);
         }
 
         logger.info("Done.");
