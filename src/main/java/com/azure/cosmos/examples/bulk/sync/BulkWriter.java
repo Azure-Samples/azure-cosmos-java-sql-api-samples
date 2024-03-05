@@ -76,6 +76,7 @@ public class BulkWriter {
                 response.getOperation(),
                 response.getException());
         }
+        semaphore.release();
         return bulkOperationResponse;
     }
 
