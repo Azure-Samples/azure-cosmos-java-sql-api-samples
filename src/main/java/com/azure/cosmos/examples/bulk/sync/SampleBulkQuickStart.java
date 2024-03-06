@@ -2,12 +2,30 @@
 // Licensed under the MIT License.
 
 package com.azure.cosmos.examples.bulk.sync;
-
-import com.azure.cosmos.*;
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.ConsistencyLevel;
+import com.azure.cosmos.ThroughputControlGroupConfig;
+import com.azure.cosmos.ThroughputControlGroupConfigBuilder;
+import com.azure.cosmos.GlobalThroughputControlConfig;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.models.*;
+import com.azure.cosmos.models.CosmosContainerProperties;
+import com.azure.cosmos.models.CosmosContainerResponse;
+import com.azure.cosmos.models.CosmosDatabaseResponse;
+import com.azure.cosmos.models.CosmosPatchOperations;
+import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.models.CosmosContainerRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.CosmosItemOperation;
+import com.azure.cosmos.models.CosmosBulkOperationResponse;
+import com.azure.cosmos.models.CosmosBulkExecutionOptions;
+import com.azure.cosmos.models.CosmosBulkItemResponse;
+import com.azure.cosmos.models.CosmosBulkOperations;
+import com.azure.cosmos.models.CosmosItemRequestOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
