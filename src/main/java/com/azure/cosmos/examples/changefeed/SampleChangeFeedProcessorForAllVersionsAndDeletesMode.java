@@ -11,6 +11,8 @@ import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.ThroughputControlGroupConfig;
+import com.azure.cosmos.ThroughputControlGroupConfigBuilder;
 import com.azure.cosmos.examples.common.AccountSettings;
 import com.azure.cosmos.examples.common.CustomPOJO2;
 import com.azure.cosmos.implementation.Utils;
@@ -22,6 +24,7 @@ import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.PriorityLevel;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,11 +66,25 @@ public class SampleChangeFeedProcessorForAllVersionsAndDeletesMode {
 
         try {
 
+            //By integrating throughput control with Change Feed Processor, users can set a low priority for
+            //the change feed workload, ensuring that it does not impact other workloads running in parallel.
+            //This prevents heavy throttling during times of high request unit (RU) usage.
+            //Learn about throughput control here: https://aka.ms/JavaCosmosSparkThroughputControl
+            //Learn about priority based execution here: https://aka.ms/CosmosPriorityBasedExecution
+            // <ThroughputControlGroupConfig>
+            ThroughputControlGroupConfig throughputControlGroupConfig =
+                    new ThroughputControlGroupConfigBuilder()
+                            .groupName("cfp")
+                            .targetThroughput(300)
+                            .priorityLevel(PriorityLevel.LOW)
+                            .build();
+            // </ThroughputControlGroupConfig>
             // <ChangeFeedProcessorOptions>
             options = new ChangeFeedProcessorOptions();            
             options.setStartFromBeginning(false);
             options.setLeasePrefix("myChangeFeedDeploymentUnit");
             options.setFeedPollDelay(Duration.ofSeconds(5));
+            options.setFeedPollThroughputControlConfig(throughputControlGroupConfig);
             // </ChangeFeedProcessorOptions>
 
             //Summary of the next four commands:
