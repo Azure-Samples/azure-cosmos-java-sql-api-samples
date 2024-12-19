@@ -53,7 +53,7 @@ public class CustomItemSerializerQuickStart {
      * This is a simple sample application intended to demonstrate usage of custom serializers for items/documents
      * This sample will
      * 1. Create asynchronous client, database and container instances
-     * 2. Create, read, update and query an item using a custom serializer
+     * 2. Create and read (wrapped and unwrapped)
      * 3. Delete the Cosmos DB database and container resources and close the client.
      */
     //  <Main>
@@ -185,6 +185,10 @@ public class CustomItemSerializerQuickStart {
         //  <ReadItem>
 
         CosmosItemRequestOptions requestOptions = new CosmosItemRequestOptions();
+
+        // we configured the custom serializer on the CosmosClientBuilder - so, it will be used by default
+        // if for certain operations the default serializer should be used instead the request options
+        // can override the serializer to be used
         if (!useCustomSerializer) {
             requestOptions.setCustomItemSerializer(CosmosItemSerializer.DEFAULT_SERIALIZER);
         }
@@ -237,6 +241,10 @@ public class CustomItemSerializerQuickStart {
         logger.info("Done.");
     }
 
+    // Sample custom serializer - for demonstration purposes it will wrap the actual document in a
+    // "wrappedContent" node - so, each document will be an envelope - with the actual payload in
+    // the "wrappedContent" property. This is typically done when the actual payload is compressed or
+    // using some non-json data format etc.
     private static class MySampleItemSerializer extends CosmosItemSerializer {
         public static CosmosItemSerializer INSTANCE = new MySampleItemSerializer();
         private final static ObjectMapper customObjectMapper = new ObjectMapper();
