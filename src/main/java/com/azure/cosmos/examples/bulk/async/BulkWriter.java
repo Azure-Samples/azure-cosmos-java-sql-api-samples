@@ -111,6 +111,19 @@ public class BulkWriter {
                 "The operation for Item ID: [{}]  Item PartitionKey Value: [{}] will be retried",
                 itemOperation.getId(),
                 itemOperation.getPartitionKeyValue());
+            if (itemResponse.getRetryAfterDuration() != null) {
+                logger.info(
+                    "Retrying after [{}] milliseconds",
+                    itemResponse.getRetryAfterDuration().toMillis());
+                try {
+                    Thread.sleep(itemResponse.getRetryAfterDuration().toMillis());
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                logger.info("Retrying without delay");
+            }
+
             //re-scheduling
             scheduleWrites(itemOperation);
         } else {
