@@ -1,58 +1,47 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package com.azure.cosmos.examples.bulk.async;
-
-import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosAsyncClient;
-import com.azure.cosmos.CosmosAsyncContainer;
-import com.azure.cosmos.CosmosAsyncDatabase;
+package com.azure.cosmos.examples.bulk.sync;
+import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.GlobalThroughputControlConfig;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.ThrottlingRetryOptions;
-import com.azure.cosmos.ThroughputControlGroupConfig;
-import com.azure.cosmos.ThroughputControlGroupConfigBuilder;
 import com.azure.cosmos.examples.common.AccountSettings;
-import com.azure.cosmos.examples.common.Families;
 import com.azure.cosmos.examples.common.Family;
-import com.azure.cosmos.models.CosmosBulkExecutionOptions;
-import com.azure.cosmos.models.CosmosBulkItemResponse;
-import com.azure.cosmos.models.CosmosBulkOperations;
 import com.azure.cosmos.models.CosmosContainerProperties;
-import com.azure.cosmos.models.CosmosContainerRequestOptions;
 import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosDatabaseResponse;
-import com.azure.cosmos.models.CosmosItemOperation;
-import com.azure.cosmos.models.CosmosItemRequestOptions;
-import com.azure.cosmos.models.CosmosPatchOperations;
-import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.ThroughputProperties;
+import com.azure.cosmos.models.CosmosContainerRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.CosmosItemOperation;
+import com.azure.cosmos.models.CosmosBulkOperations;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class SampleBulkHandleRetriesAsync {
+public class SampleBulkHandleRetries {
 
-    private static final Logger logger = LoggerFactory.getLogger(SampleBulkHandleRetriesAsync.class);
+    private static final Logger logger = LoggerFactory.getLogger(SampleBulkHandleRetries.class);
     private final String databaseName = "AzureSampleFamilyDB";
     private final String containerName = "FamilyContainer";
-    private CosmosAsyncClient client;
-    private CosmosAsyncDatabase database;
-    private CosmosAsyncContainer container;
+    private CosmosClient client;
+    private CosmosDatabase database;
+    private CosmosContainer container;
     private int noOfItemsToCreate = 500;
 
     public static void main(String[] args) {
-        SampleBulkHandleRetriesAsync p = new SampleBulkHandleRetriesAsync();
+        SampleBulkHandleRetries p = new SampleBulkHandleRetries();
 
         try {
-            logger.info("Starting ASYNC main");
+            logger.info("Starting SYNC main");
             p.getStartedDemo();
             logger.info("Demo complete, please hold while resources are released");
         } catch (Exception e) {
@@ -76,16 +65,17 @@ public class SampleBulkHandleRetriesAsync {
         force rate limiting by reducing the max retry attempts
         to simulate throttling when under heavy load*/
         client = new CosmosClientBuilder()
-            .endpoint(AccountSettings.HOST)
-            .credential(new DefaultAzureCredentialBuilder().build())
+                .endpoint(AccountSettings.HOST)
+                .credential(new DefaultAzureCredentialBuilder().build())
                 .throttlingRetryOptions(
-                    new ThrottlingRetryOptions()
-                        .setMaxRetryAttemptsOnThrottledRequests(1)
-                        .setMaxRetryWaitTime(Duration.ofSeconds(1)))
-            .contentResponseOnWriteEnabled(true)
-            .consistencyLevel(ConsistencyLevel.SESSION).buildAsyncClient();
+                        new ThrottlingRetryOptions()
+                                .setMaxRetryAttemptsOnThrottledRequests(1)
+                                .setMaxRetryWaitTime(Duration.ofSeconds(1)))
+                .contentResponseOnWriteEnabled(true)
+                .consistencyLevel(ConsistencyLevel.SESSION).buildClient();
 
- 
+        //  </CreateAsyncClient>
+
         // Note: database must already exist (cannot be created via RBAC).
         database = client.getDatabase(databaseName);
         createContainerIfNotExists();
@@ -110,50 +100,41 @@ public class SampleBulkHandleRetriesAsync {
         //  <CreateContainerIfNotExists>
 
         CosmosContainerProperties containerProperties = new CosmosContainerProperties(
-            containerName, "/lastName");
+                containerName, "/lastName");
         ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
-        Mono<CosmosContainerResponse> containerIfNotExists = database
-            .createContainerIfNotExists(containerProperties, throughputProperties);
+        CosmosContainerResponse containerIfNotExists;
+        containerIfNotExists = database
+                .createContainerIfNotExists(containerProperties, throughputProperties);
 
         //  Create container with 400 RU/s
-        CosmosContainerResponse cosmosContainerResponse = containerIfNotExists.block();
-        assert(cosmosContainerResponse != null);
-        assert(cosmosContainerResponse.getProperties() != null);
+        CosmosContainerResponse cosmosContainerResponse = containerIfNotExists;
+        assert (cosmosContainerResponse != null);
+        assert (cosmosContainerResponse.getProperties() != null);
         container = database.getContainer(cosmosContainerResponse.getProperties().getId());
         //  </CreateContainerIfNotExists>
 
         //Modify existing container
         containerProperties = cosmosContainerResponse.getProperties();
-        Mono<CosmosContainerResponse> propertiesReplace =
-            container.replace(containerProperties, new CosmosContainerRequestOptions());
-        propertiesReplace.flatMap(containerResponse -> {
-            logger.info(
+        container.replace(containerProperties, new CosmosContainerRequestOptions());
+
+        logger.info(
                 "setupContainer(): Container {}} in {} has been updated with it's new properties.",
                 container.getId(),
                 database.getId());
-            return Mono.empty();
-        }).onErrorResume((exception) -> {
-            logger.error(
-                "setupContainer(): Unable to update properties for container {} in database {}. e: {}",
-                container.getId(),
-                database.getId(),
-                exception.getLocalizedMessage(),
-                exception);
-            return Mono.empty();
-        }).block();
 
     }
+
 
     private void largeBulkUpsertItemsWithBulkWriterAbstraction(Iterable<Family> families) {
         List<CosmosItemOperation> cosmosItemOperations = new ArrayList<>();
         for (Family family : families) {
             cosmosItemOperations.add(CosmosBulkOperations.getUpsertItemOperation(family, new PartitionKey(family.getLastName())));
         }
-        BulkWriter bulkWriter = new BulkWriter(container);
+        com.azure.cosmos.examples.bulk.sync.BulkWriter bulkWriter = new BulkWriter(container);
         for (CosmosItemOperation operation : cosmosItemOperations) {
             bulkWriter.scheduleWrites(operation);
         }
-        bulkWriter.execute().subscribe();
+        bulkWriter.execute();
         //get count of items in container
         try {
             logger.info("Waiting for bulk operations to complete...");
@@ -162,9 +143,8 @@ public class SampleBulkHandleRetriesAsync {
             throw new RuntimeException(e);
         }
         logger.info("Number of items to create was: " + noOfItemsToCreate);
-        logger.info("Total items created after bulk load: " + container.readAllItems(new PartitionKey("Family0"), Family.class).count().block());
+        logger.info("Total items created after bulk load: " + container.readAllItems(new PartitionKey("Family0"), Family.class).stream().count());
     }
-    
 
     private void shutdown() {
         try {
@@ -173,9 +153,7 @@ public class SampleBulkHandleRetriesAsync {
             //Clean shutdown
             logger.info("Deleting Cosmos DB resources");
             logger.info("-Deleting container...");
-            if (container != null) container.delete().subscribe();
-            logger.info("-Deleting database...");
-            if (database != null) database.delete().subscribe();
+            if (container != null) container.delete();
             logger.info("-Closing the client...");
         } catch (InterruptedException err) {
             err.printStackTrace();
@@ -186,6 +164,4 @@ public class SampleBulkHandleRetriesAsync {
         client.close();
         logger.info("Done.");
     }
-
-
 }

@@ -10,6 +10,7 @@ import com.azure.cosmos.examples.common.Family;
 //  <CosmosBulkOperationsImport>
 import com.azure.cosmos.models.*;
 //  </CosmosBulkOperationsImport>
+import com.azure.identity.DefaultAzureCredentialBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -63,14 +64,15 @@ public class SampleBulkQuickStartAsync {
         //  <CreateAsyncClient>
         client = new CosmosClientBuilder()
             .endpoint(AccountSettings.HOST)
-            .key(AccountSettings.MASTER_KEY)
+                .credential(new DefaultAzureCredentialBuilder().build())
             .preferredRegions(preferredRegions)
             .contentResponseOnWriteEnabled(true)
             .consistencyLevel(ConsistencyLevel.SESSION).buildAsyncClient();
 
         //  </CreateAsyncClient>
  
-        createDatabaseIfNotExists();
+        // Note: database must already exist (cannot be created via RBAC).
+        database = client.getDatabase(databaseName);
         createContainerIfNotExists();
 
         //  <AddDocsToStream>
@@ -129,20 +131,6 @@ public class SampleBulkQuickStartAsync {
         bulkUpsertItemsWithBulkWriterAbstractionAndLocalThroughPutControl();
         logger.info("Bulk upserts with BulkWriter Abstraction and Global Throughput Control");
         bulkCreateItemsWithBulkWriterAbstractionAndGlobalThroughputControl();
-    }
-
-    private void createDatabaseIfNotExists() {
-        logger.info("Create database " + databaseName + " if not exists.");
-
-        //  Create database if not exists
-        //  <CreateDatabaseIfNotExists>
-        Mono<CosmosDatabaseResponse> databaseIfNotExists = client.createDatabaseIfNotExists(databaseName);
-        databaseIfNotExists.flatMap(databaseResponse -> {
-            database = client.getDatabase(databaseResponse.getProperties().getId());
-            logger.info("Checking database " + database.getId() + " completed!\n");
-            return Mono.empty();
-        }).block();
-        //  </CreateDatabaseIfNotExists>
     }
 
     private void createContainerIfNotExists() {
@@ -349,8 +337,6 @@ public class SampleBulkQuickStartAsync {
             logger.info("Deleting Cosmos DB resources");
             logger.info("-Deleting container...");
             if (container != null) container.delete().subscribe();
-            logger.info("-Deleting database...");
-            if (database != null) database.delete().subscribe();
             logger.info("-Closing the client...");
         } catch (InterruptedException err) {
             err.printStackTrace();
