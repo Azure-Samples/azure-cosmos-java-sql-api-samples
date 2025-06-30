@@ -17,9 +17,11 @@ import com.azure.cosmos.models.CosmosItemOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.Duration;
 import java.util.concurrent.Semaphore;
 
 public class BulkWriter {
@@ -111,21 +113,17 @@ public class BulkWriter {
                 "The operation for Item ID: [{}]  Item PartitionKey Value: [{}] will be retried",
                 itemOperation.getId(),
                 itemOperation.getPartitionKeyValue());
-            if (itemResponse.getRetryAfterDuration() != null) {
-                logger.info(
-                    "Retrying after [{}] milliseconds",
-                    itemResponse.getRetryAfterDuration().toMillis());
-                try {
-                    Thread.sleep(itemResponse.getRetryAfterDuration().toMillis());
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                logger.info("Retrying without delay");
-            }
+            long delay = itemResponse.getRetryAfterDuration() != null
+                    ? itemResponse.getRetryAfterDuration().toMillis()
+                    : 0;
 
-            //re-scheduling
-            scheduleWrites(itemOperation);
+            logger.info("Retrying after [{}] ms", delay);
+
+            Mono.delay(Duration.ofMillis(delay))
+                    // re-scheduling
+                    .doOnNext(t -> scheduleWrites(itemOperation))
+                    .subscribe();
+
         } else {
             logger.info(
                 "The operation for Item ID: [{}]  Item PartitionKey Value: [{}] did not complete successfully " +
@@ -156,7 +154,11 @@ public class BulkWriter {
     }
 
     private boolean shouldRetry(int statusCode) {
-        return statusCode == HttpConstants.StatusCodes.REQUEST_TIMEOUT ||
-            statusCode == HttpConstants.StatusCodes.TOO_MANY_REQUESTS;
+        return statusCode == 408 ||
+                statusCode == 429 ||
+                statusCode == 503 ||
+                statusCode == 500 ||
+                statusCode == 449 ||
+                statusCode == 410;
     }
 }

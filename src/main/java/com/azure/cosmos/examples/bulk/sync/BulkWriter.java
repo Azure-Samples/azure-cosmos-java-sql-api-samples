@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
 public class BulkWriter {
@@ -27,7 +29,7 @@ public class BulkWriter {
     private final CosmosContainer cosmosContainer;
     private final int cpuCount = Runtime.getRuntime().availableProcessors();
     private final Semaphore semaphore = new Semaphore(1024 * 167 / cpuCount);
-    private final List<CosmosItemOperation> bufferedOperations = new ArrayList<>();
+    private final Queue<CosmosItemOperation> bufferedOperations = new ConcurrentLinkedQueue<>();
     private final int maxRetries = 5;
 
     public BulkWriter(CosmosContainer cosmosContainer) {
@@ -168,7 +170,11 @@ public class BulkWriter {
     }
 
     private boolean shouldRetry(int statusCode) {
-        return statusCode == HttpConstants.StatusCodes.REQUEST_TIMEOUT ||
-                statusCode == HttpConstants.StatusCodes.TOO_MANY_REQUESTS;
+        return statusCode == 408 ||
+                statusCode == 429 ||
+                statusCode == 503 ||
+                statusCode == 500 ||
+                statusCode == 449 ||
+                statusCode == 410;
     }
 }
