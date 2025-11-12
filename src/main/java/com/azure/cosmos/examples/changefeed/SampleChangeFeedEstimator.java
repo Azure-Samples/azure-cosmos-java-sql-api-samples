@@ -112,9 +112,9 @@ public class SampleChangeFeedEstimator {
                     logger.error("This never needs to be called, as this is just monitoring the state");
                 })
                 .buildChangeFeedProcessor();
-
-            AtomicInteger totalLag = new AtomicInteger();
             // <EstimatedLag>
+            AtomicInteger totalLag = new AtomicInteger();
+            
             Mono<List<ChangeFeedProcessorState>> currentState = changeFeedProcessorMainInstance.getCurrentState();
             currentState.map(state -> {
                 for (ChangeFeedProcessorState changeFeedProcessorState : state) {
